@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block title %}Eliminar IA{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+  <h3>¿Estás seguro de que quieres eliminar la IA "{{ object.name }}"?</h3>
+  <form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Sí, eliminar</button>
+    <a href="{% url 'catalog:ia_list' %}" class="btn btn-secondary">Cancelar</a>
+  </form>
+</div>
+{% endblock %}

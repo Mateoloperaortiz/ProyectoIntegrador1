@@ -1,25 +1,47 @@
 {% extends 'base.html' %}
-{% load static %}
-
-{% block title %}Listado de IAs{% endblock %}
 
 {% block content %}
 <h1>Listado de IAs</h1>
-<div class="row">
-    {% for ia in ias %}
-    <div class="col-md-4">
-        <div class="card mb-3">
-            <div class="card-body">
-                <h5 class="card-title">{{ ia.name }}</h5>
-                <p class="card-text">
-                    {{ ia.description|truncatechars:100 }}
-                </p>
-            </div>
-            <div class="card-footer text-muted">
-                Creado el {{ ia.created_at }}
-            </div>
-        </div>
+
+<!-- Formulario para buscar por texto y/o filtrar por categoría -->
+<form method="get" class="mb-3">
+  <div class="row">
+    <!-- Campo de texto para 'q' -->
+    <div class="col-md-8">
+      <input type="text" name="q" class="form-control"
+             placeholder="Buscar IAs..." value="{{ request.GET.q }}">
     </div>
-    {% endfor %}
+    <!-- Dropdown de categorías -->
+    <div class="col-md-4">
+      <select name="category" class="form-select">
+        <option value="">-- Todas las categorías --</option>
+        {% for cat in categories %}
+          <option value="{{ cat.slug }}"
+                  {% if request.GET.category == cat.slug %}selected{% endif %}>
+            {{ cat.name }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+  <br>
+  <button class="btn btn-primary" type="submit">Buscar</button>
+</form>
+
+<!-- Listado de IAs -->
+<div class="row">
+  {% for ia in ias %}
+  <div class="col-md-4">
+      <div class="card mb-3">
+          <div class="card-body">
+              <h5 class="card-title">{{ ia.name }}</h5>
+              <p class="card-text">{{ ia.description|truncatechars:100 }}</p>
+              <a href="{% url 'catalog:ia_detail' ia.pk %}" class="btn btn-primary">
+                Ver Detalle
+              </a>
+          </div>
+      </div>
+  </div>
+  {% endfor %}
 </div>
 {% endblock %}
