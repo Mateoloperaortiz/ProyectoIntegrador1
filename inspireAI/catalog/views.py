@@ -1,3 +1,8 @@
-from django.shortcuts import render
+# catalog/views.py
+from django.views.generic import ListView
+from .models import IA
 
-# Create your views here.
+class IAListView(ListView):
+    model = IA
+    template_name = 'catalog/ia_list.html'
+    context_object_name = 'ias'

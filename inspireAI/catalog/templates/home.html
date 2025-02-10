@@ -1,0 +1,10 @@
+<!-- templates/home.html -->
+{% extends 'base.html' %}
+
+{% block title %}Página de Inicio{% endblock %}
+
+{% block content %}
+<h1>¡Bienvenido al proyecto InspireAI!</h1>
+<p>Esta es la página principal.</p>
+<a href="{% url 'catalog:ia_list' %}">Ir al Catálogo</a>
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Listado de IAs{% endblock %}
+
+{% block content %}
+<h1>Listado de IAs</h1>
+<div class="row">
+    {% for ia in ias %}
+    <div class="col-md-4">
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5 class="card-title">{{ ia.name }}</h5>
+                <p class="card-text">
+                    {{ ia.description|truncatechars:100 }}
+                </p>
+            </div>
+            <div class="card-footer text-muted">
+                Creado el {{ ia.created_at }}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
