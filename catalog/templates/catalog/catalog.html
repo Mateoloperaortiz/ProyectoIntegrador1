@@ -22,6 +22,7 @@
 </div>
 
 <style>
+    
     .categories {
         display: flex;
         gap: 10px;
@@ -38,24 +39,40 @@
     .category-tag:hover {
         background-color: #bbb;
     }
-</style> 
+
+   
+    .card:hover {
+        background-color: #bcd7f1; 
+        cursor: pointer;
+        transition: 0.3s;
+    }
+
+    
+    .card-img-top {
+        height: 200px;    
+        object-fit: cover; 
+    }
+</style>
 
 
-<div class="row">
+<div class="row row-cols-1 row-cols-md-3 g-4">
     {% for ai in ai_tools %}
-    <div class="col-md-4">
-        <div class="card mb-3">
-            {% if ai.image %}
-                <img class="card-img-top" src="{{ ai.image.url }}" alt="{{ ai.name }}">
-            {% endif %}
-            <div class="card-body">
-                <h5 class="card-title">{{ ai.name }}</h5>
-                <p class="card-text">{{ ai.description|truncatechars:100 }}</p>
+    <div class="col">
+        <!-- Toda la card es clickeable -->
+        <a href="{% url 'presentationAI' ai.id %}" class="text-decoration-none text-dark h-100">
+            <div class="card h-100">
+                {% if ai.image %}
+                    <img class="card-img-top" src="{{ ai.image.url }}" alt="{{ ai.name }}">
+                {% endif %}
+                <div class="card-body">
+                    <h5 class="card-title">{{ ai.name }}</h5>
+                    <p class="card-text">{{ ai.description|truncatechars:100 }}</p>
+                </div>
+                <div class="card-footer text-muted">
+                    <small><strong>Proveedor:</strong> {{ ai.provider }}</small>
+                </div>
             </div>
-            <div class="card-footer text-muted">
-                <small><strong>Proveedor:</strong> {{ ai.provider }}</small>
-            </div>
-        </div>
+        </a>
     </div>
     {% endfor %}
 </div>

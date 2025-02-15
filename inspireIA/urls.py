@@ -28,6 +28,7 @@ urlpatterns = [
    # path('catalog/', catalogviews.catalog, name='catalog'),  # URL para el catálogo
    # path('catalog/<str:category>/', catalogviews.catalog, name='catalog_category'),  # URL para el catálogo con filtro
     path('catalog/', catalogviews.catalog_view, name='catalog'),
+    path('catalog/presentation/<uuid:id>/', catalogviews.presentationAI, name='presentationAI'),  # Corregido a UUID
 ]
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

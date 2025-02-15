@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Catálogo de IAs{% endblock %}
+
+{% block content %}
+
+<h1>{{ ai_tool.name }}</h1>
+
+{% if ai_tool.image %}
+    <img src="{{ ai_tool.image.url }}" alt="{{ ai_tool.name }}" width="300">
+{% endif %}
+
+<p><strong>Proveedor:</strong> {{ ai_tool.provider }}</p>
+<p><strong>URL del servicio:</strong> <a href="{{ ai_tool.endpoint }}" target="_blank">{{ ai_tool.endpoint }}</a></p>
+<p><strong>Categoría:</strong> {{ ai_tool.category }}</p>
+
+<p><strong>Descripción:</strong></p>
+<div id="descripcion-texto"></div>
+
+<p><strong>Popularidad:</strong> {{ ai_tool.popularity }}</p>
+<a href="{% url 'catalog' %}" class="btn btn-outline-dark">⬅ Volver al catálogo</a>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        let descripcion = `{{ ai_tool.description|escapejs }}`; 
+        let partes = descripcion.split('.'); // Divide en cada punto
+        let contenedor = document.getElementById("descripcion-texto");
+
+        partes.forEach(parte => {
+            if (parte.trim().length > 0) {  
+                let p = document.createElement("p");
+                p.textContent = parte.trim();
+                contenedor.appendChild(p);
+            }
+        });
+    });
+</script>
+
+{% endblock %}
