@@ -5,14 +5,6 @@ from django.shortcuts import render, get_object_or_404
 def home(request):
     return render(request, 'catalog/home.html')  
 
-def catalog(request):
-    searchTerm = request.GET.get('searchAITool')
-    if searchTerm:
-        ai_tools = AITool.objects.filter(name__icontains=searchTerm)
-    else:
-        ai_tools = AITool.objects.all()
-    
-    return render(request, 'catalog/catalog.html', {'searchTerm': searchTerm, 'ai_tools': ai_tools})
 
 def presentationAI(request, id):
     ai_tool = get_object_or_404(AITool, id=id)  # Se obtiene la IA específica
