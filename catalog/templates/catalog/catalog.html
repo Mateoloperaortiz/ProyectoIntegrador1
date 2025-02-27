@@ -3,224 +3,220 @@
 
 {% block title %}Catálogo de IAs{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'catalog/css/catalog.css' %}">
+{% endblock %}
+
 {% block content %}
-<div class="container">
-    <h1 class="mb-4">Catálogo de IAs</h1>
-
-    <!-- Search and Filter Form -->
-    <form action="{% url 'catalog' %}" method="GET" class="mb-4">
-        <div class="row g-3">
-            <div class="col-md-6">
-                <div class="input-group">
-                    <input type="text" class="form-control" name="searchAITool" placeholder="Buscar herramienta IA..." value="{{ searchTerm }}"/>
-                    <button type="submit" class="btn btn-primary">Buscar</button>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <select class="form-select" name="category" onchange="this.form.submit()">
-                    <option value="">Todas las categorías</option>
-                    {% for category in categories %}
-                        <option value="{{ category }}" {% if current_category == category %}selected{% endif %}>{{ category }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-3">
-                <select class="form-select" name="sort_by" onchange="this.form.submit()">
-                    <option value="-popularity" {% if current_sort == '-popularity' %}selected{% endif %}>Popularidad ↓</option>
-                    <option value="popularity" {% if current_sort == 'popularity' %}selected{% endif %}>Popularidad ↑</option>
-                    <option value="name" {% if current_sort == 'name' %}selected{% endif %}>Nombre A-Z</option>
-                    <option value="-name" {% if current_sort == '-name' %}selected{% endif %}>Nombre Z-A</option>
-                    <option value="provider" {% if current_sort == 'provider' %}selected{% endif %}>Proveedor A-Z</option>
-                    <option value="-provider" {% if current_sort == '-provider' %}selected{% endif %}>Proveedor Z-A</option>
-                </select>
-            </div>
-        </div>
-    </form>
-
-    {% if searchTerm %}
-        <div class="alert alert-info d-flex justify-content-between align-items-center">
-            <span>Buscando: <strong>{{ searchTerm }}</strong></span>
-            <a href="{% url 'catalog' %}" class="btn btn-sm btn-outline-secondary">Limpiar filtros</a>
-        </div>
-    {% endif %}
-
-    {% if current_category %}
-        <div class="alert alert-info d-flex justify-content-between align-items-center">
-            <span>Categoría: <strong>{{ current_category }}</strong></span>
-            <a href="{% url 'catalog' %}" class="btn btn-sm btn-outline-secondary">Mostrar todas</a>
-        </div>
-    {% endif %}
-
-    <!-- Category Quick Filter Tags -->
-    <div class="categories">
-        <a href="{% url 'catalog' %}" class="category-tag {% if not current_category %}active{% endif %}">Todas</a>
-        {% for category in categories %}
-            <a href="?category={{ category }}{% if searchTerm %}&searchAITool={{ searchTerm }}{% endif %}{% if current_sort %}&sort_by={{ current_sort }}{% endif %}" 
-               class="category-tag {% if current_category == category %}active{% endif %}">
-                {{ category }}
-            </a>
-        {% endfor %}
+<!-- Hero Banner -->
+<div class="catalog-hero">
+  <div class="container">
+    <div class="row align-items-center">
+      <div class="col-lg-8 mx-auto text-center">
+        <h1 class="mb-3">Catálogo de Herramientas de IA</h1>
+        <p class="lead mb-0">Descubre las mejores herramientas de inteligencia artificial para tus necesidades</p>
+      </div>
     </div>
-
-    <!-- AI Tools Grid -->
-    {% if ai_tools %}
-        <div class="row row-cols-1 row-cols-md-3 g-4">
-            {% for ai in ai_tools %}
-            <div class="col">
-                <a href="{% url 'presentationAI' ai.id %}" class="text-decoration-none text-dark h-100">
-                    <div class="card h-100 shadow-sm">
-                        <div class="position-relative">
-                            {% if ai.image %}
-                                <img class="card-img-top" src="{{ ai.image.url }}" alt="{{ ai.name }}">
-                            {% else %}
-                                <div class="card-img-top bg-light d-flex align-items-center justify-content-center">
-                                    <span class="text-muted">No image</span>
-                                </div>
-                            {% endif %}
-                            <div class="position-absolute top-0 end-0 m-2">
-                                <span class="badge bg-primary">{{ ai.category }}</span>
-                            </div>
-                        </div>
-                        <div class="card-body">
-                            <h5 class="card-title">{{ ai.name }}</h5>
-                            <p class="card-text">{{ ai.description|truncatechars:100 }}</p>
-                        </div>
-                        <div class="card-footer bg-transparent">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <small class="text-muted"><strong>Proveedor:</strong> {{ ai.provider }}</small>
-                                <div class="popularity-indicator" title="Popularidad: {{ ai.popularity }}%">
-                                    {% for i in "12345" %}
-                                        {% if forloop.counter <= ai.popularity|divisibleby:20 %}
-                                            <i class="bi bi-star-fill text-warning"></i>
-                                        {% else %}
-                                            <i class="bi bi-star text-muted"></i>
-                                        {% endif %}
-                                    {% endfor %}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </a>
-            </div>
-            {% endfor %}
-        </div>
-        
-        <!-- Pagination -->
-        {% if is_paginated %}
-        <nav aria-label="Page navigation" class="mt-4">
-            <ul class="pagination justify-content-center">
-                {% if page_obj.has_previous %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page=1{% if searchTerm %}&searchAITool={{ searchTerm }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}{% if current_sort %}&sort_by={{ current_sort }}{% endif %}" aria-label="First">
-                            <span aria-hidden="true">&laquo;&laquo;</span>
-                        </a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if searchTerm %}&searchAITool={{ searchTerm }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}{% if current_sort %}&sort_by={{ current_sort }}{% endif %}" aria-label="Previous">
-                            <span aria-hidden="true">&laquo;</span>
-                        </a>
-                    </li>
-                {% endif %}
-                
-                {% for page in page_range %}
-                    {% if page == '...' %}
-                        <li class="page-item disabled"><span class="page-link">...</span></li>
-                    {% else %}
-                        <li class="page-item {% if page == page_obj.number %}active{% endif %}">
-                            <a class="page-link" href="?page={{ page }}{% if searchTerm %}&searchAITool={{ searchTerm }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}{% if current_sort %}&sort_by={{ current_sort }}{% endif %}">{{ page }}</a>
-                        </li>
-                    {% endif %}
-                {% endfor %}
-                
-                {% if page_obj.has_next %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if searchTerm %}&searchAITool={{ searchTerm }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}{% if current_sort %}&sort_by={{ current_sort }}{% endif %}" aria-label="Next">
-                            <span aria-hidden="true">&raquo;</span>
-                        </a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ paginator.num_pages }}{% if searchTerm %}&searchAITool={{ searchTerm }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}{% if current_sort %}&sort_by={{ current_sort }}{% endif %}" aria-label="Last">
-                            <span aria-hidden="true">&raquo;&raquo;</span>
-                        </a>
-                    </li>
-                {% endif %}
-            </ul>
-        </nav>
-        {% endif %}
-    {% else %}
-        <div class="alert alert-warning text-center mt-5">
-            <h4>No se encontraron herramientas IA</h4>
-            <p>Intenta con otra búsqueda o filtra por una categoría diferente.</p>
-            <a href="{% url 'catalog' %}" class="btn btn-primary mt-2">Ver todas las herramientas</a>
-        </div>
-    {% endif %}
+  </div>
 </div>
 
-<style>
-    /* Categories styling */
-    .categories {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        margin-bottom: 20px;
-    }
-    
-    .category-tag {
-        padding: 5px 15px;
-        background-color: #f8f9fa;
-        border-radius: 50px;
-        text-decoration: none;
-        color: #495057;
-        font-weight: 500;
-        border: 1px solid #dee2e6;
-        transition: all 0.2s;
-    }
-    
-    .category-tag:hover {
-        background-color: #e9ecef;
-        color: #212529;
-    }
-    
-    .category-tag.active {
-        background-color: #0d6efd;
-        color: white;
-        border-color: #0d6efd;
-    }
-    
-    /* Card styling */
-    .card {
-        transition: transform 0.3s, box-shadow 0.3s;
-        border: none;
-    }
-    
-    .card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
-    }
-    
-    .card-img-top {
-        height: 200px;
-        object-fit: cover;
-        border-top-left-radius: 0.375rem;
-        border-top-right-radius: 0.375rem;
-    }
-    
-    /* Empty image placeholder */
-    .card-img-top.bg-light {
-        height: 200px;
-    }
-    
-    /* Pagination styling */
-    .pagination .page-link {
-        color: #0d6efd;
-    }
-    
-    .pagination .page-item.active .page-link {
-        background-color: #0d6efd;
-        border-color: #0d6efd;
-    }
-</style>
+<div class="container">
+  <!-- Filter Section -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="filter-section">
+        <div class="row">
+          <div class="col-md-4 mb-3 mb-md-0">
+            <div class="filter-group">
+              <h5 class="filter-title"><i class="bi bi-funnel me-2"></i>Filtrar por Categoría</h5>
+              <div class="category-filters">
+                <span class="category-filter-item {% if not request.GET.category %}active{% endif %}" data-category="">Todas</span>
+                {% for category in categories %}
+                <span class="category-filter-item {% if request.GET.category == category %}active{% endif %}" data-category="{{ category }}">{{ category }}</span>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4 mb-3 mb-md-0">
+            <div class="filter-group">
+              <h5 class="filter-title"><i class="bi bi-sort-down me-2"></i>Ordenar por</h5>
+              <form id="sortForm">
+                <select class="form-select" name="sort_by" id="sortSelect">
+                  <option value="name" {% if request.GET.sort_by == 'name' %}selected{% endif %}>Nombre (A-Z)</option>
+                  <option value="-name" {% if request.GET.sort_by == '-name' %}selected{% endif %}>Nombre (Z-A)</option>
+                  <option value="-popularity" {% if request.GET.sort_by == '-popularity' %}selected{% endif %}>Popularidad (Alta a Baja)</option>
+                  <option value="popularity" {% if request.GET.sort_by == 'popularity' %}selected{% endif %}>Popularidad (Baja a Alta)</option>
+                  <option value="-created_at" {% if request.GET.sort_by == '-created_at' %}selected{% endif %}>Más recientes</option>
+                  <option value="created_at" {% if request.GET.sort_by == 'created_at' %}selected{% endif %}>Más antiguos</option>
+                </select>
+              </form>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="filter-group">
+              <h5 class="filter-title"><i class="bi bi-search me-2"></i>Buscar</h5>
+              <form action="{% url 'catalog' %}" method="get" role="search">
+                <div class="input-group">
+                  <input type="text" class="form-control" placeholder="Buscar herramientas..." name="search" value="{{ request.GET.search|default:'' }}">
+                  <button class="btn btn-primary" type="submit">
+                    <i class="bi bi-search"></i>
+                  </button>
+                </div>
+                <!-- Preserve other filters -->
+                {% if request.GET.category %}
+                <input type="hidden" name="category" value="{{ request.GET.category }}">
+                {% endif %}
+                {% if request.GET.sort_by %}
+                <input type="hidden" name="sort_by" value="{{ request.GET.sort_by }}">
+                {% endif %}
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-<!-- Include Bootstrap Icons -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css">
+  <!-- Active Filters Display -->
+  {% if request.GET.search or request.GET.category %}
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="p-3 bg-light rounded">
+        <div class="d-flex flex-wrap align-items-center">
+          <span class="me-3"><i class="bi bi-filter"></i> Filtros activos:</span>
+          {% if request.GET.search %}
+          <span class="badge bg-primary me-2 mb-2">Búsqueda: {{ request.GET.search }} <a href="{% url 'catalog' %}{% if request.GET.category %}?category={{ request.GET.category }}{% endif %}{% if request.GET.sort_by %}&sort_by={{ request.GET.sort_by }}{% endif %}" class="text-white text-decoration-none"><i class="bi bi-x-circle"></i></a></span>
+          {% endif %}
+          {% if request.GET.category %}
+          <span class="badge bg-success me-2 mb-2">Categoría: {{ request.GET.category }} <a href="{% url 'catalog' %}{% if request.GET.search %}?search={{ request.GET.search }}{% endif %}{% if request.GET.sort_by %}&sort_by={{ request.GET.sort_by }}{% endif %}" class="text-white text-decoration-none"><i class="bi bi-x-circle"></i></a></span>
+          {% endif %}
+          {% if request.GET.search or request.GET.category or request.GET.sort_by %}
+          <a href="{% url 'catalog' %}" class="btn btn-sm btn-outline-secondary ms-auto mb-2">Limpiar todos los filtros</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Tools Display -->
+  <div class="row mb-4 tools-container">
+    {% if ai_tools %}
+      {% for tool in ai_tools %}
+      <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card ai-tool-card h-100 border-0 shadow-sm">
+          <div class="ai-tool-img-container">
+            <span class="ai-tool-category">{{ tool.get_category_display }}</span>
+            {% if tool.image %}
+            <img src="{{ tool.image.url }}" class="card-img-top" alt="{{ tool.name }}">
+            {% else %}
+            <img src="https://placehold.co/600x400?text=No+Image" class="card-img-top" alt="No Image">
+            {% endif %}
+          </div>
+          <div class="card-body">
+            <h5 class="ai-tool-title">{{ tool.name }}</h5>
+            <p class="ai-tool-description">{{ tool.description|truncatechars:100 }}</p>
+            <div class="d-flex justify-content-between align-items-center mt-3">
+              <div>
+                <span class="popularity-badge {% if tool.popularity >= 75 %}bg-success{% elif tool.popularity >= 50 %}bg-primary{% elif tool.popularity >= 25 %}bg-warning{% else %}bg-secondary{% endif %}">
+                  <i class="bi bi-star-fill me-1"></i>{{ tool.popularity }}%
+                </span>
+              </div>
+              <a href="{% url 'ai_detail' tool.id %}" class="btn btn-sm btn-outline-primary">Ver Detalles</a>
+            </div>
+          </div>
+          <div class="card-footer text-muted">
+            <small><i class="bi bi-clock"></i> Actualizado: {{ tool.updated_at|date:"d/m/Y" }}</small>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="col-12">
+        <div class="empty-state">
+          <div class="empty-state-icon">
+            <i class="bi bi-search"></i>
+          </div>
+          <h3 class="empty-state-text">No se encontraron herramientas que coincidan con tu búsqueda</h3>
+          <a href="{% url 'catalog' %}" class="btn btn-primary">Ver todas las herramientas</a>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Pagination Controls -->
+  {% if ai_tools.paginator.num_pages > 1 %}
+  <div class="row">
+    <div class="col-12">
+      <div class="pagination-container d-flex justify-content-center">
+        <nav aria-label="Page navigation">
+          <ul class="pagination">
+            {% if ai_tools.has_previous %}
+            <li class="page-item">
+              <a class="page-link" href="?{% if request.GET.search %}search={{ request.GET.search }}&{% endif %}{% if request.GET.category %}category={{ request.GET.category }}&{% endif %}{% if request.GET.sort_by %}sort_by={{ request.GET.sort_by }}&{% endif %}page=1" aria-label="First">
+                <span aria-hidden="true">&laquo;&laquo;</span>
+              </a>
+            </li>
+            <li class="page-item">
+              <a class="page-link" href="?{% if request.GET.search %}search={{ request.GET.search }}&{% endif %}{% if request.GET.category %}category={{ request.GET.category }}&{% endif %}{% if request.GET.sort_by %}sort_by={{ request.GET.sort_by }}&{% endif %}page={{ ai_tools.previous_page_number }}" aria-label="Previous">
+                <span aria-hidden="true">&laquo;</span>
+              </a>
+            </li>
+            {% endif %}
+            
+            {% for i in ai_tools.paginator.page_range %}
+              {% if ai_tools.number == i %}
+                <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+              {% elif i > ai_tools.number|add:'-3' and i < ai_tools.number|add:'3' %}
+                <li class="page-item">
+                  <a class="page-link" href="?{% if request.GET.search %}search={{ request.GET.search }}&{% endif %}{% if request.GET.category %}category={{ request.GET.category }}&{% endif %}{% if request.GET.sort_by %}sort_by={{ request.GET.sort_by }}&{% endif %}page={{ i }}">{{ i }}</a>
+                </li>
+              {% endif %}
+            {% endfor %}
+            
+            {% if ai_tools.has_next %}
+            <li class="page-item">
+              <a class="page-link" href="?{% if request.GET.search %}search={{ request.GET.search }}&{% endif %}{% if request.GET.category %}category={{ request.GET.category }}&{% endif %}{% if request.GET.sort_by %}sort_by={{ request.GET.sort_by }}&{% endif %}page={{ ai_tools.next_page_number }}" aria-label="Next">
+                <span aria-hidden="true">&raquo;</span>
+              </a>
+            </li>
+            <li class="page-item">
+              <a class="page-link" href="?{% if request.GET.search %}search={{ request.GET.search }}&{% endif %}{% if request.GET.category %}category={{ request.GET.category }}&{% endif %}{% if request.GET.sort_by %}sort_by={{ request.GET.sort_by }}&{% endif %}page={{ ai_tools.paginator.num_pages }}" aria-label="Last">
+                <span aria-hidden="true">&raquo;&raquo;</span>
+              </a>
+            </li>
+            {% endif %}
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Sort select change handler
+    const sortSelect = document.getElementById('sortSelect');
+    if (sortSelect) {
+      sortSelect.addEventListener('change', function() {
+        // Add loading state
+        document.body.classList.add('loading');
+        
+        // Get current URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        // Update sort_by parameter
+        urlParams.set('sort_by', this.value);
+        
+        // Redirect to new URL
+        window.location.href = `${window.location.pathname}?${urlParams.toString()}`;
+      });
+    }
+    
+    // Category filter click handlers (already defined in main.js)
+  });
+</script>
+{% endblock %}
 {% endblock %}

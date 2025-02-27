@@ -3,12 +3,16 @@
 
 {% block title %}Inspire AI - Descubre Herramientas de IA{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'catalog/css/home.css' %}">
+{% endblock %}
+
 {% block content %}
 <!-- Hero Section -->
 <div class="hero-section py-5 mb-5 bg-primary text-white">
     <div class="container py-5">
         <div class="row align-items-center">
-            <div class="col-lg-6 mb-4 mb-lg-0">
+            <div class="col-lg-6 mb-4 mb-lg-0 fade-in-up delay-1">
                 <h1 class="display-4 fw-bold mb-4">Encuentra la herramienta de IA perfecta para ti</h1>
                 <p class="lead mb-4">Explora nuestro catálogo curado de las mejores herramientas de inteligencia artificial para diferentes necesidades y categorías.</p>
                 <div class="d-flex gap-3">
@@ -20,7 +24,7 @@
                     </a>
                 </div>
             </div>
-            <div class="col-lg-6 text-center">
+            <div class="col-lg-6 text-center fade-in-up delay-2">
                 <img src="https://images.unsplash.com/photo-1591696331111-ef9586a5b17a?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80" 
                      alt="Inteligencia Artificial" 
                      class="img-fluid rounded shadow-lg" 
@@ -32,25 +36,25 @@
 
 <!-- Categories Section -->
 <div class="container mb-5">
-    <div class="text-center mb-5">
+    <div class="text-center mb-5 fade-in-up delay-3">
         <h2 class="display-6 fw-bold">Categorías Destacadas</h2>
         <p class="lead text-muted">Explora herramientas de IA por categoría</p>
     </div>
     
     <div class="row g-4">
         {% for category in categories %}
-        <div class="col-md-4">
-            <a href="{% url 'catalog' %}?category={{ category }}" class="text-decoration-none">
+        <div class="col-md-4 fade-in-up delay-{{ forloop.counter|add:3 }}">
+            <a href="{% url 'catalog' %}?category={{ category }}" class="text-decoration-none category-card-container">
                 <div class="card h-100 border-0 shadow-sm hover-card">
                     <div class="card-body text-center p-5">
                         {% if category == 'Transcription' %}
-                            <i class="bi bi-soundwave display-1 mb-3 text-primary"></i>
+                            <i class="bi bi-soundwave display-1 mb-3 text-primary category-icon"></i>
                         {% elif category == 'Image Generator' %}
-                            <i class="bi bi-image display-1 mb-3 text-success"></i>
+                            <i class="bi bi-image display-1 mb-3 text-success category-icon"></i>
                         {% elif category == 'Word Processor' %}
-                            <i class="bi bi-file-text display-1 mb-3 text-danger"></i>
+                            <i class="bi bi-file-text display-1 mb-3 text-danger category-icon"></i>
                         {% else %}
-                            <i class="bi bi-box display-1 mb-3 text-warning"></i>
+                            <i class="bi bi-box display-1 mb-3 text-warning category-icon"></i>
                         {% endif %}
                         <h3 class="card-title">{{ category }}</h3>
                         <p class="card-text text-muted">Descubre las mejores herramientas de {{ category }}</p>
@@ -65,33 +69,33 @@
 <!-- Features Section -->
 <div class="bg-light py-5 mb-5">
     <div class="container">
-        <div class="text-center mb-5">
+        <div class="text-center mb-5 fade-in-section">
             <h2 class="display-6 fw-bold">¿Por qué usar Inspire AI?</h2>
             <p class="lead text-muted">Beneficios de nuestro catálogo de herramientas de IA</p>
         </div>
         
         <div class="row g-4">
-            <div class="col-md-4">
-                <div class="text-center">
-                    <div class="bg-white rounded-circle d-inline-flex align-items-center justify-content-center p-3 mb-4 shadow-sm" style="width: 80px; height: 80px;">
+            <div class="col-md-4 fade-in-section">
+                <div class="text-center feature-container">
+                    <div class="feature-icon-wrapper bg-white">
                         <i class="bi bi-search fs-1 text-primary"></i>
                     </div>
                     <h3>Fácil Búsqueda</h3>
                     <p class="text-muted">Encuentra rápidamente la herramienta que necesitas con nuestras opciones de búsqueda y filtrado.</p>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="text-center">
-                    <div class="bg-white rounded-circle d-inline-flex align-items-center justify-content-center p-3 mb-4 shadow-sm" style="width: 80px; height: 80px;">
+            <div class="col-md-4 fade-in-section">
+                <div class="text-center feature-container">
+                    <div class="feature-icon-wrapper bg-white">
                         <i class="bi bi-star-half fs-1 text-primary"></i>
                     </div>
                     <h3>Ratings de Popularidad</h3>
                     <p class="text-muted">Descubre las herramientas mejor valoradas y más utilizadas por otros usuarios.</p>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="text-center">
-                    <div class="bg-white rounded-circle d-inline-flex align-items-center justify-content-center p-3 mb-4 shadow-sm" style="width: 80px; height: 80px;">
+            <div class="col-md-4 fade-in-section">
+                <div class="text-center feature-container">
+                    <div class="feature-icon-wrapper bg-white">
                         <i class="bi bi-arrow-up-right-circle fs-1 text-primary"></i>
                     </div>
                     <h3>Acceso Directo</h3>
@@ -103,25 +107,20 @@
 </div>
 
 <!-- Call to Action -->
-<div class="container text-center my-5 py-5">
+<div class="container text-center my-5 py-5 cta-section fade-in-section">
     <h2 class="display-5 fw-bold mb-4">¿Listo para explorar el mundo de la IA?</h2>
     <p class="lead text-muted mb-4">Descubre todas las herramientas de IA que tenemos disponibles en nuestro catálogo completo.</p>
-    <a href="{% url 'catalog' %}" class="btn btn-primary btn-lg px-5 py-3 shadow">
+    <a href="{% url 'catalog' %}" class="btn btn-primary btn-lg px-5 py-3 shadow cta-button">
         <i class="bi bi-collection me-2"></i>Explorar el Catálogo
     </a>
 </div>
 
-<style>
-    .hover-card {
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-    
-    .hover-card:hover {
-        transform: translateY(-10px);
-        box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
-    }
-</style>
-
-<!-- Include Bootstrap Icons -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css">
+{% block extra_js %}
+<script>
+    // Additional home page specific JavaScript
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('Home page loaded');
+    });
+</script>
+{% endblock %}
 {% endblock %}
