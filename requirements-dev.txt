@@ -1,0 +1,11 @@
+-r requirements.txt
+
+# Development tools
+django-debug-toolbar==4.3.0
+ipython==8.22.1
+pytest==8.0.2
+pytest-django==4.8.0
+coverage==7.4.3
+black==24.2.0
+isort==5.13.2
+flake8==7.0.0
