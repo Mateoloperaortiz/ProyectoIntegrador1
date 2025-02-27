@@ -1,4 +1,4 @@
-Inspire AI Project
+# Inspire AI Project
 
 ## Overview
 Inspire AI is a web application designed to help students and teachers discover, access, search, and interact with Artificial Intelligence tools. The project is part of "Proyecto Integrador 1" at EAFIT University.
