@@ -1,6 +1,6 @@
 -r requirements.txt
 
 # Production-only requirements
-sentry-sdk==1.39.1
+sentry-sdk==2.8.0
 django-storages[boto3]==1.14.2
 hiredis==2.3.2
