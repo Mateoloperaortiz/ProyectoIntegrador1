@@ -7,7 +7,7 @@
 <div class="container mt-4">
     <!-- Back to catalog button -->
     <div class="mb-4">
-        <a href="{% url 'catalog' %}" class="btn btn-outline-primary">
+        <a href="{% url 'catalog:tool_list' %}" class="btn btn-outline-primary">
             <i class="bi bi-arrow-left"></i> Volver al catálogo
         </a>
     </div>
@@ -108,7 +108,7 @@
         <div class="row row-cols-1 row-cols-md-3 g-4">
             {% for related in related_tools %}
             <div class="col">
-                <a href="{% url 'presentationAI' related.id %}" class="text-decoration-none text-dark">
+                <a href="{% url 'catalog:tool_detail' related.id %}" class="text-decoration-none text-dark">
                     <div class="card h-100 shadow-sm">
                         <div class="position-relative">
                             {% if related.image %}

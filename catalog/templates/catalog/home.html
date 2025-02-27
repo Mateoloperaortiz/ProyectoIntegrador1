@@ -16,10 +16,10 @@
                 <h1 class="display-4 fw-bold mb-4">Encuentra la herramienta de IA perfecta para ti</h1>
                 <p class="lead mb-4">Explora nuestro catálogo curado de las mejores herramientas de inteligencia artificial para diferentes necesidades y categorías.</p>
                 <div class="d-flex gap-3">
-                    <a href="{% url 'catalog' %}" class="btn btn-light btn-lg px-4 shadow-sm">
+                    <a href="{% url 'catalog:tool_list' %}" class="btn btn-light btn-lg px-4 shadow-sm">
                         <i class="bi bi-grid-3x3-gap-fill me-2"></i>Ver Catálogo
                     </a>
-                    <a href="{% url 'catalog' %}?sort_by=-popularity" class="btn btn-outline-light btn-lg px-4">
+                    <a href="{% url 'catalog:tool_list' %}?sort_by=-popularity" class="btn btn-outline-light btn-lg px-4">
                         <i class="bi bi-star-fill me-2"></i>Más Populares
                     </a>
                 </div>
@@ -44,7 +44,7 @@
     <div class="row g-4">
         {% for category in categories %}
         <div class="col-md-4 fade-in-up delay-{{ forloop.counter|add:3 }}">
-            <a href="{% url 'catalog' %}?category={{ category }}" class="text-decoration-none category-card-container">
+            <a href="{% url 'catalog:category_list' category=category %}" class="text-decoration-none category-card-container">
                 <div class="card h-100 border-0 shadow-sm hover-card">
                     <div class="card-body text-center p-5">
                         {% if category == 'Transcription' %}
@@ -110,7 +110,7 @@
 <div class="container text-center my-5 py-5 cta-section fade-in-section">
     <h2 class="display-5 fw-bold mb-4">¿Listo para explorar el mundo de la IA?</h2>
     <p class="lead text-muted mb-4">Descubre todas las herramientas de IA que tenemos disponibles en nuestro catálogo completo.</p>
-    <a href="{% url 'catalog' %}" class="btn btn-primary btn-lg px-5 py-3 shadow cta-button">
+    <a href="{% url 'catalog:tool_list' %}" class="btn btn-primary btn-lg px-5 py-3 shadow cta-button">
         <i class="bi bi-collection me-2"></i>Explorar el Catálogo
     </a>
 </div>

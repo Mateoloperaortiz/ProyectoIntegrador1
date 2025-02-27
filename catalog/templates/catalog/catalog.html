@@ -55,7 +55,7 @@
           <div class="col-md-4">
             <div class="filter-group">
               <h5 class="filter-title"><i class="bi bi-search me-2"></i>Buscar</h5>
-              <form action="{% url 'catalog' %}" method="get" role="search">
+              <form action="{% url 'catalog:search' %}" method="get" role="search">
                 <div class="input-group">
                   <input type="text" class="form-control" placeholder="Buscar herramientas..." name="search" value="{{ request.GET.search|default:'' }}">
                   <button class="btn btn-primary" type="submit">
@@ -85,13 +85,13 @@
         <div class="d-flex flex-wrap align-items-center">
           <span class="me-3"><i class="bi bi-filter"></i> Filtros activos:</span>
           {% if request.GET.search %}
-          <span class="badge bg-primary me-2 mb-2">Búsqueda: {{ request.GET.search }} <a href="{% url 'catalog' %}{% if request.GET.category %}?category={{ request.GET.category }}{% endif %}{% if request.GET.sort_by %}&sort_by={{ request.GET.sort_by }}{% endif %}" class="text-white text-decoration-none"><i class="bi bi-x-circle"></i></a></span>
+          <span class="badge bg-primary me-2 mb-2">Búsqueda: {{ request.GET.search }} <a href="{% url 'catalog:tool_list' %}{% if request.GET.category %}?category={{ request.GET.category }}{% endif %}{% if request.GET.sort_by %}&sort_by={{ request.GET.sort_by }}{% endif %}" class="text-white text-decoration-none"><i class="bi bi-x-circle"></i></a></span>
           {% endif %}
           {% if request.GET.category %}
-          <span class="badge bg-success me-2 mb-2">Categoría: {{ request.GET.category }} <a href="{% url 'catalog' %}{% if request.GET.search %}?search={{ request.GET.search }}{% endif %}{% if request.GET.sort_by %}&sort_by={{ request.GET.sort_by }}{% endif %}" class="text-white text-decoration-none"><i class="bi bi-x-circle"></i></a></span>
+          <span class="badge bg-success me-2 mb-2">Categoría: {{ request.GET.category }} <a href="{% url 'catalog:tool_list' %}{% if request.GET.search %}?search={{ request.GET.search }}{% endif %}{% if request.GET.sort_by %}&sort_by={{ request.GET.sort_by }}{% endif %}" class="text-white text-decoration-none"><i class="bi bi-x-circle"></i></a></span>
           {% endif %}
           {% if request.GET.search or request.GET.category or request.GET.sort_by %}
-          <a href="{% url 'catalog' %}" class="btn btn-sm btn-outline-secondary ms-auto mb-2">Limpiar todos los filtros</a>
+          <a href="{% url 'catalog:tool_list' %}" class="btn btn-sm btn-outline-secondary ms-auto mb-2">Limpiar todos los filtros</a>
           {% endif %}
         </div>
       </div>
@@ -122,7 +122,7 @@
                   <i class="bi bi-star-fill me-1"></i>{{ tool.popularity }}%
                 </span>
               </div>
-              <a href="{% url 'ai_detail' tool.id %}" class="btn btn-sm btn-outline-primary">Ver Detalles</a>
+              <a href="{% url 'catalog:tool_detail' tool.id %}" class="btn btn-sm btn-outline-primary">Ver Detalles</a>
             </div>
           </div>
           <div class="card-footer text-muted">
@@ -138,7 +138,7 @@
             <i class="bi bi-search"></i>
           </div>
           <h3 class="empty-state-text">No se encontraron herramientas que coincidan con tu búsqueda</h3>
-          <a href="{% url 'catalog' %}" class="btn btn-primary">Ver todas las herramientas</a>
+          <a href="{% url 'catalog:tool_list' %}" class="btn btn-primary">Ver todas las herramientas</a>
         </div>
       </div>
     {% endif %}

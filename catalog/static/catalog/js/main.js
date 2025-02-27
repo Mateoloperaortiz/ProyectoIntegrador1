@@ -100,28 +100,61 @@ function initCategoryFilters() {
     categoryFilters.forEach(filter => {
         const filterCategory = filter.getAttribute('data-category');
         
-        if (filterCategory === currentCategory) {
+        if ((currentCategory === null && filterCategory === '') || 
+            (currentCategory === filterCategory)) {
             filter.classList.add('active');
+        } else {
+            filter.classList.remove('active');
         }
         
         // Add click event
-        filter.addEventListener('click', function() {
-            const category = this.getAttribute('data-category');
-            let url = new URL(window.location);
+        filter.addEventListener('click', () => {
+            // Add loading state
+            document.body.classList.add('loading');
             
-            if (category) {
-                url.searchParams.set('category', category);
+            // Get base URL (either the tool_list or current category-specific URL)
+            let baseUrl;
+            const pathParts = window.location.pathname.split('/');
+            
+            if (pathParts.includes('category')) {
+                // We're on a category page, need to change to the base tools URL
+                baseUrl = '/tools/';
+            } else if (pathParts.includes('search')) {
+                // We're on a search page, stay there but update the category
+                baseUrl = '/search/';
             } else {
-                url.searchParams.delete('category');
+                // We're on the main tools page
+                baseUrl = window.location.pathname;
             }
             
-            window.location.href = url.toString();
+            // Get current parameters
+            const params = new URLSearchParams(window.location.search);
+            
+            // Update or remove category parameter
+            if (filterCategory === '') {
+                params.delete('category');
+            } else {
+                params.set('category', filterCategory);
+            }
+            
+            // Remove page parameter to start from page 1
+            params.delete('page');
+            
+            // Build new URL
+            let newUrl = baseUrl;
+            const queryString = params.toString();
+            if (queryString) {
+                newUrl += '?' + queryString;
+            }
+            
+            // Navigate to new URL
+            window.location.href = newUrl;
         });
     });
 }
 
 /**
- * Add loading state to search form
+ * Add loading state to search
  */
 function initSearchLoading() {
     const searchForms = document.querySelectorAll('form[role="search"]');
@@ -129,15 +162,8 @@ function initSearchLoading() {
     if (searchForms.length === 0) return;
     
     searchForms.forEach(form => {
-        form.addEventListener('submit', function() {
-            // Create and show loading spinner
-            const spinner = document.createElement('div');
-            spinner.classList.add('spinner-border', 'spinner-border-sm', 'text-light', 'ms-2');
-            spinner.setAttribute('role', 'status');
-            
-            const searchButton = this.querySelector('button[type="submit"]');
-            searchButton.appendChild(spinner);
-            searchButton.disabled = true;
+        form.addEventListener('submit', () => {
+            document.body.classList.add('loading');
         });
     });
 }

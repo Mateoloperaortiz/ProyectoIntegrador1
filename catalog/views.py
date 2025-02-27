@@ -4,6 +4,7 @@ from django.contrib import messages
 from django.db.models import Q
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.http import Http404
+from django.urls import reverse
 
 from .models import AITool
 
@@ -20,6 +21,8 @@ class HomeView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['categories'] = self.get_categories()
+        # Add featured tools - using the most popular ones
+        context['featured_tools'] = AITool.objects.order_by('-popularity')[:3]
         return context
     
     def get_categories(self):
@@ -34,10 +37,19 @@ class AIToolDetailView(DetailView):
     Display detailed information about a specific AI tool.
     """
     model = AITool
-    template_name = 'catalog/presentationAI.html'
+    template_name = 'catalog/presentationAI.html'  # Will be renamed in future
     context_object_name = 'ai_tool'
-    slug_field = 'id'
-    slug_url_kwarg = 'id'
+    
+    def get_object(self):
+        """
+        Get the object based on either pk or id for backward compatibility
+        """
+        if 'pk' in self.kwargs:
+            return get_object_or_404(AITool, pk=self.kwargs['pk'])
+        elif 'id' in self.kwargs:
+            return get_object_or_404(AITool, id=self.kwargs['id'])
+        else:
+            raise Http404("AI Tool not found")
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -57,7 +69,7 @@ class CatalogView(ListView):
     template_name = 'catalog/catalog.html'
     context_object_name = 'ai_tools'
     paginate_by = ITEMS_PER_PAGE
-
+    
     def get_queryset(self):
         """
         Return the filtered and sorted queryset based on parameters.
@@ -65,12 +77,12 @@ class CatalogView(ListView):
         queryset = AITool.objects.all()
         
         # Filter by category
-        category = self.request.GET.get('category')
+        category = self.kwargs.get('category') or self.request.GET.get('category')
         if category and category in self.get_categories():
             queryset = queryset.filter(category=category)
         
-        # Search functionality
-        search_term = self.request.GET.get('searchAITool', '')
+        # Search functionality (supporting both old and new parameter names)
+        search_term = self.request.GET.get('search', '') or self.request.GET.get('searchAITool', '')
         if search_term:
             # Create a Q object for each search field
             search_query = Q()
@@ -80,7 +92,8 @@ class CatalogView(ListView):
         
         # Sorting
         sort_by = self.request.GET.get('sort_by', '-popularity')
-        valid_sort_fields = ['name', '-name', 'popularity', '-popularity', 'provider', '-provider']
+        valid_sort_fields = ['name', '-name', 'popularity', '-popularity', 'provider', '-provider', 
+                             'created_at', '-created_at', 'updated_at', '-updated_at']
         if sort_by in valid_sort_fields:
             queryset = queryset.order_by(sort_by)
         else:
@@ -96,13 +109,19 @@ class CatalogView(ListView):
         
         # Add search and filter parameters to context
         context['categories'] = self.get_categories()
-        context['searchTerm'] = self.request.GET.get('searchAITool', '')
-        context['current_category'] = self.request.GET.get('category', '')
+        
+        # Support for both old and new parameter names for backward compatibility
+        search_term = self.request.GET.get('search', '') or self.request.GET.get('searchAITool', '')
+        context['searchTerm'] = search_term
+        
+        # Get category from URL kwargs or query parameters
+        category = self.kwargs.get('category') or self.request.GET.get('category', '')
+        context['current_category'] = category
+        
         context['current_sort'] = self.request.GET.get('sort_by', '-popularity')
         
         # Add pagination parameters
         if context['is_paginated']:
-            # Add pagination context
             paginator = context['paginator']
             page_obj = context['page_obj']
             
@@ -150,11 +169,8 @@ def home(request):
 
 def presentationAI(request, id):
     """Legacy function-based detail view for backward compatibility."""
-    try:
-        return AIToolDetailView.as_view()(request, id=id)
-    except Http404:
-        messages.error(request, "The AI tool you're looking for doesn't exist.")
-        return redirect('catalog')
+    view = AIToolDetailView.as_view()
+    return view(request, id=id)
 
 
 def catalog_view(request):

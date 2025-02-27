@@ -16,26 +16,19 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from catalog import views as catalog_views
-
 from django.conf import settings
 from django.conf.urls.static import static
 
 
 urlpatterns = [
-    # Admin
+    # Admin interface
     path('admin/', admin.site.urls),
     
-    # Main Pages
-    path('', catalog_views.HomeView.as_view(), name='home'),
-    path('catalog/', catalog_views.CatalogView.as_view(), name='catalog'),
-    path('catalog/presentation/<uuid:id>/', catalog_views.AIToolDetailView.as_view(), name='presentationAI'),
+    # Catalog app URLs - includes home, tools list, detail views, etc.
+    path('', include('catalog.urls', namespace='catalog')),
     
-    # Legacy URLs - can be kept for backward compatibility
-    # These use the function-based views that now call the class-based views
-    # path('legacy/', catalog_views.home, name='legacy_home'),
-    # path('legacy/catalog/', catalog_views.catalog_view, name='legacy_catalog'),
-    # path('legacy/catalog/presentation/<uuid:id>/', catalog_views.presentationAI, name='legacy_presentationAI'),
+    # API endpoints could be added here in the future
+    # path('api/', include('api.urls', namespace='api')),
 ]
 
 # Serve media files in development
