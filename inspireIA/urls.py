@@ -15,21 +15,41 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
-from catalog import views as catalogviews
+from django.urls import path, include
+from catalog import views as catalog_views
 
 from django.conf import settings
 from django.conf.urls.static import static
 
 
 urlpatterns = [
+    # Admin
     path('admin/', admin.site.urls),
-    path('', catalogviews.home),
-   # path('catalog/', catalogviews.catalog, name='catalog'),  # URL para el catálogo
-   # path('catalog/<str:category>/', catalogviews.catalog, name='catalog_category'),  # URL para el catálogo con filtro
-    path('catalog/', catalogviews.catalog_view, name='catalog'),
-    path('catalog/presentation/<uuid:id>/', catalogviews.presentationAI, name='presentationAI'),  # Corregido a UUID
+    
+    # Main Pages
+    path('', catalog_views.HomeView.as_view(), name='home'),
+    path('catalog/', catalog_views.CatalogView.as_view(), name='catalog'),
+    path('catalog/presentation/<uuid:id>/', catalog_views.AIToolDetailView.as_view(), name='presentationAI'),
+    
+    # Legacy URLs - can be kept for backward compatibility
+    # These use the function-based views that now call the class-based views
+    # path('legacy/', catalog_views.home, name='legacy_home'),
+    # path('legacy/catalog/', catalog_views.catalog_view, name='legacy_catalog'),
+    # path('legacy/catalog/presentation/<uuid:id>/', catalog_views.presentationAI, name='legacy_presentationAI'),
 ]
-urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
-
+# Serve media files in development
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    
+    # Add debug toolbar URLs only in debug mode
+    try:
+        import debug_toolbar
+        urlpatterns += [
+            path('__debug__/', include(debug_toolbar.urls)),
+        ]
+    except ImportError:
+        pass
+else:
+    # In production, add proper Media file serving
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -1,0 +1,141 @@
+/* Home Page Specific Styles */
+
+/* Hero Section */
+.hero-section {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(to right, var(--primary-color), #224abe);
+}
+
+.hero-section h1 {
+  font-size: 3rem;
+  line-height: 1.2;
+}
+
+.hero-section img {
+  transition: transform 1s ease;
+}
+
+.hero-section:hover img {
+  transform: scale(1.05);
+}
+
+/* Categories Section */
+.category-card-container {
+  transition: transform var(--transition-speed);
+}
+
+.category-card-container:hover {
+  transform: translateY(-10px);
+}
+
+.category-icon {
+  font-size: 4rem;
+  margin-bottom: 1.5rem;
+  transition: transform var(--transition-speed);
+}
+
+.category-card-container:hover .category-icon {
+  transform: scale(1.1);
+}
+
+/* Features Section */
+.feature-icon-wrapper {
+  width: 80px;
+  height: 80px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  margin-bottom: 1.5rem;
+  transition: transform var(--transition-speed);
+}
+
+.feature-container:hover .feature-icon-wrapper {
+  transform: rotateY(180deg);
+}
+
+/* Call to Action */
+.cta-section {
+  position: relative;
+  overflow: hidden;
+}
+
+.cta-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: url('https://images.unsplash.com/photo-1534972195531-d756b9bfa9f2?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80') center/cover no-repeat;
+  opacity: 0.05;
+  z-index: -1;
+}
+
+.cta-button {
+  transition: transform var(--transition-speed), box-shadow var(--transition-speed);
+}
+
+.cta-button:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.15) !important;
+}
+
+/* Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in-up {
+  animation: fadeInUp 0.8s ease-out forwards;
+  opacity: 0;
+}
+
+.delay-1 { animation-delay: 0.1s; }
+.delay-2 { animation-delay: 0.2s; }
+.delay-3 { animation-delay: 0.3s; }
+.delay-4 { animation-delay: 0.4s; }
+.delay-5 { animation-delay: 0.5s; }
+.delay-6 { animation-delay: 0.6s; }
+
+/* Responsive styles */
+@media (max-width: 992px) {
+  .hero-section h1 {
+    font-size: 2.2rem;
+  }
+  
+  .hero-section img {
+    max-height: 250px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .hero-section {
+    text-align: center;
+  }
+  
+  .hero-section .d-flex {
+    justify-content: center;
+  }
+  
+  .hero-section img {
+    margin-top: 2rem;
+  }
+  
+  .feature-container {
+    margin-bottom: 3rem;
+  }
+  
+  .cta-section h2 {
+    font-size: 2rem;
+  }
+}

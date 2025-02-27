@@ -3,77 +3,220 @@
 
 {% block title %}Catálogo de IAs{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'catalog/css/catalog.css' %}">
+{% endblock %}
+
 {% block content %}
-<h1 class="mb-4">Catálogo de IAs</h1>
-
-<form action="" method="GET" class="mb-4">
-    <div class="input-group">
-        <input type="text" class="form-control" name="searchAITool" placeholder="Buscar herramienta IA..."/>
-        <button type="submit" class="btn btn-primary">Buscar</button>
+<!-- Hero Banner -->
+<div class="catalog-hero">
+  <div class="container">
+    <div class="row align-items-center">
+      <div class="col-lg-8 mx-auto text-center">
+        <h1 class="mb-3">Catálogo de Herramientas de IA</h1>
+        <p class="lead mb-0">Descubre las mejores herramientas de inteligencia artificial para tus necesidades</p>
+      </div>
     </div>
-</form>
-
-<p class="text-muted">Buscando: {{ searchTerm }}</p>
-
-<div class="categories">
-    {% for category in categories %}
-        <a href="?category={{ category }}" class="category-tag">{{ category }}</a>
-    {% endfor %}
+  </div>
 </div>
 
-<style>
-    
-    .categories {
-        display: flex;
-        gap: 10px;
-        margin-bottom: 20px;
-    }
-    .category-tag {
-        padding: 5px 10px;
-        background-color: #ddd;
-        border-radius: 10px;
-        text-decoration: none;
-        color: black;
-        font-weight: bold;
-    }
-    .category-tag:hover {
-        background-color: #bbb;
-    }
-
-   
-    .card:hover {
-        background-color: #bcd7f1; 
-        cursor: pointer;
-        transition: 0.3s;
-    }
-
-    
-    .card-img-top {
-        height: 200px;    
-        object-fit: cover; 
-    }
-</style>
-
-
-<div class="row row-cols-1 row-cols-md-3 g-4">
-    {% for ai in ai_tools %}
-    <div class="col">
-        <!-- Toda la card es clickeable -->
-        <a href="{% url 'presentationAI' ai.id %}" class="text-decoration-none text-dark h-100">
-            <div class="card h-100">
-                {% if ai.image %}
-                    <img class="card-img-top" src="{{ ai.image.url }}" alt="{{ ai.name }}">
-                {% endif %}
-                <div class="card-body">
-                    <h5 class="card-title">{{ ai.name }}</h5>
-                    <p class="card-text">{{ ai.description|truncatechars:100 }}</p>
-                </div>
-                <div class="card-footer text-muted">
-                    <small><strong>Proveedor:</strong> {{ ai.provider }}</small>
-                </div>
+<div class="container">
+  <!-- Filter Section -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="filter-section">
+        <div class="row">
+          <div class="col-md-4 mb-3 mb-md-0">
+            <div class="filter-group">
+              <h5 class="filter-title"><i class="bi bi-funnel me-2"></i>Filtrar por Categoría</h5>
+              <div class="category-filters">
+                <span class="category-filter-item {% if not request.GET.category %}active{% endif %}" data-category="">Todas</span>
+                {% for category in categories %}
+                <span class="category-filter-item {% if request.GET.category == category %}active{% endif %}" data-category="{{ category }}">{{ category }}</span>
+                {% endfor %}
+              </div>
             </div>
-        </a>
+          </div>
+          <div class="col-md-4 mb-3 mb-md-0">
+            <div class="filter-group">
+              <h5 class="filter-title"><i class="bi bi-sort-down me-2"></i>Ordenar por</h5>
+              <form id="sortForm">
+                <select class="form-select" name="sort_by" id="sortSelect">
+                  <option value="name" {% if request.GET.sort_by == 'name' %}selected{% endif %}>Nombre (A-Z)</option>
+                  <option value="-name" {% if request.GET.sort_by == '-name' %}selected{% endif %}>Nombre (Z-A)</option>
+                  <option value="-popularity" {% if request.GET.sort_by == '-popularity' %}selected{% endif %}>Popularidad (Alta a Baja)</option>
+                  <option value="popularity" {% if request.GET.sort_by == 'popularity' %}selected{% endif %}>Popularidad (Baja a Alta)</option>
+                  <option value="-created_at" {% if request.GET.sort_by == '-created_at' %}selected{% endif %}>Más recientes</option>
+                  <option value="created_at" {% if request.GET.sort_by == 'created_at' %}selected{% endif %}>Más antiguos</option>
+                </select>
+              </form>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="filter-group">
+              <h5 class="filter-title"><i class="bi bi-search me-2"></i>Buscar</h5>
+              <form action="{% url 'catalog' %}" method="get" role="search">
+                <div class="input-group">
+                  <input type="text" class="form-control" placeholder="Buscar herramientas..." name="search" value="{{ request.GET.search|default:'' }}">
+                  <button class="btn btn-primary" type="submit">
+                    <i class="bi bi-search"></i>
+                  </button>
+                </div>
+                <!-- Preserve other filters -->
+                {% if request.GET.category %}
+                <input type="hidden" name="category" value="{{ request.GET.category }}">
+                {% endif %}
+                {% if request.GET.sort_by %}
+                <input type="hidden" name="sort_by" value="{{ request.GET.sort_by }}">
+                {% endif %}
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-    {% endfor %}
+  </div>
+
+  <!-- Active Filters Display -->
+  {% if request.GET.search or request.GET.category %}
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="p-3 bg-light rounded">
+        <div class="d-flex flex-wrap align-items-center">
+          <span class="me-3"><i class="bi bi-filter"></i> Filtros activos:</span>
+          {% if request.GET.search %}
+          <span class="badge bg-primary me-2 mb-2">Búsqueda: {{ request.GET.search }} <a href="{% url 'catalog' %}{% if request.GET.category %}?category={{ request.GET.category }}{% endif %}{% if request.GET.sort_by %}&sort_by={{ request.GET.sort_by }}{% endif %}" class="text-white text-decoration-none"><i class="bi bi-x-circle"></i></a></span>
+          {% endif %}
+          {% if request.GET.category %}
+          <span class="badge bg-success me-2 mb-2">Categoría: {{ request.GET.category }} <a href="{% url 'catalog' %}{% if request.GET.search %}?search={{ request.GET.search }}{% endif %}{% if request.GET.sort_by %}&sort_by={{ request.GET.sort_by }}{% endif %}" class="text-white text-decoration-none"><i class="bi bi-x-circle"></i></a></span>
+          {% endif %}
+          {% if request.GET.search or request.GET.category or request.GET.sort_by %}
+          <a href="{% url 'catalog' %}" class="btn btn-sm btn-outline-secondary ms-auto mb-2">Limpiar todos los filtros</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Tools Display -->
+  <div class="row mb-4 tools-container">
+    {% if ai_tools %}
+      {% for tool in ai_tools %}
+      <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card ai-tool-card h-100 border-0 shadow-sm">
+          <div class="ai-tool-img-container">
+            <span class="ai-tool-category">{{ tool.get_category_display }}</span>
+            {% if tool.image %}
+            <img src="{{ tool.image.url }}" class="card-img-top" alt="{{ tool.name }}">
+            {% else %}
+            <img src="https://placehold.co/600x400?text=No+Image" class="card-img-top" alt="No Image">
+            {% endif %}
+          </div>
+          <div class="card-body">
+            <h5 class="ai-tool-title">{{ tool.name }}</h5>
+            <p class="ai-tool-description">{{ tool.description|truncatechars:100 }}</p>
+            <div class="d-flex justify-content-between align-items-center mt-3">
+              <div>
+                <span class="popularity-badge {% if tool.popularity >= 75 %}bg-success{% elif tool.popularity >= 50 %}bg-primary{% elif tool.popularity >= 25 %}bg-warning{% else %}bg-secondary{% endif %}">
+                  <i class="bi bi-star-fill me-1"></i>{{ tool.popularity }}%
+                </span>
+              </div>
+              <a href="{% url 'ai_detail' tool.id %}" class="btn btn-sm btn-outline-primary">Ver Detalles</a>
+            </div>
+          </div>
+          <div class="card-footer text-muted">
+            <small><i class="bi bi-clock"></i> Actualizado: {{ tool.updated_at|date:"d/m/Y" }}</small>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="col-12">
+        <div class="empty-state">
+          <div class="empty-state-icon">
+            <i class="bi bi-search"></i>
+          </div>
+          <h3 class="empty-state-text">No se encontraron herramientas que coincidan con tu búsqueda</h3>
+          <a href="{% url 'catalog' %}" class="btn btn-primary">Ver todas las herramientas</a>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Pagination Controls -->
+  {% if ai_tools.paginator.num_pages > 1 %}
+  <div class="row">
+    <div class="col-12">
+      <div class="pagination-container d-flex justify-content-center">
+        <nav aria-label="Page navigation">
+          <ul class="pagination">
+            {% if ai_tools.has_previous %}
+            <li class="page-item">
+              <a class="page-link" href="?{% if request.GET.search %}search={{ request.GET.search }}&{% endif %}{% if request.GET.category %}category={{ request.GET.category }}&{% endif %}{% if request.GET.sort_by %}sort_by={{ request.GET.sort_by }}&{% endif %}page=1" aria-label="First">
+                <span aria-hidden="true">&laquo;&laquo;</span>
+              </a>
+            </li>
+            <li class="page-item">
+              <a class="page-link" href="?{% if request.GET.search %}search={{ request.GET.search }}&{% endif %}{% if request.GET.category %}category={{ request.GET.category }}&{% endif %}{% if request.GET.sort_by %}sort_by={{ request.GET.sort_by }}&{% endif %}page={{ ai_tools.previous_page_number }}" aria-label="Previous">
+                <span aria-hidden="true">&laquo;</span>
+              </a>
+            </li>
+            {% endif %}
+            
+            {% for i in ai_tools.paginator.page_range %}
+              {% if ai_tools.number == i %}
+                <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+              {% elif i > ai_tools.number|add:'-3' and i < ai_tools.number|add:'3' %}
+                <li class="page-item">
+                  <a class="page-link" href="?{% if request.GET.search %}search={{ request.GET.search }}&{% endif %}{% if request.GET.category %}category={{ request.GET.category }}&{% endif %}{% if request.GET.sort_by %}sort_by={{ request.GET.sort_by }}&{% endif %}page={{ i }}">{{ i }}</a>
+                </li>
+              {% endif %}
+            {% endfor %}
+            
+            {% if ai_tools.has_next %}
+            <li class="page-item">
+              <a class="page-link" href="?{% if request.GET.search %}search={{ request.GET.search }}&{% endif %}{% if request.GET.category %}category={{ request.GET.category }}&{% endif %}{% if request.GET.sort_by %}sort_by={{ request.GET.sort_by }}&{% endif %}page={{ ai_tools.next_page_number }}" aria-label="Next">
+                <span aria-hidden="true">&raquo;</span>
+              </a>
+            </li>
+            <li class="page-item">
+              <a class="page-link" href="?{% if request.GET.search %}search={{ request.GET.search }}&{% endif %}{% if request.GET.category %}category={{ request.GET.category }}&{% endif %}{% if request.GET.sort_by %}sort_by={{ request.GET.sort_by }}&{% endif %}page={{ ai_tools.paginator.num_pages }}" aria-label="Last">
+                <span aria-hidden="true">&raquo;&raquo;</span>
+              </a>
+            </li>
+            {% endif %}
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </div>
+  {% endif %}
 </div>
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Sort select change handler
+    const sortSelect = document.getElementById('sortSelect');
+    if (sortSelect) {
+      sortSelect.addEventListener('change', function() {
+        // Add loading state
+        document.body.classList.add('loading');
+        
+        // Get current URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        // Update sort_by parameter
+        urlParams.set('sort_by', this.value);
+        
+        // Redirect to new URL
+        window.location.href = `${window.location.pathname}?${urlParams.toString()}`;
+      });
+    }
+    
+    // Category filter click handlers (already defined in main.js)
+  });
+</script>
+{% endblock %}
 {% endblock %}
