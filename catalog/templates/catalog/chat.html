@@ -1,0 +1,805 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load catalog_extras %}
+
+{% block title %}Chat with {{ ai_tool.name }} | InspireAI{% endblock %}
+
+{% block extra_css %}
+<style>
+  .chat-container {
+    height: 500px;
+    overflow-y: auto;
+    padding: 1.5rem;
+    background-color: var(--neutral-50);
+    border-radius: var(--radius-lg);
+    scrollbar-width: thin;
+    scrollbar-color: var(--neutral-300) var(--neutral-100);
+  }
+  
+  .chat-container::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .chat-container::-webkit-scrollbar-track {
+    background: var(--neutral-100);
+  }
+  
+  .chat-container::-webkit-scrollbar-thumb {
+    background-color: var(--neutral-300);
+    border-radius: 10px;
+  }
+  
+  .message-container {
+    margin-bottom: 1.5rem;
+    animation: messageAppear 0.3s ease-out;
+  }
+  
+  @keyframes messageAppear {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  .user-message .message-bubble {
+    background-color: var(--primary-color);
+    color: white;
+    border-radius: 18px 4px 18px 18px;
+    padding: 1rem 1.25rem;
+    max-width: 80%;
+    box-shadow: var(--shadow-sm);
+    position: relative;
+    line-height: 1.5;
+  }
+  
+  .ai-message .message-bubble {
+    background-color: white;
+    color: var(--neutral-900);
+    border-radius: 4px 18px 18px 18px;
+    padding: 1rem 1.25rem;
+    max-width: 80%;
+    box-shadow: var(--shadow-sm);
+    position: relative;
+    line-height: 1.5;
+  }
+  
+  .message-time {
+    font-size: 0.75rem;
+    margin-top: 0.5rem;
+    text-align: right;
+  }
+  
+  .avatar {
+    display: flex;
+    align-items: end;
+  }
+  
+  .avatar img,
+  .avatar .avatar-placeholder {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    object-fit: cover;
+    box-shadow: var(--shadow-sm);
+  }
+  
+  .avatar .avatar-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.875rem;
+  }
+  
+  .chat-form {
+    background-color: white;
+    border-radius: 2rem;
+    padding: 0.25rem;
+    box-shadow: var(--shadow-md);
+    margin-top: 1rem;
+    transition: all 0.3s ease;
+  }
+  
+  .chat-form:focus-within {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px);
+  }
+  
+  .chat-input {
+    border: none;
+    padding: 0.875rem 1.25rem;
+    border-radius: 2rem;
+    flex: 1;
+    font-size: 1rem;
+  }
+  
+  .chat-input:focus {
+    outline: none;
+    box-shadow: none;
+  }
+  
+  .send-button {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+  }
+  
+  .send-button:hover {
+    background-color: var(--primary-light);
+    transform: scale(1.05);
+  }
+  
+  .send-button:active {
+    background-color: var(--primary-dark);
+    transform: scale(0.95);
+  }
+  
+  .chat-options-button {
+    background-color: transparent;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--neutral-700);
+    transition: all 0.2s ease;
+  }
+  
+  .chat-options-button:hover {
+    background-color: var(--neutral-100);
+  }
+  
+  .chat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--neutral-200);
+    background-color: white;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  }
+  
+  .chat-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--neutral-200);
+    background-color: white;
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  }
+  
+  .chat-status {
+    padding: 0.35rem 0.75rem;
+    border-radius: 2rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+  }
+  
+  .chat-status-icon {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 0.5rem;
+  }
+  
+  .status-active {
+    background-color: rgba(16, 185, 129, 0.1);
+    color: var(--success-color);
+  }
+  
+  .status-active .chat-status-icon {
+    background-color: var(--success-color);
+  }
+  
+  .status-demo {
+    background-color: rgba(245, 158, 11, 0.1);
+    color: var(--warning-color);
+  }
+  
+  .status-demo .chat-status-icon {
+    background-color: var(--warning-color);
+  }
+  
+  .tool-card {
+    transition: all 0.3s ease;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+  }
+  
+  .tool-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+  }
+  
+  .breadcrumb-nav {
+    margin-bottom: 1.5rem;
+  }
+  
+  .breadcrumb-item a {
+    color: var(--neutral-700);
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+  
+  .breadcrumb-item a:hover {
+    color: var(--primary-color);
+  }
+  
+  .breadcrumb-item.active {
+    color: var(--primary-color);
+  }
+  
+  .empty-state {
+    text-align: center;
+    padding: 3rem 2rem;
+  }
+  
+  .empty-state-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background-color: rgba(91, 70, 244, 0.1);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+    color: var(--primary-color);
+  }
+  
+  .conversation-item {
+    display: flex;
+    padding: 0.75rem;
+    border-radius: var(--radius-md);
+    margin-bottom: 0.5rem;
+    transition: all 0.2s ease;
+  }
+  
+  .conversation-item:hover {
+    background-color: var(--neutral-100);
+  }
+  
+  .conversation-item.active {
+    background-color: var(--neutral-100);
+    border-left: 3px solid var(--primary-color);
+  }
+  
+  .conversation-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 0.75rem;
+    background-color: var(--neutral-100);
+    color: var(--primary-color);
+  }
+  
+  .conversation-title {
+    font-size: 0.925rem;
+    font-weight: 500;
+    color: var(--neutral-800);
+    margin-bottom: 0.25rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  .conversation-date {
+    font-size: 0.75rem;
+    color: var(--neutral-500);
+  }
+  
+  /* Typing animation */
+  .typing-dots {
+    display: flex;
+    align-items: center;
+    height: 20px;
+  }
+  
+  .typing-dots span {
+    width: 8px;
+    height: 8px;
+    margin: 0 2px;
+    background-color: var(--neutral-400);
+    border-radius: 50%;
+    display: inline-block;
+    animation: typing 1.4s infinite ease-in-out both;
+  }
+  
+  .typing-dots span:nth-child(1) {
+    animation-delay: 0s;
+  }
+  
+  .typing-dots span:nth-child(2) {
+    animation-delay: 0.2s;
+  }
+  
+  .typing-dots span:nth-child(3) {
+    animation-delay: 0.4s;
+  }
+  
+  @keyframes typing {
+    0%, 80%, 100% {
+      transform: scale(0.6);
+    }
+    40% {
+      transform: scale(1);
+    }
+  }
+  
+  /* Animate on scroll */
+  .animate-on-scroll {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+  
+  .animate-on-scroll.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+  <div class="col-lg-12">
+    <nav aria-label="breadcrumb" class="breadcrumb-nav">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/"><i class="fas fa-home me-1"></i>Home</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'catalog' %}">Catalog</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'presentationAI' ai_tool.id %}">{{ ai_tool.name }}</a></li>
+        <li class="breadcrumb-item active">Chat</li>
+      </ol>
+    </nav>
+  </div>
+</div>
+
+<div class="row">
+  <!-- Main Chat Area -->
+  <div class="col-lg-8 animate-on-scroll">
+    <div class="card shadow-sm tool-card mb-4">
+      <div class="chat-header">
+        <div class="d-flex align-items-center">
+          {% if ai_tool.image %}
+            <img src="{{ ai_tool.image.url }}" alt="{{ ai_tool.name }}" class="me-3 rounded-circle" style="width: 42px; height: 42px; object-fit: cover;">
+          {% else %}
+            <div class="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center me-3" style="width: 42px; height: 42px;">
+              <span class="fw-bold">{{ ai_tool.name|slice:":1"|upper }}</span>
+            </div>
+          {% endif %}
+          
+          <div>
+            <h5 class="fw-bold mb-1">{{ ai_tool.name }}</h5>
+            <div class="chat-status {% if has_api %}status-active{% else %}status-demo{% endif %}">
+              <div class="chat-status-icon"></div>
+              <span>{% if has_api %}API Connected{% else %}Demo Mode{% endif %}</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="d-flex align-items-center">
+          <a href="{% url 'presentationAI' ai_tool.id %}" class="btn btn-sm btn-outline-primary me-2 d-none d-md-block">
+            <i class="fas fa-info-circle me-1"></i>Details
+          </a>
+          
+          <div class="dropdown">
+            <button class="chat-options-button" type="button" id="chatOptionsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+              <i class="fas fa-ellipsis-v"></i>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" aria-labelledby="chatOptionsDropdown">
+              <li><a class="dropdown-item" href="#" id="clearChat"><i class="fas fa-eraser me-2 text-danger"></i>Clear Chat</a></li>
+              <li><a class="dropdown-item" href="{% url 'download_conversation' conversation.id 'txt' %}"><i class="fas fa-file-alt me-2 text-primary"></i>Download as Text</a></li>
+              <li><a class="dropdown-item" href="{% url 'download_conversation' conversation.id 'json' %}"><i class="fas fa-file-code me-2 text-secondary"></i>Download as JSON</a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item" href="#" id="shareLink"><i class="fas fa-share-alt me-2 text-success"></i>Share Conversation</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      
+      <div id="chat-messages" class="chat-container">
+        {% if not messages %}
+          <div class="empty-state">
+            <div class="empty-state-icon">
+              <i class="fas fa-comment-dots fa-2x"></i>
+            </div>
+            <h4 class="fw-bold mb-2">Start a conversation</h4>
+            <p class="text-muted mb-0">Type a message below to begin chatting with {{ ai_tool.name }}</p>
+          </div>
+        {% else %}
+          {% for message in messages %}
+            <div class="message-container {% if message.is_user %}user-message{% else %}ai-message{% endif %}">
+              <div class="d-flex {% if message.is_user %}justify-content-end{% endif %}">
+                {% if not message.is_user %}
+                  <div class="avatar me-2">
+                    {% if ai_tool.image %}
+                      <img src="{{ ai_tool.image.url }}" alt="{{ ai_tool.name }}">
+                    {% else %}
+                      <div class="avatar-placeholder bg-primary text-white">
+                        {{ ai_tool.name|slice:":1"|upper }}
+                      </div>
+                    {% endif %}
+                  </div>
+                {% endif %}
+                
+                <div class="message-bubble">
+                  {{ message.content|linebreaks }}
+                  <div class="message-time">
+                    <span class="{% if message.is_user %}text-white-50{% else %}text-muted{% endif %}">
+                      {{ message.timestamp|time:"H:i" }}
+                    </span>
+                  </div>
+                </div>
+                
+                {% if message.is_user %}
+                  <div class="avatar ms-2">
+                    <div class="avatar-placeholder bg-info text-white">
+                      {{ request.user.username|slice:":1"|upper }}
+                    </div>
+                  </div>
+                {% endif %}
+              </div>
+            </div>
+          {% endfor %}
+        {% endif %}
+      </div>
+      
+      <div class="chat-footer">
+        <form id="chat-form" class="d-flex align-items-center">
+          <div class="chat-form d-flex align-items-center flex-grow-1">
+            <input type="text" id="message-input" class="chat-input form-control" placeholder="Type your message here..." required>
+            <button type="submit" class="send-button">
+              <i class="fas fa-paper-plane"></i>
+            </button>
+          </div>
+        </form>
+        
+        <div class="d-flex align-items-center mt-3">
+          <i class="fas fa-info-circle text-primary me-2"></i>
+          <small class="text-muted">
+            {% if has_api %}
+              This AI uses a real API connection with {{ ai_tool.get_api_type_display }}
+              {% if ai_tool.api_model %}(Model: {{ ai_tool.api_model }}){% endif %}.
+            {% else %}
+              This is a demo mode. API integration is not currently active.
+            {% endif %}
+          </small>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Sidebar -->
+  <div class="col-lg-4">
+    <!-- AI Info Card -->
+    <div class="card shadow-sm tool-card animate-on-scroll" style="animation-delay: 0.1s">
+      <div class="card-body p-4">
+        <div class="d-flex align-items-center mb-3">
+          {% if ai_tool.image %}
+            <img src="{{ ai_tool.image.url }}" alt="{{ ai_tool.name }}" class="me-3 rounded" style="width: 50px; height: 50px; object-fit: cover;">
+          {% else %}
+            <div class="rounded bg-primary text-white d-inline-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px;">
+              <span class="fw-bold">{{ ai_tool.name|slice:":1"|upper }}</span>
+            </div>
+          {% endif %}
+          
+          <div>
+            <h5 class="fw-bold mb-1">{{ ai_tool.name }}</h5>
+            <span class="badge bg-primary">{{ ai_tool.category }}</span>
+          </div>
+        </div>
+        
+        <p class="text-muted">{{ ai_tool.description|truncatechars:200 }}</p>
+        
+        <div class="d-grid gap-2 mt-3">
+          <a href="{{ ai_tool.endpoint }}" target="_blank" class="btn btn-outline-primary">
+            <i class="fas fa-external-link-alt me-1"></i> Visit Official Website
+          </a>
+          <a href="{% url 'presentationAI' ai_tool.id %}" class="btn btn-outline-secondary">
+            <i class="fas fa-info-circle me-1"></i> View Details
+          </a>
+        </div>
+      </div>
+    </div>
+    
+    <!-- API Status Card -->
+    <div class="card shadow-sm tool-card animate-on-scroll" style="animation-delay: 0.2s">
+      <div class="card-header bg-white">
+        <h5 class="fw-bold mb-0">AI Connection Status</h5>
+      </div>
+      <div class="card-body p-4">
+        {% if has_api %}
+          <div class="d-flex align-items-center">
+            <div class="rounded-circle bg-success d-inline-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px;">
+              <i class="fas fa-plug text-white fa-lg"></i>
+            </div>
+            <div>
+              <h6 class="fw-bold mb-1">API Connected</h6>
+              <p class="mb-0 text-muted">
+                Using {{ ai_tool.get_api_type_display }}
+                {% if ai_tool.api_model %}<br>Model: {{ ai_tool.api_model }}{% endif %}
+              </p>
+            </div>
+          </div>
+        {% else %}
+          <div class="d-flex align-items-center">
+            <div class="rounded-circle bg-warning d-inline-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px;">
+              <i class="fas fa-robot text-white fa-lg"></i>
+            </div>
+            <div>
+              <h6 class="fw-bold mb-1">Demo Mode</h6>
+              <p class="mb-0 text-muted">Using simulated responses<br>No active API connection</p>
+            </div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+    
+    <!-- Previous Conversations -->
+    {% if user.is_authenticated %}
+      <div class="card shadow-sm tool-card animate-on-scroll" style="animation-delay: 0.3s">
+        <div class="card-header bg-white">
+          <h5 class="fw-bold mb-0">Recent Conversations</h5>
+        </div>
+        <div class="card-body p-0">
+          {% with user_conversations=user.conversation_set.all|dictsortreversed:"updated_at" %}
+            {% if user_conversations %}
+              <div class="p-3">
+                {% for conv in user_conversations|slice:":5" %}
+                  <a href="{% url 'chat' conv.ai_tool.id %}?conversation_id={{ conv.id }}" class="text-decoration-none">
+                    <div class="conversation-item {% if conv.id == conversation.id %}active{% endif %}">
+                      <div class="conversation-icon">
+                        <i class="fas fa-comment-alt"></i>
+                      </div>
+                      <div>
+                        <div class="conversation-title">{{ conv.title|truncatechars:25 }}</div>
+                        <div class="conversation-date">{{ conv.updated_at|date:"M d, Y" }}</div>
+                      </div>
+                    </div>
+                  </a>
+                {% endfor %}
+              </div>
+            {% else %}
+              <div class="p-4 text-center">
+                <p class="text-muted mb-0">No previous conversations found</p>
+              </div>
+            {% endif %}
+          {% endwith %}
+        </div>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const chatForm = document.getElementById('chat-form');
+    const messageInput = document.getElementById('message-input');
+    const chatMessages = document.getElementById('chat-messages');
+    const clearChatBtn = document.getElementById('clearChat');
+    const shareLinkBtn = document.getElementById('shareLink');
+    const conversationId = '{{ conversation.id }}';
+    
+    // Animation on scroll
+    const animatedElements = document.querySelectorAll('.animate-on-scroll');
+    
+    // Initial check for elements in viewport
+    animateElementsInViewport();
+    
+    // Add animation on scroll
+    window.addEventListener('scroll', animateElementsInViewport);
+    
+    function animateElementsInViewport() {
+      animatedElements.forEach(element => {
+        const position = element.getBoundingClientRect();
+        
+        // Check if element is in viewport
+        if(position.top < window.innerHeight * 0.9) {
+          element.classList.add('visible');
+        }
+      });
+    }
+    
+    // Scroll to bottom of chat
+    function scrollToBottom() {
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+    
+    // Initially scroll to bottom
+    scrollToBottom();
+    
+    // Send message function
+    async function sendMessage(message) {
+      // Add user message to UI immediately
+      const userMessageHtml = `
+        <div class="message-container user-message">
+          <div class="d-flex justify-content-end">
+            <div class="message-bubble">
+              ${message.replace(/\n/g, '<br>')}
+              <div class="message-time">
+                <span class="text-white-50">
+                  ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                </span>
+              </div>
+            </div>
+            <div class="avatar ms-2">
+              <div class="avatar-placeholder bg-info text-white">
+                {% if user.is_authenticated %}{{ user.username|slice:":1"|upper }}{% else %}G{% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      // Add a typing indicator
+      const typingIndicator = document.createElement('div');
+      typingIndicator.classList.add('message-container', 'ai-message', 'typing-indicator');
+      typingIndicator.innerHTML = `
+        <div class="d-flex">
+          <div class="avatar me-2">
+            {% if ai_tool.image %}
+              <img src="{{ ai_tool.image.url }}" alt="{{ ai_tool.name }}">
+            {% else %}
+              <div class="avatar-placeholder bg-primary text-white">
+                {{ ai_tool.name|slice:":1"|upper }}
+              </div>
+            {% endif %}
+          </div>
+          <div class="message-bubble">
+            <div class="typing-dots">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      // Remove empty state if it exists
+      const emptyState = chatMessages.querySelector('.empty-state');
+      if (emptyState) {
+        emptyState.remove();
+      }
+      
+      // Add the user message to the chat
+      chatMessages.insertAdjacentHTML('beforeend', userMessageHtml);
+      
+      // Add typing indicator
+      chatMessages.appendChild(typingIndicator);
+      
+      // Scroll to bottom
+      scrollToBottom();
+      
+      try {
+        // Send message to server
+        const response = await fetch(`/chat/${conversationId}/send/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ message }),
+        });
+        
+        // Remove typing indicator
+        document.querySelector('.typing-indicator').remove();
+        
+        if (response.ok) {
+          const data = await response.json();
+          
+          if (data.success) {
+            // Add AI response to UI
+            const aiMessageHtml = `
+              <div class="message-container ai-message">
+                <div class="d-flex">
+                  <div class="avatar me-2">
+                    {% if ai_tool.image %}
+                      <img src="{{ ai_tool.image.url }}" alt="{{ ai_tool.name }}">
+                    {% else %}
+                      <div class="avatar-placeholder bg-primary text-white">
+                        {{ ai_tool.name|slice:":1"|upper }}
+                      </div>
+                    {% endif %}
+                  </div>
+                  <div class="message-bubble">
+                    ${data.ai_message.content.replace(/\n/g, '<br>')}
+                    <div class="message-time">
+                      <span class="text-muted">
+                        ${new Date(data.ai_message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            `;
+            
+            // Add the AI message to the chat
+            chatMessages.insertAdjacentHTML('beforeend', aiMessageHtml);
+            
+            // Scroll to bottom
+            scrollToBottom();
+          } else {
+            // Show error
+            showFeedback(data.error || 'Error processing your message', 'danger');
+          }
+        } else {
+          // Show error
+          showFeedback('Error connecting to server', 'danger');
+        }
+      } catch (error) {
+        // Remove typing indicator
+        const indicator = document.querySelector('.typing-indicator');
+        if (indicator) {
+          indicator.remove();
+        }
+        
+        // Show error
+        showFeedback('Error: ' + error.message, 'danger');
+      }
+    }
+    
+    // Handle form submission
+    chatForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const message = messageInput.value.trim();
+      
+      if (message) {
+        sendMessage(message);
+        messageInput.value = '';
+      }
+    });
+    
+    // Clear chat button
+    if (clearChatBtn) {
+      clearChatBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        if (confirm('Are you sure you want to clear this chat? This cannot be undone.')) {
+          // Clear the chat UI
+          chatMessages.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-state-icon">
+                <i class="fas fa-comment-dots fa-2x"></i>
+              </div>
+              <h4 class="fw-bold mb-2">Start a conversation</h4>
+              <p class="text-muted mb-0">Type a message below to begin chatting with {{ ai_tool.name }}</p>
+            </div>
+          `;
+          
+          // Show feedback
+          showFeedback('Chat cleared', 'info');
+        }
+      });
+    }
+    
+    // Share link button
+    if (shareLinkBtn) {
+      shareLinkBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        // Generate shareable link
+        const shareableLink = `${window.location.origin}/chat/{{ ai_tool.id }}?conversation_id={{ conversation.id }}`;
+        
+        // Copy to clipboard
+        navigator.clipboard.writeText(shareableLink).then(function() {
+          showFeedback('Link copied to clipboard!', 'success');
+        }, function() {
+          showFeedback('Failed to copy link', 'danger');
+        });
+      });
+    }
+    
+    // Focus on input field by default
+    messageInput.focus();
+  });
+</script>
+{% endblock %}

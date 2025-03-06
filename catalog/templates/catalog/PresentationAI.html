@@ -1,40 +1,983 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load catalog_extras %}
 
-{% block title %}Catálogo de IAs{% endblock %}
+{% block title %}{{ ai_tool.name }} | InspireAI{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* Detail page specific styles */
+  .tool-header {
+    margin-bottom: 2rem;
+  }
+  
+  .breadcrumb {
+    background-color: transparent;
+    padding: 0;
+    margin-bottom: 1rem;
+  }
+  
+  .breadcrumb-item a {
+    color: var(--neutral-700);
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+  
+  .breadcrumb-item a:hover {
+    color: var(--primary-color);
+  }
+  
+  .breadcrumb-item.active {
+    color: var(--primary-color);
+  }
+  
+  .tool-image {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    transition: transform 0.3s ease;
+  }
+  
+  .tool-image:hover {
+    transform: scale(1.05);
+  }
+  
+  .image-placeholder {
+    width: 120px;
+    height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-lg);
+    background-color: var(--primary-color);
+    color: white;
+    font-size: 2.5rem;
+    font-weight: 700;
+  }
+  
+  .tool-rating {
+    background-color: rgba(91, 70, 244, 0.1);
+    padding: 0.5rem 1rem;
+    border-radius: 2rem;
+    font-weight: 600;
+    color: var(--primary-color);
+    display: inline-flex;
+    align-items: center;
+  }
+  
+  .tool-rating .star {
+    color: var(--warning-color);
+    margin-right: 0.5rem;
+  }
+  
+  .tool-label {
+    font-size: 0.85rem;
+    color: var(--neutral-500);
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+  }
+  
+  .tool-label i {
+    color: var(--primary-color);
+    margin-right: 0.5rem;
+    width: 16px;
+    text-align: center;
+  }
+  
+  .description-text p {
+    color: var(--neutral-700);
+    margin-bottom: 1rem;
+    line-height: 1.7;
+  }
+  
+  .action-button {
+    border-radius: var(--radius-md);
+    padding: 0.75rem 1.5rem;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    box-shadow: var(--shadow-sm);
+  }
+  
+  .action-button:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+  
+  .action-button i {
+    margin-right: 0.75rem;
+  }
+  
+  .related-tool {
+    transition: all 0.3s ease;
+    border-radius: var(--radius-md);
+    padding: 1rem;
+  }
+  
+  .related-tool:hover {
+    background-color: var(--neutral-50);
+    transform: translateX(5px);
+  }
+  
+  .related-tool-img {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+  }
+  
+  .chat-container {
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-md);
+    transition: all 0.3s ease;
+    background-color: white;
+  }
+  
+  .chat-container:hover {
+    box-shadow: var(--shadow-lg);
+  }
+  
+  .chat-header {
+    padding: 1rem 1.5rem;
+    background-color: var(--neutral-50);
+    border-bottom: 1px solid var(--neutral-200);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  
+  .chat-messages {
+    padding: 1.5rem;
+    background-color: white;
+    min-height: 250px;
+    max-height: 350px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--neutral-300) var(--neutral-100);
+  }
+  
+  .chat-messages::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .chat-messages::-webkit-scrollbar-track {
+    background: var(--neutral-100);
+  }
+  
+  .chat-messages::-webkit-scrollbar-thumb {
+    background-color: var(--neutral-300);
+    border-radius: 10px;
+  }
+  
+  .chat-input-container {
+    display: flex;
+    padding: 1rem 1.5rem;
+    background-color: white;
+    border-top: 1px solid var(--neutral-200);
+  }
+  
+  .chat-input {
+    flex: 1;
+    border-radius: 2rem 0 0 2rem;
+    border: 1px solid var(--neutral-300);
+    border-right: none;
+    padding: 0.75rem 1.25rem;
+    box-shadow: none;
+  }
+  
+  .chat-input:focus {
+    box-shadow: none;
+    border-color: var(--primary-color);
+  }
+  
+  .chat-submit {
+    border-radius: 0 2rem 2rem 0;
+    background-color: var(--primary-color);
+    color: white;
+    border: 1px solid var(--primary-color);
+    padding: 0 1.5rem;
+    transition: all 0.2s ease;
+  }
+  
+  .chat-submit:hover {
+    background-color: var(--primary-light);
+  }
+  
+  .user-message {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 1.5rem;
+  }
+  
+  .user-message-content {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 1rem 1.25rem;
+    border-radius: 1rem 0.25rem 1rem 1rem;
+    max-width: 80%;
+    box-shadow: var(--shadow-sm);
+    animation: messageInRight 0.3s ease forwards;
+  }
+  
+  .ai-message {
+    display: flex;
+    justify-content: flex-start;
+    margin-bottom: 1.5rem;
+    position: relative;
+  }
+  
+  .ai-message-content {
+    background-color: var(--neutral-100);
+    color: var(--neutral-900);
+    padding: 1rem 1.25rem;
+    border-radius: 0.25rem 1rem 1rem 1rem;
+    max-width: 80%;
+    box-shadow: var(--shadow-sm);
+    animation: messageInLeft 0.3s ease forwards;
+  }
+  
+  @keyframes messageInRight {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  
+  @keyframes messageInLeft {
+    from { opacity: 0; transform: translateX(-20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  
+  .section-divider {
+    height: 1px;
+    background-color: var(--neutral-200);
+    margin: 2rem 0;
+  }
+  
+  .feature-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.4rem 0.75rem;
+    background-color: var(--neutral-100);
+    border-radius: 2rem;
+    margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
+    color: var(--neutral-700);
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+  }
+  
+  .feature-tag i {
+    margin-right: 0.4rem;
+    color: var(--primary-color);
+  }
+  
+  .feature-tag:hover {
+    background-color: var(--neutral-200);
+    color: var(--neutral-900);
+    text-decoration: none;
+  }
+  
+  .rating-stars {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+  }
+  
+  .rating-stars i {
+    color: var(--neutral-300);
+    margin-right: 0.25rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .rating-stars i.active, .rating-stars i:hover {
+    color: var(--warning-color);
+  }
+  
+  .popularity-gauge {
+    position: relative;
+    height: 8px;
+    background-color: var(--neutral-200);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  
+  .popularity-value {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    background-color: var(--warning-color);
+    border-radius: 4px;
+    transition: width 1s ease;
+  }
+  
+  .rating-distribution {
+    margin-top: 1.5rem;
+  }
+  
+  .rating-bar {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.75rem;
+  }
+  
+  .rating-label {
+    width: 30px;
+    margin-right: 1rem;
+    color: var(--neutral-700);
+    font-size: 0.85rem;
+  }
+  
+  .rating-progress {
+    flex: 1;
+    height: 6px;
+    background-color: var(--neutral-200);
+    border-radius: 3px;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .rating-bar-value {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    background-color: var(--warning-color);
+    border-radius: 3px;
+  }
+  
+  .rating-count {
+    width: 30px;
+    margin-left: 1rem;
+    color: var(--neutral-600);
+    font-size: 0.85rem;
+    text-align: right;
+  }
+  
+  .animate-on-scroll {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+  
+  .animate-on-scroll.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  
+  .category-card {
+    background-color: rgba(91, 70, 244, 0.03);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    border: 1px solid rgba(91, 70, 244, 0.1);
+    transition: all 0.3s ease;
+  }
+  
+  .category-card:hover {
+    background-color: rgba(91, 70, 244, 0.05);
+    transform: translateY(-5px);
+  }
+  
+  .provider-badge {
+    display: inline-flex;
+    align-items: center;
+    background-color: var(--neutral-100);
+    padding: 0.4rem 0.75rem;
+    border-radius: 2rem;
+    color: var(--neutral-700);
+    font-size: 0.85rem;
+    margin-right: 0.75rem;
+  }
+  
+  .provider-badge i {
+    margin-right: 0.5rem;
+    color: var(--neutral-500);
+  }
+  
+  .api-badge {
+    display: inline-flex;
+    align-items: center;
+    background-color: rgba(16, 185, 129, 0.1);
+    padding: 0.4rem 0.75rem;
+    border-radius: 2rem;
+    color: var(--success-color);
+    font-size: 0.85rem;
+  }
+  
+  .api-badge i {
+    margin-right: 0.5rem;
+  }
+  
+  .favorite-btn {
+    border: none;
+    background-color: transparent;
+    color: var(--danger-color);
+    padding: 0.5rem;
+    border-radius: var(--radius-md);
+    transition: all 0.2s ease;
+  }
+  
+  .favorite-btn:hover {
+    background-color: rgba(239, 68, 68, 0.1);
+    transform: scale(1.1);
+  }
+  
+  .favorite-btn i {
+    font-size: 1.25rem;
+  }
+  
+  .section-title {
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+    margin-bottom: 1.25rem;
+    color: var(--neutral-800);
+  }
+  
+  .section-title i {
+    color: var(--primary-color);
+    margin-right: 0.75rem;
+    font-size: 1.25rem;
+  }
+  
+  .share-btn {
+    padding: 0.75rem 1.25rem;
+    border-radius: var(--radius-md);
+    transition: all 0.2s ease;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .share-btn i {
+    margin-right: 0.75rem;
+  }
+  
+  .share-btn:hover {
+    transform: translateY(-2px);
+  }
+</style>
+{% endblock %}
 
 {% block content %}
+<div class="tool-header animate-on-scroll">
+  <div class="row">
+    <div class="col-md-8">
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="/"><i class="fas fa-home me-1"></i>Home</a></li>
+          <li class="breadcrumb-item"><a href="{% url 'catalog' %}">Catalog</a></li>
+          <li class="breadcrumb-item"><a href="{% url 'catalog' %}?category={{ ai_tool.category }}">{{ ai_tool.category }}</a></li>
+          <li class="breadcrumb-item active">{{ ai_tool.name }}</li>
+        </ol>
+      </nav>
+    </div>
+    <div class="col-md-4 text-md-end">
+      <a href="{% url 'catalog' %}" class="btn btn-outline-primary">
+        <i class="fas fa-arrow-left me-2"></i>Back to Catalog
+      </a>
+    </div>
+  </div>
+</div>
 
-<h1>{{ ai_tool.name }}</h1>
-
-{% if ai_tool.image %}
-    <img src="{{ ai_tool.image.url }}" alt="{{ ai_tool.name }}" width="300">
-{% endif %}
-
-<p><strong>Proveedor:</strong> {{ ai_tool.provider }}</p>
-<p><strong>URL del servicio:</strong> <a href="{{ ai_tool.endpoint }}" target="_blank">{{ ai_tool.endpoint }}</a></p>
-<p><strong>Categoría:</strong> {{ ai_tool.category }}</p>
-
-<p><strong>Descripción:</strong></p>
-<div id="descripcion-texto"></div>
-
-<p><strong>Popularidad:</strong> {{ ai_tool.popularity }}</p>
-<a href="{% url 'catalog' %}" class="btn btn-outline-dark">⬅ Volver al catálogo</a>
+<div class="row">
+  <!-- Main Content -->
+  <div class="col-lg-8">
+    <div class="card shadow-sm mb-4 animate-on-scroll" style="animation-delay: 0.1s">
+      <div class="card-body p-4">
+        <!-- Tool Header -->
+        <div class="d-flex mb-4">
+          {% if ai_tool.image %}
+            <img src="{{ ai_tool.image.url }}" alt="{{ ai_tool.name }}" class="tool-image me-4">
+          {% else %}
+            <div class="image-placeholder me-4">
+              {{ ai_tool.name|slice:":1"|upper }}
+            </div>
+          {% endif %}
+          
+          <div>
+            <h1 class="fw-bold mb-2">{{ ai_tool.name }}</h1>
+            <div class="d-flex flex-wrap align-items-center mb-2">
+              <span class="provider-badge me-2">
+                <i class="fas fa-building"></i> {{ ai_tool.provider }}
+              </span>
+              
+              <a href="{% url 'catalog' %}?category={{ ai_tool.category }}" class="badge bg-primary text-decoration-none">
+                {{ ai_tool.category }}
+              </a>
+              
+              {% if ai_tool.api_type != 'none' %}
+                <span class="api-badge ms-2">
+                  <i class="fas fa-plug"></i> API Connected
+                </span>
+              {% endif %}
+            </div>
+            
+            <div class="d-flex align-items-center mt-3">
+              <div class="tool-rating me-3">
+                <i class="fas fa-star star"></i>
+                <span>{{ ai_tool.popularity }}</span><span class="text-muted">/10</span>
+              </div>
+              
+              <button class="favorite-btn" id="favoriteBtn" aria-label="Add to favorites">
+                <i class="far fa-heart"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Description -->
+        <div class="mb-4 animate-on-scroll" style="animation-delay: 0.2s">
+          <h2 class="section-title">
+            <i class="fas fa-info-circle"></i>About this AI Tool
+          </h2>
+          
+          <div id="description-text" class="description-text"></div>
+          
+          <!-- Features tags -->
+          <div class="mt-4">
+            <div class="feature-tag">
+              <i class="fas fa-check-circle"></i> User Friendly
+            </div>
+            <div class="feature-tag">
+              <i class="fas fa-shield-alt"></i> Secure
+            </div>
+            <div class="feature-tag">
+              <i class="fas fa-tachometer-alt"></i> Fast
+            </div>
+            <div class="feature-tag">
+              <i class="fas fa-laptop-code"></i> {{ ai_tool.category }} Tool
+            </div>
+          </div>
+        </div>
+        
+        <div class="section-divider"></div>
+        
+        <!-- Quick Access -->
+        <div class="mb-4 animate-on-scroll" style="animation-delay: 0.3s">
+          <h2 class="section-title">
+            <i class="fas fa-link"></i>Quick Access
+          </h2>
+          
+          <div class="d-grid gap-3 d-md-flex">
+            <a href="{{ ai_tool.endpoint }}" target="_blank" class="btn btn-primary action-button">
+              <i class="fas fa-external-link-alt"></i>Visit {{ ai_tool.name }}
+            </a>
+            
+            <a href="{% url 'chat' ai_tool.id %}" class="btn btn-success action-button">
+              <i class="fas fa-comments"></i>Chat with {{ ai_tool.name }}
+            </a>
+            
+            <a href="{% url 'compare' %}?tool1={{ ai_tool.id }}" class="btn btn-secondary action-button">
+              <i class="fas fa-balance-scale"></i>Compare Tool
+            </a>
+          </div>
+        </div>
+        
+        <div class="section-divider"></div>
+        
+        <!-- Interactive Demo -->
+        <div class="mb-4 animate-on-scroll" style="animation-delay: 0.4s">
+          <h2 class="section-title">
+            <i class="fas fa-robot"></i>Try It Out
+          </h2>
+          
+          <p class="text-muted mb-4">Experience {{ ai_tool.name }} directly through our platform:</p>
+          
+          <div class="chat-container">
+            <div class="chat-header">
+              <div class="d-flex align-items-center">
+                {% if ai_tool.image %}
+                  <img src="{{ ai_tool.image.url }}" alt="{{ ai_tool.name }}" class="rounded" width="30" height="30" style="object-fit: cover;">
+                {% else %}
+                  <div class="rounded bg-primary text-white d-inline-flex align-items-center justify-content-center" style="width: 30px; height: 30px; font-size: 0.8rem;">
+                    {{ ai_tool.name|slice:":1"|upper }}
+                  </div>
+                {% endif %}
+                <span class="ms-2 fw-medium">{{ ai_tool.name }}</span>
+              </div>
+              
+              <div>
+                <button id="clear-button" class="btn btn-sm btn-outline-secondary">
+                  <i class="fas fa-trash-alt me-1"></i>Clear
+                </button>
+              </div>
+            </div>
+            
+            <div id="ai-response" class="chat-messages">
+              <div class="text-center text-muted my-5">
+                <div class="mb-3">
+                  <i class="fas fa-comment-dots fa-3x"></i>
+                </div>
+                <p>Start a conversation with {{ ai_tool.name }}!</p>
+                <p class="small">Type your message below to try this AI tool.</p>
+              </div>
+            </div>
+            
+            <div class="chat-input-container">
+              <input type="text" id="ai-input" class="form-control chat-input" placeholder="Type your message here...">
+              <button id="send-button" class="btn chat-submit">
+                <i class="fas fa-paper-plane"></i>
+              </button>
+            </div>
+          </div>
+          
+          <div class="d-flex justify-content-end mt-3">
+            <button id="download-button" class="btn btn-outline-secondary btn-sm">
+              <i class="fas fa-download me-1"></i>Download Conversation
+            </button>
+          </div>
+        </div>
+        
+        <div class="section-divider"></div>
+        
+        <!-- Ratings & Reviews -->
+        <div class="animate-on-scroll" style="animation-delay: 0.5s">
+          <h2 class="section-title">
+            <i class="fas fa-star"></i>Ratings & Reviews
+          </h2>
+          
+          <div class="row align-items-center">
+            <div class="col-md-6">
+              <div class="text-center mb-4">
+                <div class="display-4 fw-bold text-warning">{{ ai_tool.popularity }}</div>
+                <div class="text-muted mb-2">out of 10</div>
+                
+                <div class="rating-stars">
+                  {% for i in "12345678910"|make_list %}
+                    <i class="fas fa-star {% if forloop.counter <= ai_tool.popularity %}active{% endif %}"></i>
+                  {% endfor %}
+                </div>
+                
+                <div class="popularity-gauge mb-2">
+                  <div class="popularity-value" style="width: {{ ai_tool.popularity|multiply:10 }}%;"></div>
+                </div>
+                
+                <div class="text-muted small">Based on user ratings and popularity metrics</div>
+              </div>
+            </div>
+            
+            <div class="col-md-6">
+              <div class="rating-distribution">
+                {% for i in "12345"|make_list %}
+                  {% with num_reversed=6|subtract:forloop.counter %}
+                    <div class="rating-bar">
+                      <div class="rating-label">{{ num_reversed }}</div>
+                      <div class="rating-progress">
+                        <div class="rating-bar-value" style="width: {% if num_reversed == 5 %}60%{% elif num_reversed == 4 %}40%{% elif num_reversed == 3 %}80%{% elif num_reversed == 2 %}30%{% else %}10%{% endif %};"></div>
+                      </div>
+                      <div class="rating-count">{% if num_reversed == 5 %}24{% elif num_reversed == 4 %}16{% elif num_reversed == 3 %}32{% elif num_reversed == 2 %}12{% else %}4{% endif %}</div>
+                    </div>
+                  {% endwith %}
+                {% endfor %}
+              </div>
+              
+              <div class="d-grid mt-4">
+                <button class="btn btn-outline-primary" id="rate-button">
+                  <i class="fas fa-star me-1"></i>Rate this AI Tool
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Sidebar -->
+  <div class="col-lg-4">
+    <!-- Related AIs -->
+    <div class="card shadow-sm mb-4 animate-on-scroll" style="animation-delay: 0.15s">
+      <div class="card-header bg-white py-3">
+        <h3 class="h5 mb-0 fw-bold">Related AI Tools</h3>
+      </div>
+      
+      <div class="card-body p-0">
+        {% if related_ais %}
+          {% for related in related_ais %}
+            <div class="related-tool {% if not forloop.last %}border-bottom{% endif %} p-3">
+              <div class="d-flex">
+                {% if related.image %}
+                  <img src="{{ related.image.url }}" alt="{{ related.name }}" class="related-tool-img me-3">
+                {% else %}
+                  <div class="rounded bg-light-purple text-primary d-inline-flex align-items-center justify-content-center related-tool-img me-3">
+                    <span class="fw-bold">{{ related.name|slice:":1"|upper }}</span>
+                  </div>
+                {% endif %}
+                
+                <div>
+                  <h4 class="h6 fw-bold mb-1">{{ related.name }}</h4>
+                  <p class="text-muted small mb-2">{{ related.provider }}</p>
+                  
+                  <div class="d-flex">
+                    <a href="{% url 'presentationAI' related.id %}" class="btn btn-sm btn-primary me-2">
+                      View
+                    </a>
+                    
+                    <a href="{% url 'chat' related.id %}" class="btn btn-sm btn-outline-primary">
+                      <i class="fas fa-comment-alt me-1"></i>Chat
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <div class="p-4 text-center">
+            <div class="text-muted mb-3">
+              <i class="fas fa-search fa-2x"></i>
+            </div>
+            <p class="text-muted">No related AI tools found.</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+    
+    <!-- Category Information -->
+    <div class="card shadow-sm mb-4 animate-on-scroll" style="animation-delay: 0.25s">
+      <div class="card-header bg-white py-3">
+        <h3 class="h5 mb-0 fw-bold">{{ ai_tool.category }} Tools</h3>
+      </div>
+      
+      <div class="card-body">
+        <div class="category-card">
+          <p class="mb-3">Explore more tools in the {{ ai_tool.category }} category from our extensive catalog.</p>
+          
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <div class="text-muted small">
+              <i class="fas fa-layer-group me-1"></i> Category
+            </div>
+            <span class="fw-medium">{{ ai_tool.category }}</span>
+          </div>
+          
+          <div class="d-flex align-items-center justify-content-between mb-4">
+            <div class="text-muted small">
+              <i class="fas fa-tools me-1"></i> Tools in category
+            </div>
+            <span class="fw-medium">
+              {% if related_ais %}
+                {{ related_ais|length|add:"1" }}
+              {% else %}
+                1
+              {% endif %}
+            </span>
+          </div>
+          
+          <div class="d-grid">
+            <a href="{% url 'catalog' %}?category={{ ai_tool.category }}" class="btn btn-outline-primary">
+              Browse All {{ ai_tool.category }} Tools
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Share Section -->
+    <div class="card shadow-sm animate-on-scroll" style="animation-delay: 0.35s">
+      <div class="card-header bg-white py-3">
+        <h3 class="h5 mb-0 fw-bold">Share</h3>
+      </div>
+      
+      <div class="card-body">
+        <p class="text-muted small mb-3">Share this AI tool with your network:</p>
+        
+        <div class="d-grid gap-2">
+          <button class="btn btn-outline-primary share-btn" id="copy-link-button">
+            <i class="fas fa-link"></i>Copy Link
+          </button>
+          
+          <div class="d-flex gap-2">
+            <button class="btn btn-outline-info share-btn flex-grow-1">
+              <i class="fab fa-twitter"></i>Twitter
+            </button>
+            
+            <button class="btn btn-outline-primary share-btn flex-grow-1">
+              <i class="fab fa-linkedin"></i>LinkedIn
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <script>
-    document.addEventListener("DOMContentLoaded", function() {
-        let descripcion = `{{ ai_tool.description|escapejs }}`; 
-        let partes = descripcion.split('.'); // Divide en cada punto
-        let contenedor = document.getElementById("descripcion-texto");
+  document.addEventListener("DOMContentLoaded", function() {
+    // Process description text
+    let description = `{{ ai_tool.description|escapejs }}`; 
+    let parts = description.split('.'); // Split by periods
+    let container = document.getElementById("description-text");
 
-        partes.forEach(parte => {
-            if (parte.trim().length > 0) {  
-                let p = document.createElement("p");
-                p.textContent = parte.trim();
-                contenedor.appendChild(p);
-            }
-        });
+    parts.forEach(part => {
+      if (part.trim().length > 0) {  
+        let p = document.createElement("p");
+        p.textContent = part.trim() + ".";
+        container.appendChild(p);
+      }
     });
+    
+    // Favorite button functionality
+    const favoriteBtn = document.getElementById('favoriteBtn');
+    favoriteBtn.addEventListener('click', function() {
+      const icon = this.querySelector('i');
+      if (icon.classList.contains('far')) {
+        icon.classList.remove('far');
+        icon.classList.add('fas');
+        
+        // Show feedback
+        showFeedback('Added to favorites!');
+      } else {
+        icon.classList.remove('fas');
+        icon.classList.add('far');
+        
+        // Show feedback
+        showFeedback('Removed from favorites', 'info');
+      }
+    });
+    
+    // Chat functionality
+    const aiInput = document.getElementById('ai-input');
+    const sendButton = document.getElementById('send-button');
+    const aiResponse = document.getElementById('ai-response');
+    const clearButton = document.getElementById('clear-button');
+    const downloadButton = document.getElementById('download-button');
+    
+    // Sample responses for demo
+    const sampleResponses = [
+      "I'm an AI assistant designed to help answer your questions and provide information about {{ ai_tool.name }}.",
+      "That's an interesting question! Let me think about that...",
+      "I can help you with that. Here's what I found about {{ ai_tool.name }}...",
+      "Based on my knowledge of {{ ai_tool.name }}, I can offer the following information...",
+      "I'm not sure about that specific query. Could you provide more details?"
+    ];
+    
+    // Send button functionality
+    sendButton.addEventListener('click', function() {
+      if (aiInput.value.trim() === '') return;
+      
+      // Clear initial message if present
+      if (aiResponse.querySelector('.text-center')) {
+        aiResponse.innerHTML = '';
+      }
+      
+      // Add user message
+      const userMessage = document.createElement('div');
+      userMessage.className = 'user-message';
+      userMessage.innerHTML = `
+        <div class="user-message-content">
+          ${aiInput.value}
+        </div>
+      `;
+      
+      aiResponse.appendChild(userMessage);
+      aiResponse.scrollTop = aiResponse.scrollHeight;
+      
+      // Simulate AI typing
+      const typingIndicator = document.createElement('div');
+      typingIndicator.className = 'ai-message';
+      typingIndicator.innerHTML = `
+        <div class="ai-message-content">
+          <div class="d-flex align-items-center">
+            <span class="me-2">Typing</span>
+            <div class="spinner-grow spinner-grow-sm text-primary" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      aiResponse.appendChild(typingIndicator);
+      aiResponse.scrollTop = aiResponse.scrollHeight;
+      
+      // Simulate AI thinking
+      setTimeout(() => {
+        // Remove typing indicator
+        aiResponse.removeChild(typingIndicator);
+        
+        // Random response for demo
+        const randomResponse = sampleResponses[Math.floor(Math.random() * sampleResponses.length)];
+        
+        // Add AI response
+        const aiMessage = document.createElement('div');
+        aiMessage.className = 'ai-message';
+        aiMessage.innerHTML = `
+          <div class="ai-message-content">
+            ${randomResponse}
+          </div>
+        `;
+        
+        aiResponse.appendChild(aiMessage);
+        aiResponse.scrollTop = aiResponse.scrollHeight;
+      }, 1500);
+      
+      // Clear input
+      aiInput.value = '';
+    });
+    
+    // Allow sending with Enter key
+    aiInput.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        sendButton.click();
+      }
+    });
+    
+    // Clear button functionality
+    clearButton.addEventListener('click', function() {
+      aiResponse.innerHTML = `
+        <div class="text-center text-muted my-5">
+          <div class="mb-3">
+            <i class="fas fa-comment-dots fa-3x"></i>
+          </div>
+          <p>Start a conversation with {{ ai_tool.name }}!</p>
+          <p class="small">Type your message below to try this AI tool.</p>
+        </div>
+      `;
+    });
+    
+    // Download button (demo)
+    downloadButton.addEventListener('click', function() {
+      showFeedback('Conversation downloaded!');
+    });
+    
+    // Copy link button
+    document.getElementById('copy-link-button').addEventListener('click', function() {
+      navigator.clipboard.writeText(window.location.href).then(() => {
+        showFeedback('Link copied to clipboard!');
+      });
+    });
+    
+    // Rate button
+    document.getElementById('rate-button').addEventListener('click', function() {
+      // Would show a rating modal in a real implementation
+      showFeedback('Thank you for rating this tool!');
+    });
+    
+    // Animation on scroll
+    const animatedElements = document.querySelectorAll('.animate-on-scroll');
+    
+    // Initial check for elements in viewport
+    animateElementsInViewport();
+    
+    // Add animation on scroll
+    window.addEventListener('scroll', animateElementsInViewport);
+    
+    function animateElementsInViewport() {
+      animatedElements.forEach(element => {
+        const position = element.getBoundingClientRect();
+        
+        // Check if element is in viewport
+        if(position.top < window.innerHeight * 0.9) {
+          element.classList.add('visible');
+        }
+      });
+    }
+  });
 </script>
-
 {% endblock %}

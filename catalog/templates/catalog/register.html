@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block title %}Register | InspireAI{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="card shadow">
+      <div class="card-header bg-white">
+        <h3 class="mb-0">Create an Account</h3>
+      </div>
+      <div class="card-body">
+        {% if messages %}
+          {% for message in messages %}
+            <div class="alert alert-{% if message.tags %}{{ message.tags }}{% endif %} alert-dismissible fade show">
+              {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          {% endfor %}
+        {% endif %}
+        
+        <form method="post" action="{% url 'register' %}">
+          {% csrf_token %}
+          
+          <div class="mb-3">
+            <label for="username" class="form-label">Username</label>
+            <input type="text" class="form-control" id="username" name="username" required>
+            <div class="form-text">Choose a unique username between 3-20 characters.</div>
+          </div>
+          
+          <div class="mb-3">
+            <label for="email" class="form-label">Email Address</label>
+            <input type="email" class="form-control" id="email" name="email" required>
+          </div>
+          
+          <div class="mb-3">
+            <label for="password1" class="form-label">Password</label>
+            <input type="password" class="form-control" id="password1" name="password1" required>
+            <div class="form-text">Password must be at least 8 characters long.</div>
+          </div>
+          
+          <div class="mb-3">
+            <label for="password2" class="form-label">Confirm Password</label>
+            <input type="password" class="form-control" id="password2" name="password2" required>
+          </div>
+          
+          <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-primary-custom">Register</button>
+          </div>
+        </form>
+      </div>
+      <div class="card-footer bg-white text-center">
+        <p class="mb-0">Already have an account? <a href="{% url 'login' %}">Log in</a></p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
