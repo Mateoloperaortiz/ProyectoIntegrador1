@@ -21,4 +21,7 @@ urlpatterns = [
     
     # Legacy URLs (for backward compatibility)
     path('presentation/<uuid:id>/', views.AIToolDetailView.as_view(), name='presentationAI'),
+      # Add new URL for adding/removing favorites
+    path('tools/<uuid:tool_id>/favorite/', views.add_favorite, name='add_favorite'),
+    
 ]

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<!-- Enlace al archivo CSS -->
+<link rel="stylesheet" type="text/css" href="{% static 'users/css/login.css' %}">
+
+<div class="login-wrapper">
+  <div class="login-box">
+    <h2>Login</h2>
+
+    {% if error %}
+      <div class="alert alert-danger">{{ error }}</div>
+    {% endif %}
+
+    <form method="post">
+      {% csrf_token %}
+      
+      <div class="input-container">
+        <label for="{{ form.username.id_for_label }}">Email</label>
+        <div class="input-box">
+          <i class="fas fa-envelope"></i>
+          {{ form.username }}
+        </div>
+      </div>
+
+      <div class="input-container">
+        <label for="{{ form.password.id_for_label }}">Password</label>
+        <div class="input-box">
+          <i class="fas fa-lock"></i>
+          {{ form.password }}
+        </div>
+      </div>
+
+      <button type="submit" class="login-btn">Login</button>
+    </form>
+
+    <p class="signup-link">
+      Don't have an account? <a href="{% url 'users:register' %}">Sign up</a>
+    </p>
+  </div>
+</div>
+
+{% endblock %}

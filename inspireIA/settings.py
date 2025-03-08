@@ -42,7 +42,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'catalog'
+    'catalog',
+    'users',
 ]
 
 MIDDLEWARE = [
@@ -124,7 +125,21 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, "users/static"),
+    os.path.join(BASE_DIR, "catalog/static"),
+]
+
+
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+AUTH_USER_MODEL = 'users.CustomUser'  # Apunta al modelo de usuario personalizado
+LOGIN_REDIRECT_URL = 'catalog:home'  # Página a la que se redirige después de iniciar sesión
+LOGOUT_REDIRECT_URL = 'catalog:home'  # Página a la que se redirige después de cerrar sesión
+LOGIN_REDIRECT_URL = 'catalog:home'  # Redirigir al home de la app catalog
+LOGIN_REDIRECT_URL = 'catalog:tool_list'
+LOGOUT_REDIRECT_URL = 'catalog:tool_list'

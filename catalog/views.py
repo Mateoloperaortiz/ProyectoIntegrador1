@@ -5,7 +5,7 @@ from django.db.models import Q
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.http import Http404
 from django.urls import reverse
-
+from django.contrib.auth.decorators import login_required
 from .models import AITool
 
 # Constants
@@ -176,3 +176,19 @@ def presentationAI(request, id):
 def catalog_view(request):
     """Legacy function-based catalog view for backward compatibility."""
     return CatalogView.as_view()(request)
+
+
+
+
+@login_required
+def add_favorite(request, tool_id):
+    ai_tool = get_object_or_404(AITool, id=tool_id)
+    
+    # Toggle favorite
+    if ai_tool in request.user.favorites.all():
+        request.user.favorites.remove(ai_tool)
+    else:
+        request.user.favorites.add(ai_tool)
+    
+    # Redirect back to the tool detail page
+    return redirect('catalog:tool_detail', pk=ai_tool.id)

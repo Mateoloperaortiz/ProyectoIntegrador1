@@ -19,3 +19,28 @@ django-debug-toolbar==4.3.0
 
 # For production deployment
 sentry-sdk==2.8.0
+
+
+"""
+# Django
+Django
+django-storages
+boto3
+python-dotenv
+dj-database-url
+
+# Database
+psycopg
+psycopg-binary
+
+# Production
+gunicorn
+whitenoise
+django-redis
+
+# Development
+django-debug-toolbar
+
+# For production deployment
+sentry-sdk
+"""

@@ -22,6 +22,18 @@
                     <a href="{% url 'catalog:tool_list' %}?sort_by=-popularity" class="btn btn-outline-light btn-lg px-4">
                         <i class="bi bi-star-fill me-2"></i>Más Populares
                     </a>
+                    <!-- Nuevo botón de Registro -->
+                    {% if request.user.is_authenticated %}
+                        <!-- Mostrar Logout si el usuario está autenticado -->
+                        <a href="{% url 'users:logout' %}" class="btn btn-danger btn-lg px-4">
+                            <i class="bi bi-box-arrow-right me-2"></i>Logout
+                        </a>
+                    {% else %}
+                        <!-- Mostrar Registrarse si el usuario NO está autenticado -->
+                        <a href="{% url 'users:register' %}" class="btn btn-warning btn-lg px-4">
+                            <i class="bi bi-person-plus-fill me-2"></i>Sing Up
+                        </a>
+                    {% endif %}
                 </div>
             </div>
             <div class="col-lg-6 text-center fade-in-up delay-2">
@@ -33,6 +45,7 @@
         </div>
     </div>
 </div>
+
 
 <!-- Categories Section -->
 <div class="container mb-5">
@@ -113,6 +126,7 @@
     <a href="{% url 'catalog:tool_list' %}" class="btn btn-primary btn-lg px-5 py-3 shadow cta-button">
         <i class="bi bi-collection me-2"></i>Explorar el Catálogo
     </a>
+    
 </div>
 
 {% block extra_js %}

@@ -26,7 +26,7 @@
                     </div>
                 {% endif %}
                 
-                <!-- Popularity indicator -->
+                <!-- Popularity indicator agregar boton de favorito(corazon pero solo lleno y vacio para favorito y no favorito (negro y vacio))-->
                 <div class="card-body">
                     <h5 class="mb-3">Popularidad</h5>
                     <div class="progress" style="height: 20px;">
@@ -83,6 +83,17 @@
                             </tbody>
                         </table>
                     </div>
+
+                     <!-- Favorite Button -->
+                     {% if user.is_authenticated %}
+                     <form method="POST" action="{% url 'catalog:add_favorite' ai_tool.id %}">
+                         {% csrf_token %}
+                         <button type="submit" class="btn {% if ai_tool in user.favorites.all %}btn-danger{% else %}btn-outline-danger{% endif %}">
+                             <i class="bi {% if ai_tool in user.favorites.all %}bi-heart-fill{% else %}bi-heart{% endif %}"></i>
+                             {% if ai_tool in user.favorites.all %}Eliminar de favoritos{% else %}Agregar a favoritos{% endif %}
+                         </button>
+                     </form>
+                    {% endif %}
                     
                     <!-- Description -->
                     <div class="mt-4">

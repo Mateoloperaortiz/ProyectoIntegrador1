@@ -1,0 +1,106 @@
+/* Fondo con un ligero gradiente */
+.login-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: white;
+  padding: 20px;
+}
+
+/* Caja del formulario */
+.login-box {
+  width: 400px;
+  background: white;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.15);
+  text-align: center;
+}
+
+/* Título */
+h2 {
+  font-size: 24px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+/* Estilos de los inputs */
+.input-container {
+  text-align: left;
+  margin-bottom: 15px;
+}
+
+.input-container label {
+  font-weight: bold;
+  display: block;
+  margin-bottom: 5px;
+  color: #555;
+}
+
+/* Contenedor del input con borde más estilizado */
+.input-box {
+  display: flex;
+  align-items: center;
+  background: #f1f1f1;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  transition: border 0.3s;
+}
+
+.input-box:focus-within {
+  border: 1px solid #4a73ff;
+}
+
+/* Íconos en los inputs */
+.input-box i {
+  color: #888;
+  margin-right: 10px;
+}
+
+.input-box input {
+  border: none;
+  outline: none;
+  background: transparent;
+  width: 100%;
+  font-size: 16px;
+}
+
+/* Botón de login */
+.login-btn {
+  width: 100%;
+  padding: 12px;
+  background: linear-gradient(90deg, #4a73ff, #375ce6);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.login-btn:hover {
+  background: linear-gradient(90deg, #375ce6, #2b4ac8);
+  transform: scale(1.02);
+}
+
+/* Link de registro más atractivo */
+.signup-link {
+  margin-top: 12px;
+  font-size: 14px;
+}
+
+.signup-link a {
+  color: #4a73ff;
+  font-weight: bold;
+  text-decoration: none;
+  transition: 0.3s;
+}
+
+.signup-link a:hover {
+  color: #2b4ac8;
+  text-decoration: underline;
+}

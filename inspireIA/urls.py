@@ -26,7 +26,8 @@ urlpatterns = [
     
     # Catalog app URLs - includes home, tools list, detail views, etc.
     path('', include('catalog.urls', namespace='catalog')),
-    
+    path('users/', include('users.urls', namespace='users')),
+
     # API endpoints could be added here in the future
     # path('api/', include('api.urls', namespace='api')),
 ]
