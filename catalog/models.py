@@ -28,8 +28,36 @@ class AITool(models.Model):
     api_endpoint = models.CharField(max_length=255, blank=True, null=True)
     is_featured = models.BooleanField(default=False)
     
+    # New OpenRouter-like fields
+    modality = models.CharField(
+        max_length=50,
+        choices=[
+            ('text-to-text', 'Text to Text'),
+            ('text-image-to-text', 'Text & Image to Text'),
+            ('other', 'Other')
+        ],
+        default='text-to-text'
+    )
+    context_length = models.IntegerField(default=4096)
+    prompt_pricing = models.DecimalField(max_digits=10, decimal_places=4, default=0)
+    completion_pricing = models.DecimalField(max_digits=10, decimal_places=4, default=0)
+    series = models.CharField(max_length=100, blank=True, null=True)  # e.g., GPT, Claude, Gemini
+    supported_parameters = models.TextField(blank=True, null=True)  # Stored as JSON
+    throughput = models.IntegerField(default=1)  # Requests per minute
+    latency = models.IntegerField(default=500)  # ms
+    release_date = models.DateField(default=timezone.now)
+    
     def __str__(self):
         return self.name
+    
+    def get_parameters_list(self):
+        """Return supported parameters as a list"""
+        if not self.supported_parameters:
+            return []
+        try:
+            return json.loads(self.supported_parameters)
+        except:
+            return []
 
 
 class UserFavorite(models.Model):

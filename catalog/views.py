@@ -11,6 +11,11 @@ from django.views.decorators.http import require_POST
 import json
 import time
 from . import utils
+import uuid
+import os
+import csv
+from django.utils import timezone
+from .forms import CustomUserCreationForm, CustomAuthenticationForm
 
 
 def home(request):
@@ -40,6 +45,12 @@ def presentationAI(request, id):
 # Available categories for AI tools
 CATEGORIES = ["Transcription", "Image Generator", "Word Processor"]
 
+# New constants for OpenRouter-like filters
+MODALITIES = ["text-to-text", "text-image-to-text", "other"]
+CONTEXT_LENGTHS = [4096, 8192, 16384, 32768, 65536, 128000]  # 4K, 8K, 16K, 32K, 64K, 128K
+SERIES = ["GPT", "Claude", "Gemini", "Falcon", "Llama", "Other"]
+PARAMETERS = ["tools", "temperature", "top_p", "frequency_penalty", "presence_penalty", "json_mode"]
+
 def catalog_view(request):
     """
     Display the catalog of AI tools with filtering, sorting, and search capabilities.
@@ -48,11 +59,24 @@ def catalog_view(request):
     - searchAITool: Search by name, provider, or description
     - category: Filter by specific category
     - sort: Sort results by popularity or name
+    - modality: Filter by text-to-text or text-image-to-text
+    - context_length: Filter by minimum context length
+    - price_max: Filter by maximum prompt price
+    - series: Filter by model series (GPT, Claude, etc.)
+    - parameters: Filter by supported parameters
     """
     # Get filter parameters from request
     searchTerm = request.GET.get('searchAITool', '')
     category = request.GET.get('category', '')
     sort = request.GET.get('sort', '')
+    
+    # New OpenRouter-like filter parameters
+    modality = request.GET.get('modality', '')
+    min_context = request.GET.get('min_context', '')
+    max_price = request.GET.get('max_price', '')
+    series = request.GET.get('series', '')
+    parameter = request.GET.get('parameter', '')
+    provider = request.GET.get('provider', '')
     
     # Start with all AI tools
     ai_tools = AITool.objects.all()
@@ -69,6 +93,31 @@ def catalog_view(request):
             Q(description__icontains=searchTerm)
         )
     
+    # Apply new OpenRouter-like filters
+    if modality in MODALITIES:
+        ai_tools = ai_tools.filter(modality=modality)
+    
+    if min_context and min_context.isdigit():
+        ai_tools = ai_tools.filter(context_length__gte=int(min_context))
+    
+    if max_price and max_price.replace('.', '', 1).isdigit():
+        ai_tools = ai_tools.filter(prompt_pricing__lte=float(max_price))
+    
+    if series in SERIES:
+        ai_tools = ai_tools.filter(series=series)
+    
+    if parameter in PARAMETERS:
+        # Filter tools that have this parameter in their supported_parameters JSON
+        filtered_tools = []
+        for tool in ai_tools:
+            params = tool.get_parameters_list()
+            if parameter in params:
+                filtered_tools.append(tool.id)
+        ai_tools = ai_tools.filter(id__in=filtered_tools)
+    
+    if provider:
+        ai_tools = ai_tools.filter(provider=provider)
+    
     # Apply sorting if provided
     if sort:
         if sort == 'popularity_desc':
@@ -79,18 +128,44 @@ def catalog_view(request):
             ai_tools = ai_tools.order_by('name')
         elif sort == 'name_desc':
             ai_tools = ai_tools.order_by('-name')
+        elif sort == 'newest':
+            ai_tools = ai_tools.order_by('-release_date')
+        elif sort == 'price_low':
+            ai_tools = ai_tools.order_by('prompt_pricing')
+        elif sort == 'price_high':
+            ai_tools = ai_tools.order_by('-prompt_pricing')
+        elif sort == 'context_high':
+            ai_tools = ai_tools.order_by('-context_length')
+        elif sort == 'throughput_high':
+            ai_tools = ai_tools.order_by('-throughput')
+        elif sort == 'latency_low':
+            ai_tools = ai_tools.order_by('latency')
     else:
-        # Default sorting by popularity (highest first)
-        ai_tools = ai_tools.order_by('-popularity')
+        # Default sorting by newest
+        ai_tools = ai_tools.order_by('-release_date')
     
     # Get the featured AI (highest popularity)
     featured_ai = AITool.objects.all().order_by('-popularity').first()
+    
+    # Get all unique providers for provider filter
+    all_providers = AITool.objects.values_list('provider', flat=True).distinct()
 
     return render(request, 'catalog/catalog.html', {
         'ai_tools': ai_tools,
         'categories': CATEGORIES,
+        'modalities': MODALITIES,
+        'context_lengths': CONTEXT_LENGTHS,
+        'series_options': SERIES,
+        'parameters': PARAMETERS,
+        'providers': all_providers,
         'searchTerm': searchTerm,
         'current_category': category,
+        'current_modality': modality,
+        'current_min_context': min_context,
+        'current_max_price': max_price,
+        'current_series': series,
+        'current_parameter': parameter,
+        'current_provider': provider,
         'sort': sort,
         'featured_ai': featured_ai,
     })
@@ -212,11 +287,21 @@ def chat_view(request, ai_id):
     # Get messages for this conversation
     chat_messages = conversation.get_messages()
     
+    # Get all AI tools for the sidebar
+    ai_tools = AITool.objects.filter(api_type__in=['openai', 'huggingface', 'custom']).order_by('-popularity')
+    
+    # Get user conversations
+    user_conversations = []
+    if request.user.is_authenticated:
+        user_conversations = Conversation.objects.filter(user=request.user).order_by('-updated_at')
+    
     return render(request, 'catalog/chat.html', {
         'ai_tool': ai_tool,
+        'ai_tools': ai_tools,
         'conversation': conversation,
         'messages': chat_messages,
-        'has_api': has_api
+        'has_api': has_api,
+        'user_conversations': user_conversations
     })
 
 
@@ -400,4 +485,73 @@ def compare_tools(request):
         'tool2': tool2,
         'all_tools': all_tools
     })
+
+
+def openrouter_chat_view(request):
+    """Display the OpenRouter-like chat interface at /chat route."""
+    # Get all AI tools that have API integration
+    ai_tools = AITool.objects.filter(api_type__in=['openai', 'huggingface', 'custom']).order_by('-popularity')
+    
+    # Categorize models into groups
+    flagship_models = ai_tools.filter(Q(provider__icontains='openai') | Q(provider__icontains='anthropic') | Q(provider__icontains='google')).order_by('-popularity')[:4]
+    roleplay_models = ai_tools.filter(description__icontains='roleplay').order_by('-popularity')[:4]
+    coding_models = ai_tools.filter(Q(description__icontains='code') | Q(description__icontains='programming')).order_by('-popularity')[:4]
+    reasoning_models = ai_tools.filter(Q(description__icontains='reasoning') | Q(description__icontains='math') | Q(description__icontains='logic')).order_by('-popularity')[:4]
+    
+    # Get conversations for the user
+    user_conversations = []
+    if request.user.is_authenticated:
+        user_conversations = Conversation.objects.filter(user=request.user).order_by('-updated_at')
+    
+    # Get or create conversation if ai_id is provided in GET params
+    conversation = None
+    ai_tool = None
+    chat_messages = []
+    conversation_id = request.GET.get('conversation_id')
+    ai_id = request.GET.get('ai_id')
+    
+    if conversation_id:
+        # Load existing conversation
+        try:
+            conversation = get_object_or_404(Conversation, id=conversation_id)
+            if request.user.is_authenticated and conversation.user != request.user:
+                # Prevent access to other users' conversations
+                messages.error(request, "You don't have permission to access this conversation.")
+                return redirect('openrouter_chat')
+            ai_tool = conversation.ai_tool
+            chat_messages = conversation.get_messages()
+        except:
+            # If conversation doesn't exist, just show the empty chat interface
+            pass
+    elif ai_id:
+        # Create new conversation with specified AI
+        try:
+            ai_tool = get_object_or_404(AITool, id=ai_id)
+            conversation = Conversation.objects.create(
+                user=request.user if request.user.is_authenticated else None,
+                ai_tool=ai_tool,
+                title=f"Chat with {ai_tool.name}"
+            )
+        except:
+            # If AI doesn't exist, just show the empty chat interface
+            pass
+    
+    context = {
+        'ai_tools': ai_tools,
+        'flagship_models': flagship_models,
+        'roleplay_models': roleplay_models,
+        'coding_models': coding_models,
+        'reasoning_models': reasoning_models,
+        'user_conversations': user_conversations,
+        'conversation': conversation,
+        'messages': chat_messages,
+    }
+    
+    if ai_tool:
+        context['ai_tool'] = ai_tool
+        context['has_api'] = ai_tool.api_type != 'none'
+    else:
+        context['has_api'] = False
+    
+    return render(request, 'catalog/chat.html', context)
 

@@ -27,6 +27,7 @@ urlpatterns = [
     path('profile/', catalog_views.profile_view, name='profile'),
     
     # API Integration - Chat
+    path('chat/', catalog_views.openrouter_chat_view, name='openrouter_chat'),
     path('chat/<uuid:ai_id>/', catalog_views.chat_view, name='chat'),
     path('chat/<uuid:conversation_id>/send/', catalog_views.send_message, name='send_message'),
     path('conversation/<uuid:conversation_id>/download/<str:format>/', catalog_views.download_conversation, name='download_conversation'),

@@ -2,565 +2,851 @@
 {% load static %}
 {% load catalog_extras %}
 
-{% block title %}AI Catalog | InspireAI{% endblock %}
+{% block title %}AI Models Catalog | InspireAI{% endblock %}
 
 {% block extra_css %}
 <style>
-  .catalog-header {
-    margin-bottom: 2rem;
+  :root {
+    --card-hover-bg: rgba(67, 83, 255, 0.02);
+    --model-card-border: rgba(226, 232, 240, 1);
+    --tag-bg: rgba(249, 250, 251, 1);
+    --metrics-border: rgba(243, 244, 246, 1);
+    --advanced-metrics-bg: rgba(249, 250, 251, 0.8);
+    --tooltip-bg: rgba(15, 23, 42, 0.8);
   }
-  
-  .featured-badge {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    background-color: var(--secondary-color);
-    color: white;
-    font-size: 0.7rem;
-    font-weight: 500;
-    padding: 0.25rem 0.75rem;
-    border-radius: 2rem;
-    z-index: 2;
-  }
-  
-  .filter-card {
-    border: none;
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-sm);
-    background-color: white;
-    margin-bottom: 2rem;
-  }
-  
-  .tool-card {
-    border: none;
-    border-radius: var(--radius-lg);
-    overflow: hidden;
-    transition: all 0.3s ease;
-    height: 100%;
-    position: relative;
-    background-color: white;
-    box-shadow: var(--shadow-sm);
-  }
-  
-  .tool-card:hover {
-    transform: translateY(-5px);
-    box-shadow: var(--shadow-lg);
-  }
-  
-  .tool-card .card-img-wrapper {
-    height: 180px;
-    overflow: hidden;
-    position: relative;
-  }
-  
-  .tool-card .card-img-top {
-    height: 100%;
-    width: 100%;
-    object-fit: cover;
-    transition: transform 0.5s ease;
-  }
-  
-  .tool-card:hover .card-img-top {
-    transform: scale(1.05);
-  }
-  
-  .tool-card .card-img-overlay {
-    background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.6) 100%);
+
+  /* General layout and containers */
+  .catalog-container {
     display: flex;
-    align-items: flex-end;
+    gap: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  
+  .filter-sidebar {
+    width: 280px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 1rem;
+    height: calc(100vh - 100px);
+    overflow-y: auto;
+    padding-right: 1rem;
+  }
+  
+  .catalog-content {
+    flex-grow: 1;
+  }
+  
+  /* Filters styling */
+  .filter-section {
+    margin-bottom: 1.5rem;
+    background-color: #fff;
+    border-radius: 0.75rem;
     padding: 1rem;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   }
   
-  .tool-card .card-body {
-    padding: 1.25rem;
-  }
-  
-  .popularity-badge {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background-color: rgba(0, 0, 0, 0.6);
-    color: white;
-    padding: 0.25rem 0.75rem;
-    border-radius: 2rem;
-    font-size: 0.75rem;
-    z-index: 2;
-  }
-  
-  .category-pill {
-    border-radius: 2rem;
-    padding: 0.3rem 0.8rem;
-    font-size: 0.8rem;
-    font-weight: 500;
-    display: inline-block;
-    margin-right: 0.5rem;
-    margin-bottom: 0.5rem;
-    background-color: rgba(91, 70, 244, 0.1);
-    color: var(--primary-color);
-    transition: all 0.2s ease;
-  }
-  
-  .category-pill:hover {
-    text-decoration: none;
-    background-color: rgba(91, 70, 244, 0.2);
-  }
-  
-  .category-pill.active {
-    background-color: var(--primary-color);
-    color: white;
-  }
-  
-  .provider-badge {
-    font-size: 0.8rem;
-    color: var(--neutral-500);
+  .filter-section h3 {
+    font-size: 0.875rem;
+    font-weight: 600;
     margin-bottom: 0.75rem;
+    color: var(--neutral-900);
+    letter-spacing: 0.025em;
+    text-transform: uppercase;
+  }
+  
+  .filter-option {
+    margin-bottom: 0.5rem;
+  }
+  
+  .filter-divider {
+    height: 1px;
+    background-color: var(--neutral-200);
+    margin: 1rem 0;
+  }
+  
+  .filter-badge {
     display: inline-block;
-  }
-  
-  .favorite-btn {
-    position: absolute;
-    bottom: 1rem;
-    right: 1rem;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background-color: white;
-    border: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: var(--shadow-sm);
-    transition: all 0.2s ease;
-    z-index: 3;
-  }
-  
-  .favorite-btn:hover {
-    transform: scale(1.1);
-  }
-  
-  .favorite-btn i {
-    color: var(--danger-color);
-  }
-  
-  .search-form {
-    position: relative;
-  }
-  
-  .search-form .form-control {
-    border-radius: 2rem;
-    padding-left: 2.5rem;
-    border: 1px solid var(--neutral-200);
-    box-shadow: var(--shadow-sm);
-  }
-  
-  .search-form .search-icon {
-    position: absolute;
-    left: 1rem;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--neutral-500);
-    z-index: 4;
-  }
-  
-  .badge-filter {
-    border-radius: 2rem;
-    padding: 0.5rem 1rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.375rem;
+    background-color: var(--tag-bg);
+    color: var(--neutral-700);
     margin-right: 0.5rem;
     margin-bottom: 0.5rem;
-    display: inline-flex;
-    align-items: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.75rem;
+    border: 1px solid transparent;
+  }
+  
+  .filter-badge:hover {
+    background-color: rgba(var(--primary-rgb), 0.05);
+    border-color: rgba(var(--primary-rgb), 0.1);
+  }
+  
+  .filter-badge.active {
+    background-color: rgba(var(--primary-rgb), 0.1);
+    color: var(--primary-color);
+    border-color: rgba(var(--primary-rgb), 0.2);
     font-weight: 500;
   }
   
-  .badge-filter .close-icon {
-    margin-left: 0.5rem;
-    opacity: 0.8;
-    transition: opacity 0.2s ease;
+  .filter-reset {
+    color: var(--primary-color);
+    font-size: 0.75rem;
+    text-decoration: none;
+    display: inline-block;
+    margin-top: 0.25rem;
+    float: right;
   }
   
-  .badge-filter .close-icon:hover {
-    opacity: 1;
-  }
-  
-  .grid-view-tools {
+  /* Model card styling */
+  .models-container {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
     gap: 1.5rem;
   }
   
-  .list-view-tools .tool-card {
+  .model-card {
+    position: relative;
+    background: white;
+    border-radius: 1rem;
+    transition: all 0.3s ease;
+    border: 1px solid var(--model-card-border);
     display: flex;
-    flex-direction: row;
-    max-height: 200px;
-  }
-  
-  .list-view-tools .tool-card .card-img-wrapper {
-    width: 200px;
+    flex-direction: column;
+    overflow: hidden;
     height: 100%;
   }
   
-  .list-view-tools .tool-card .card-body {
-    flex: 1;
+  .model-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    border-color: rgba(var(--primary-rgb), 0.1);
+    background-color: var(--card-hover-bg);
   }
   
-  .view-toggle-btn {
+  .model-header {
+    display: flex;
+    align-items: center;
+    padding: 1.25rem;
+    border-bottom: 1px solid var(--model-card-border);
+    position: relative;
+  }
+  
+  .model-logo {
+    width: 48px;
+    height: 48px;
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--neutral-100);
+    font-size: 1.25rem;
+    color: var(--primary-color);
+    flex-shrink: 0;
+    margin-right: 1rem;
+    overflow: hidden;
+  }
+  
+  .model-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  .model-meta {
+    flex-grow: 1;
+  }
+  
+  .model-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-bottom: 0.125rem;
+    color: var(--neutral-900);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .model-provider {
+    font-size: 0.75rem;
+    color: var(--neutral-600);
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+  
+  .model-verified {
+    color: #3B82F6;
+    font-size: 0.875rem;
+  }
+  
+  .model-content {
+    padding: 1.25rem;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .model-description {
+    font-size: 0.875rem;
+    color: var(--neutral-700);
+    margin-bottom: 1.25rem;
+    line-height: 1.5;
+    flex-grow: 1;
+  }
+  
+  .model-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+  }
+  
+  .model-tag {
+    font-size: 0.6875rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.375rem;
+    background-color: var(--tag-bg);
+    color: var(--neutral-700);
+    font-weight: 500;
+    letter-spacing: 0.01em;
+  }
+  
+  .model-metrics-basic {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    margin-bottom: 1.25rem;
+    gap: 0.75rem;
+  }
+  
+  .model-metric {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
     padding: 0.5rem;
     border-radius: 0.5rem;
-    background-color: var(--neutral-100);
-    border: 1px solid var(--neutral-200);
-    color: var(--neutral-700);
+    background-color: var(--tag-bg);
+  }
+  
+  .model-metric-label {
+    font-size: 0.6875rem;
+    color: var(--neutral-600);
+    margin-bottom: 0.25rem;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+  
+  .model-metric-value {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--neutral-900);
+  }
+
+  .model-metric-help {
+    cursor: help;
+    position: relative;
+  }
+  
+  .model-metric-help:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 0.5rem;
+    background-color: var(--tooltip-bg);
+    color: white;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: normal;
+    white-space: nowrap;
+    z-index: 10;
+    margin-bottom: 0.25rem;
+  }
+  
+  .model-metrics-advanced {
+    border-top: 1px solid var(--metrics-border);
+    padding-top: 1.25rem;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+  }
+  
+  .model-badge {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    font-size: 0.6875rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.375rem;
+    font-weight: 500;
+  }
+  
+  .model-badge.new {
+    background-color: rgba(16, 185, 129, 0.1);
+    color: #059669;
+  }
+  
+  .model-badge.trending {
+    background-color: rgba(245, 158, 11, 0.1);
+    color: #D97706;
+  }
+  
+  .model-footer {
+    padding: 1rem 1.25rem;
+    border-top: 1px solid var(--model-card-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: var(--tag-bg);
+  }
+  
+  .model-actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+  
+  .model-action-btn {
+    border-radius: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
     transition: all 0.2s ease;
   }
   
-  .view-toggle-btn:hover {
-    background-color: var(--neutral-200);
-  }
-  
-  .view-toggle-btn.active {
-    background-color: var(--primary-color);
-    color: white;
-    border-color: var(--primary-color);
-  }
-  
-  .api-connected-badge {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    background-color: var(--success-color);
-    color: white;
-    font-size: 0.7rem;
-    padding: 0.2rem 0.6rem;
-    border-radius: 2rem;
-    z-index: 2;
-  }
-  
-  /* Animation classes */
-  .fade-in {
-    animation: fadeIn 0.5s ease-in-out;
-  }
-  
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  
-  /* Empty state styling */
-  .empty-state {
-    text-align: center;
-    padding: 3rem 2rem;
-    background-color: var(--neutral-50);
-    border-radius: var(--radius-lg);
-  }
-  
-  .empty-state-icon {
-    font-size: 3rem;
-    color: var(--neutral-300);
-    margin-bottom: 1rem;
-  }
-  
-  /* Pagination styling */
-  .pagination .page-link {
-    border-radius: 0.5rem;
-    margin: 0 0.25rem;
+  .model-pricing {
+    font-size: 0.75rem;
     color: var(--neutral-700);
-    border: 1px solid var(--neutral-200);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
   }
   
-  .pagination .page-item.active .page-link {
-    background-color: var(--primary-color);
-    border-color: var(--primary-color);
+  .model-price-tag {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    background-color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.375rem;
+    border: 1px solid var(--model-card-border);
   }
   
-  .pagination .page-link:hover {
-    background-color: var(--neutral-100);
+  /* Sorting options */
+  .sort-options {
+    display: flex;
+    overflow-x: auto;
+    gap: 0.25rem;
+    margin-bottom: 2rem;
+    padding: 0.5rem;
+    background-color: white;
+    border-radius: 0.5rem;
+    border: 1px solid var(--model-card-border);
+  }
+  
+  .sort-option {
+    white-space: nowrap;
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    background-color: transparent;
+    color: var(--neutral-700);
+    font-size: 0.75rem;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    border: 1px solid transparent;
+    font-weight: 500;
+  }
+  
+  .sort-option:hover {
+    background-color: var(--tag-bg);
+  }
+  
+  .sort-option.active {
+    background-color: rgba(var(--primary-rgb), 0.1);
     color: var(--primary-color);
+    border-color: rgba(var(--primary-rgb), 0.2);
   }
   
-  .pagination .page-item.active .page-link:hover {
-    background-color: var(--primary-color);
-    color: white;
+  /* Filter chip badges */
+  .filter-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .filter-chip {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.375rem 0.75rem;
+    background-color: white;
+    border: 1px solid var(--model-card-border);
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    color: var(--neutral-800);
+  }
+  
+  .filter-chip-label {
+    font-weight: 500;
+    color: var(--neutral-500);
+  }
+  
+  .filter-chip-close {
+    color: var(--neutral-400);
+    cursor: pointer;
+    transition: color 0.2s ease;
+  }
+  
+  .filter-chip-close:hover {
+    color: var(--neutral-800);
+  }
+  
+  /* Mobile responsive adjustments */
+  @media (max-width: 992px) {
+    .catalog-container {
+      flex-direction: column;
+    }
+    
+    .filter-sidebar {
+      width: 100%;
+      height: auto;
+      position: static;
+      margin-bottom: 1.5rem;
+    }
+    
+    .models-container {
+      grid-template-columns: 1fr;
+    }
   }
 </style>
 {% endblock %}
 
 {% block content %}
-<!-- Catalog Header -->
-<div class="catalog-header">
-  <div class="row align-items-center">
-    <div class="col-lg-8">
-      <h1 class="fw-bold mb-2">AI Tools Catalog</h1>
-      <p class="text-muted">Discover and compare {{ ai_tools.count }} AI tools across multiple categories.</p>
+<div class="mb-4">
+  <div class="d-flex justify-content-between align-items-center">
+    <div>
+      <h1 class="fw-bold">AI Models Catalog</h1>
+      <p class="text-muted">Access {{ ai_tools.count }} AI models through our unified API</p>
     </div>
-    <div class="col-lg-4 text-lg-end">
-      <div class="d-flex justify-content-lg-end align-items-center">
-        <a href="{% url 'compare' %}" class="btn btn-outline-primary me-3 d-none d-md-inline-flex">
-          <i class="fas fa-balance-scale me-1"></i>Compare Tools
-        </a>
-        
-        <div class="btn-group me-3" role="group" aria-label="View toggle">
-          <button type="button" class="view-toggle-btn active" id="gridViewBtn">
-            <i class="fas fa-th"></i>
-          </button>
-          <button type="button" class="view-toggle-btn" id="listViewBtn">
-            <i class="fas fa-list"></i>
-          </button>
-        </div>
-        
-        {% if featured_ai %}
-        <div class="d-none d-md-flex align-items-center">
-          <div class="me-2">
-            <span class="badge bg-warning text-dark">Featured</span>
-          </div>
-          <a href="{% url 'presentationAI' featured_ai.id %}" class="d-flex align-items-center text-decoration-none">
-            {% if featured_ai.image %}
-              <img src="{{ featured_ai.image.url }}" alt="{{ featured_ai.name }}" class="rounded" width="40" height="40" style="object-fit: cover;">
-            {% else %}
-              <div class="rounded bg-light-purple text-primary d-inline-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                <span class="fw-bold">{{ featured_ai.name.0|upper }}</span>
-              </div>
-            {% endif %}
-            <span class="ms-2 text-truncate" style="max-width: 120px;">{{ featured_ai.name }}</span>
-          </a>
-        </div>
-        {% endif %}
-      </div>
+    <div>
+      <a href="{% url 'compare' %}" class="btn btn-outline-primary d-none d-md-inline-flex">
+        <i class="fas fa-balance-scale me-1"></i>Compare Models
+      </a>
     </div>
   </div>
 </div>
 
-<!-- Search and Filters Section -->
-<div class="filter-card p-4 mb-4">
-  <div class="row g-3">
-    <!-- Search bar -->
-    <div class="col-lg-8">
-      <form action="" method="GET" class="search-form">
-        <i class="fas fa-search search-icon"></i>
-        <input type="text" class="form-control form-control-lg" name="searchAITool" placeholder="Search by name, provider, or description..." value="{{ searchTerm }}" aria-label="Search AI tools">
-        
-        <!-- Hidden inputs to preserve other parameters -->
-        {% if current_category %}<input type="hidden" name="category" value="{{ current_category }}">{% endif %}
-        {% if sort %}<input type="hidden" name="sort" value="{{ sort }}">{% endif %}
-      </form>
+<div class="catalog-container">
+  <!-- Filter Sidebar -->
+  <aside class="filter-sidebar">
+    <!-- Search box -->
+    <form action="" method="GET" class="mb-4">
+      <div class="position-relative">
+        <i class="fas fa-search position-absolute" style="top: 12px; left: 12px; color: var(--neutral-500);"></i>
+        <input type="text" name="searchAITool" class="form-control ps-4" style="height: 44px;" placeholder="Search models..." value="{{ searchTerm }}">
+      </div>
+    </form>
+    
+    <!-- Modality Filter -->
+    <div class="filter-section">
+      <h3>Modality</h3>
+      <div class="d-flex flex-wrap">
+        {% for modality_option in modalities %}
+        <a href="?modality={{ modality_option }}{% if searchTerm %}&searchAITool={{ searchTerm }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}" 
+           class="filter-badge {% if current_modality == modality_option %}active{% endif %}">
+          {% if modality_option == 'text-to-text' %}Text to Text
+          {% elif modality_option == 'text-image-to-text' %}Text & Image to Text
+          {% else %}{{ modality_option|title }}
+          {% endif %}
+        </a>
+        {% endfor %}
+      </div>
+      {% if current_modality %}
+        <a href="?{% if searchTerm %}searchAITool={{ searchTerm }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}" class="filter-reset">Reset</a>
+      {% endif %}
     </div>
     
-    <!-- Sort dropdown -->
-    <div class="col-lg-4">
-      <form action="" method="GET" class="d-flex">
-        <!-- Hidden inputs to preserve other parameters -->
-        {% if searchTerm %}<input type="hidden" name="searchAITool" value="{{ searchTerm }}">{% endif %}
-        {% if current_category %}<input type="hidden" name="category" value="{{ current_category }}">{% endif %}
-        
-        <select class="form-select form-select-lg" name="sort" onchange="this.form.submit()" aria-label="Sort by">
-          <option value="">Sort by: Relevance</option>
-          <option value="popularity_desc" {% if sort == 'popularity_desc' %}selected{% endif %}>Popularity (High to Low)</option>
-          <option value="popularity_asc" {% if sort == 'popularity_asc' %}selected{% endif %}>Popularity (Low to High)</option>
-          <option value="name_asc" {% if sort == 'name_asc' %}selected{% endif %}>Name (A-Z)</option>
-          <option value="name_desc" {% if sort == 'name_desc' %}selected{% endif %}>Name (Z-A)</option>
-        </select>
-      </form>
+    <!-- Context Length Filter -->
+    <div class="filter-section">
+      <h3>Context length</h3>
+      <div class="d-flex flex-wrap">
+        {% for context in context_lengths %}
+        <a href="?min_context={{ context }}{% if searchTerm %}&searchAITool={{ searchTerm }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}" 
+           class="filter-badge {% if current_min_context == context|stringformat:'i' %}active{% endif %}">
+          {% if context == 4096 %}4K{% elif context == 8192 %}8K{% elif context == 16384 %}16K
+          {% elif context == 32768 %}32K{% elif context == 65536 %}64K{% elif context == 128000 %}128K
+          {% else %}{{ context }}{% endif %}
+        </a>
+        {% endfor %}
+      </div>
+      {% if current_min_context %}
+        <a href="?{% if searchTerm %}searchAITool={{ searchTerm }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}" class="filter-reset">Reset</a>
+      {% endif %}
     </div>
-  </div>
-  
-  <!-- Category filters -->
-  <div class="mt-4">
-    <h6 class="fw-bold mb-3">Categories</h6>
-    <div class="d-flex flex-wrap">
-      <a href="?{% if searchTerm %}searchAITool={{ searchTerm }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}" 
-         class="category-pill {% if not current_category %}active{% endif %}">
-        All Categories
-      </a>
-      {% for category in categories %}
+    
+    <!-- Prompt Pricing Filter -->
+    <div class="filter-section">
+      <h3>Prompt pricing</h3>
+      <div class="d-flex flex-wrap">
+        <a href="?max_price=0{% if searchTerm %}&searchAITool={{ searchTerm }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}" 
+           class="filter-badge {% if current_max_price == '0' %}active{% endif %}">
+          FREE
+        </a>
+        <a href="?max_price=0.5{% if searchTerm %}&searchAITool={{ searchTerm }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}" 
+           class="filter-badge {% if current_max_price == '0.5' %}active{% endif %}">
+          $0.5
+        </a>
+        <a href="?max_price=10{% if searchTerm %}&searchAITool={{ searchTerm }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}" 
+           class="filter-badge {% if current_max_price == '10' %}active{% endif %}">
+          $10+
+        </a>
+      </div>
+      {% if current_max_price %}
+        <a href="?{% if searchTerm %}searchAITool={{ searchTerm }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}" class="filter-reset">Reset</a>
+      {% endif %}
+    </div>
+    
+    <!-- Series Filter -->
+    <div class="filter-section">
+      <h3>Series</h3>
+      <div class="d-flex flex-wrap">
+        {% for series_option in series_options %}
+        <a href="?series={{ series_option }}{% if searchTerm %}&searchAITool={{ searchTerm }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}" 
+           class="filter-badge {% if current_series == series_option %}active{% endif %}">
+          {{ series_option }}
+        </a>
+        {% endfor %}
+      </div>
+      {% if current_series %}
+        <a href="?{% if searchTerm %}searchAITool={{ searchTerm }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}" class="filter-reset">Reset</a>
+      {% endif %}
+    </div>
+    
+    <!-- Category Filter -->
+    <div class="filter-section">
+      <h3>Category</h3>
+      <div class="d-flex flex-wrap">
+        {% for category in categories %}
         <a href="?category={{ category }}{% if searchTerm %}&searchAITool={{ searchTerm }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}" 
-           class="category-pill {% if current_category == category %}active{% endif %}">
+           class="filter-badge {% if current_category == category %}active{% endif %}">
           {{ category }}
         </a>
-      {% endfor %}
+        {% endfor %}
+      </div>
+      {% if current_category %}
+        <a href="?{% if searchTerm %}searchAITool={{ searchTerm }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}" class="filter-reset">Reset</a>
+      {% endif %}
     </div>
-  </div>
+    
+    <!-- Supported Parameters Filter -->
+    <div class="filter-section">
+      <h3>Supported Parameters</h3>
+      <div class="d-flex flex-wrap">
+        {% for param in parameters %}
+        <a href="?parameter={{ param }}{% if searchTerm %}&searchAITool={{ searchTerm }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}" 
+           class="filter-badge {% if current_parameter == param %}active{% endif %}">
+          {{ param }}
+        </a>
+        {% endfor %}
+      </div>
+      {% if current_parameter %}
+        <a href="?{% if searchTerm %}searchAITool={{ searchTerm }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}" class="filter-reset">Reset</a>
+      {% endif %}
+    </div>
+    
+    <!-- Providers Filter -->
+    <div class="filter-section">
+      <h3>Providers</h3>
+      <div class="d-flex flex-wrap">
+        {% for provider_option in providers %}
+        <a href="?provider={{ provider_option }}{% if searchTerm %}&searchAITool={{ searchTerm }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}" 
+           class="filter-badge {% if current_provider == provider_option %}active{% endif %}">
+          {{ provider_option }}
+        </a>
+        {% endfor %}
+      </div>
+      {% if current_provider %}
+        <a href="?{% if searchTerm %}searchAITool={{ searchTerm }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}" class="filter-reset">Reset</a>
+      {% endif %}
+    </div>
+    
+    {% if searchTerm or current_category or current_modality or current_min_context or current_max_price or current_series or current_parameter or current_provider %}
+    <div class="d-grid mt-4">
+      <a href="{% url 'catalog' %}" class="btn btn-primary btn-sm">
+        <i class="fas fa-times-circle me-1"></i> Reset All Filters
+      </a>
+    </div>
+    {% endif %}
+  </aside>
   
-  <!-- Active filters -->
-  {% if searchTerm or current_category %}
-  <div class="mt-3">
-    <div class="d-flex flex-wrap">
+  <!-- Catalog Content -->
+  <main class="catalog-content">
+    <!-- Applied filters summary -->
+    {% if searchTerm or current_category or current_modality or current_min_context or current_max_price or current_series or current_parameter or current_provider %}
+    <div class="filter-chips mb-4">      
       {% if searchTerm %}
-      <div class="badge-filter bg-primary text-white">
-        <span>Search: "{{ searchTerm }}"</span>
-        <a href="?{% if current_category %}category={{ current_category }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}" 
-           class="text-white text-decoration-none close-icon">
-          <i class="fas fa-times-circle"></i>
+      <div class="filter-chip">
+        <span class="filter-chip-label">Search:</span> {{ searchTerm }}
+        <a href="?{% if current_category %}category={{ current_category }}{% endif %}{% if current_modality %}&modality={{ current_modality }}{% endif %}{% if current_min_context %}&min_context={{ current_min_context }}{% endif %}{% if current_max_price %}&max_price={{ current_max_price }}{% endif %}{% if current_series %}&series={{ current_series }}{% endif %}{% if current_parameter %}&parameter={{ current_parameter }}{% endif %}{% if current_provider %}&provider={{ current_provider }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}" class="filter-chip-close ms-2">
+          <i class="fas fa-times"></i>
         </a>
       </div>
       {% endif %}
       
       {% if current_category %}
-      <div class="badge-filter bg-info text-white">
-        <span>Category: {{ current_category }}</span>
-        <a href="?{% if searchTerm %}searchAITool={{ searchTerm }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}" 
-           class="text-white text-decoration-none close-icon">
-          <i class="fas fa-times-circle"></i>
+      <div class="filter-chip">
+        <span class="filter-chip-label">Category:</span> {{ current_category }}
+        <a href="?{% if searchTerm %}searchAITool={{ searchTerm }}{% endif %}{% if current_modality %}&modality={{ current_modality }}{% endif %}{% if current_min_context %}&min_context={{ current_min_context }}{% endif %}{% if current_max_price %}&max_price={{ current_max_price }}{% endif %}{% if current_series %}&series={{ current_series }}{% endif %}{% if current_parameter %}&parameter={{ current_parameter }}{% endif %}{% if current_provider %}&provider={{ current_provider }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}" class="filter-chip-close ms-2">
+          <i class="fas fa-times"></i>
         </a>
       </div>
       {% endif %}
       
-      {% if sort %}
-      <div class="badge-filter bg-secondary text-white">
-        <span>
-          Sort: 
-          {% if sort == 'popularity_desc' %}Popularity (High to Low){% endif %}
-          {% if sort == 'popularity_asc' %}Popularity (Low to High){% endif %}
-          {% if sort == 'name_asc' %}Name (A-Z){% endif %}
-          {% if sort == 'name_desc' %}Name (Z-A){% endif %}
-        </span>
-        <a href="?{% if searchTerm %}searchAITool={{ searchTerm }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}" 
-           class="text-white text-decoration-none close-icon">
-          <i class="fas fa-times-circle"></i>
+      {% if current_modality %}
+      <div class="filter-chip">
+        <span class="filter-chip-label">Modality:</span>
+        {% if current_modality == 'text-to-text' %}Text to Text{% elif current_modality == 'text-image-to-text' %}Text & Image to Text{% else %}{{ current_modality|title }}{% endif %}
+        <a href="?{% if searchTerm %}searchAITool={{ searchTerm }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}{% if current_min_context %}&min_context={{ current_min_context }}{% endif %}{% if current_max_price %}&max_price={{ current_max_price }}{% endif %}{% if current_series %}&series={{ current_series }}{% endif %}{% if current_parameter %}&parameter={{ current_parameter }}{% endif %}{% if current_provider %}&provider={{ current_provider }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}" class="filter-chip-close ms-2">
+          <i class="fas fa-times"></i>
         </a>
       </div>
       {% endif %}
       
-      <a href="{% url 'catalog' %}" class="btn btn-sm btn-outline-secondary ms-2">
-        Clear All Filters
+      {% if current_min_context %}
+      <div class="filter-chip">
+        <span class="filter-chip-label">Min Context:</span> 
+        {% if current_min_context == '4096' %}4K{% elif current_min_context == '8192' %}8K{% elif current_min_context == '16384' %}16K
+        {% elif current_min_context == '32768' %}32K{% elif current_min_context == '65536' %}64K{% elif current_min_context == '128000' %}128K
+        {% else %}{{ current_min_context }}{% endif %}
+        <a href="?{% if searchTerm %}searchAITool={{ searchTerm }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}{% if current_modality %}&modality={{ current_modality }}{% endif %}{% if current_max_price %}&max_price={{ current_max_price }}{% endif %}{% if current_series %}&series={{ current_series }}{% endif %}{% if current_parameter %}&parameter={{ current_parameter }}{% endif %}{% if current_provider %}&provider={{ current_provider }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}" class="filter-chip-close ms-2">
+          <i class="fas fa-times"></i>
+        </a>
+      </div>
+      {% endif %}
+      
+      {% if current_max_price %}
+      <div class="filter-chip">
+        <span class="filter-chip-label">Max Price:</span> ${{ current_max_price }}
+        <a href="?{% if searchTerm %}searchAITool={{ searchTerm }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}{% if current_modality %}&modality={{ current_modality }}{% endif %}{% if current_min_context %}&min_context={{ current_min_context }}{% endif %}{% if current_series %}&series={{ current_series }}{% endif %}{% if current_parameter %}&parameter={{ current_parameter }}{% endif %}{% if current_provider %}&provider={{ current_provider }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}" class="filter-chip-close ms-2">
+          <i class="fas fa-times"></i>
+        </a>
+      </div>
+      {% endif %}
+      
+      {% if current_series %}
+      <div class="filter-chip">
+        <span class="filter-chip-label">Series:</span> {{ current_series }}
+        <a href="?{% if searchTerm %}searchAITool={{ searchTerm }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}{% if current_modality %}&modality={{ current_modality }}{% endif %}{% if current_min_context %}&min_context={{ current_min_context }}{% endif %}{% if current_max_price %}&max_price={{ current_max_price }}{% endif %}{% if current_parameter %}&parameter={{ current_parameter }}{% endif %}{% if current_provider %}&provider={{ current_provider }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}" class="filter-chip-close ms-2">
+          <i class="fas fa-times"></i>
+        </a>
+      </div>
+      {% endif %}
+      
+      {% if current_parameter %}
+      <div class="filter-chip">
+        <span class="filter-chip-label">Parameter:</span> {{ current_parameter }}
+        <a href="?{% if searchTerm %}searchAITool={{ searchTerm }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}{% if current_modality %}&modality={{ current_modality }}{% endif %}{% if current_min_context %}&min_context={{ current_min_context }}{% endif %}{% if current_max_price %}&max_price={{ current_max_price }}{% endif %}{% if current_series %}&series={{ current_series }}{% endif %}{% if current_provider %}&provider={{ current_provider }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}" class="filter-chip-close ms-2">
+          <i class="fas fa-times"></i>
+        </a>
+      </div>
+      {% endif %}
+      
+      {% if current_provider %}
+      <div class="filter-chip">
+        <span class="filter-chip-label">Provider:</span> {{ current_provider }}
+        <a href="?{% if searchTerm %}searchAITool={{ searchTerm }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}{% if current_modality %}&modality={{ current_modality }}{% endif %}{% if current_min_context %}&min_context={{ current_min_context }}{% endif %}{% if current_max_price %}&max_price={{ current_max_price }}{% endif %}{% if current_series %}&series={{ current_series }}{% endif %}{% if current_parameter %}&parameter={{ current_parameter }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}" class="filter-chip-close ms-2">
+          <i class="fas fa-times"></i>
+        </a>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+    
+    <!-- Sort options -->
+    <div class="sort-options mb-4">
+      <a href="?sort=newest{% if searchTerm %}&searchAITool={{ searchTerm }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}{% if current_modality %}&modality={{ current_modality }}{% endif %}{% if current_min_context %}&min_context={{ current_min_context }}{% endif %}{% if current_max_price %}&max_price={{ current_max_price }}{% endif %}{% if current_series %}&series={{ current_series }}{% endif %}{% if current_parameter %}&parameter={{ current_parameter }}{% endif %}{% if current_provider %}&provider={{ current_provider }}{% endif %}" 
+         class="sort-option {% if sort == 'newest' or not sort %}active{% endif %}">
+        <i class="fas fa-calendar-alt me-1"></i> Newest
+      </a>
+      <a href="?sort=popularity_desc{% if searchTerm %}&searchAITool={{ searchTerm }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}{% if current_modality %}&modality={{ current_modality }}{% endif %}{% if current_min_context %}&min_context={{ current_min_context }}{% endif %}{% if current_max_price %}&max_price={{ current_max_price }}{% endif %}{% if current_series %}&series={{ current_series }}{% endif %}{% if current_parameter %}&parameter={{ current_parameter }}{% endif %}{% if current_provider %}&provider={{ current_provider }}{% endif %}" 
+         class="sort-option {% if sort == 'popularity_desc' %}active{% endif %}">
+        <i class="fas fa-fire me-1"></i> Top Weekly
+      </a>
+      <a href="?sort=price_low{% if searchTerm %}&searchAITool={{ searchTerm }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}{% if current_modality %}&modality={{ current_modality }}{% endif %}{% if current_min_context %}&min_context={{ current_min_context }}{% endif %}{% if current_max_price %}&max_price={{ current_max_price }}{% endif %}{% if current_series %}&series={{ current_series }}{% endif %}{% if current_parameter %}&parameter={{ current_parameter }}{% endif %}{% if current_provider %}&provider={{ current_provider }}{% endif %}" 
+         class="sort-option {% if sort == 'price_low' %}active{% endif %}">
+        <i class="fas fa-sort-amount-down me-1"></i> Price: Low to High
+      </a>
+      <a href="?sort=price_high{% if searchTerm %}&searchAITool={{ searchTerm }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}{% if current_modality %}&modality={{ current_modality }}{% endif %}{% if current_min_context %}&min_context={{ current_min_context }}{% endif %}{% if current_max_price %}&max_price={{ current_max_price }}{% endif %}{% if current_series %}&series={{ current_series }}{% endif %}{% if current_parameter %}&parameter={{ current_parameter }}{% endif %}{% if current_provider %}&provider={{ current_provider }}{% endif %}" 
+         class="sort-option {% if sort == 'price_high' %}active{% endif %}">
+        <i class="fas fa-sort-amount-up me-1"></i> Price: High to Low
+      </a>
+      <a href="?sort=context_high{% if searchTerm %}&searchAITool={{ searchTerm }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}{% if current_modality %}&modality={{ current_modality }}{% endif %}{% if current_min_context %}&min_context={{ current_min_context }}{% endif %}{% if current_max_price %}&max_price={{ current_max_price }}{% endif %}{% if current_series %}&series={{ current_series }}{% endif %}{% if current_parameter %}&parameter={{ current_parameter }}{% endif %}{% if current_provider %}&provider={{ current_provider }}{% endif %}" 
+         class="sort-option {% if sort == 'context_high' %}active{% endif %}">
+        <i class="fas fa-expand me-1"></i> Context: High to Low
       </a>
     </div>
-  </div>
-  {% endif %}
-</div>
-
-<!-- AI Tools Grid -->
-{% if ai_tools %}
-  <div id="toolsContainer" class="grid-view-tools mb-5">
-    {% for ai in ai_tools %}
-    <div class="tool-item fade-in" style="animation-delay: {{ forloop.counter0|multiply:0.05 }}s">
-      <div class="tool-card">
-        <!-- API Connected Badge -->
-        {% if ai.api_type != 'none' %}
-        <div class="api-connected-badge">
-          <i class="fas fa-plug me-1"></i> API
-        </div>
+    
+    <!-- Models list -->
+    {% if ai_tools %}
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fs-5 fw-bold mb-0">
+          Models ({{ ai_tools.count }})
+        </h2>
+        {% if sort or searchTerm or current_category or current_modality or current_min_context or current_max_price or current_series or current_parameter or current_provider %}
+          <a href="{% url 'catalog' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-times-circle me-1"></i> Reset All Filters
+          </a>
         {% endif %}
-        
-        <!-- Featured Badge (if this is the featured AI) -->
-        {% if featured_ai and featured_ai.id == ai.id %}
-        <div class="featured-badge">
-          <i class="fas fa-award me-1"></i> Featured
-        </div>
-        {% endif %}
-        
-        <!-- Image -->
-        <div class="card-img-wrapper">
-          {% if ai.image %}
-            <img src="{{ ai.image.url }}" class="card-img-top" alt="{{ ai.name }}">
-          {% else %}
-            <div class="bg-light-purple d-flex align-items-center justify-content-center h-100">
-              <h2 class="text-primary m-0">{{ ai.name.0|upper }}</h2>
+      </div>
+      
+      <div class="models-container">
+        {% for ai in ai_tools %}
+        <div class="model-card">
+          <!-- Model header with logo and title -->
+          <div class="model-header">
+            <!-- Model logo -->
+            <div class="model-logo">
+              {% if ai.image %}
+                <img src="{{ ai.image.url }}" alt="{{ ai.name }}">
+              {% else %}
+                {{ ai.name.0|upper }}
+              {% endif %}
             </div>
-          {% endif %}
-          
-          <!-- Popularity badge -->
-          <span class="popularity-badge">
-            <i class="fas fa-star text-warning me-1"></i> {{ ai.popularity }}/10
-          </span>
-        </div>
-        
-        <!-- Content -->
-        <div class="card-body">
-          <div class="mb-2">
-            <span class="category-pill">{{ ai.category }}</span>
+            
+            <!-- Model meta info -->
+            <div class="model-meta">
+              <h3 class="model-title">
+                {{ ai.name }}
+                {% if ai.is_featured %}
+                <i class="fas fa-check-circle model-verified" title="Verified model"></i>
+                {% endif %}
+              </h3>
+              <div class="model-provider">
+                <i class="fas fa-building me-1"></i> {{ ai.provider }}
+              </div>
+            </div>
+            
+            <!-- Badge for new or trending models -->
+            {% if forloop.counter <= 3 and not searchTerm and not current_category and not current_modality and not current_min_context and not current_max_price and not current_series and not current_parameter and not current_provider %}
+              <div class="model-badge trending">
+                <i class="fas fa-fire me-1"></i> Trending
+              </div>
+            {% endif %}
           </div>
           
-          <h5 class="card-title fw-bold mb-2">{{ ai.name }}</h5>
+          <!-- Model content -->
+          <div class="model-content">
+            <!-- Description -->
+            <p class="model-description">{{ ai.description|truncatechars:150 }}</p>
+            
+            <!-- Model tags -->
+            <div class="model-tags">
+              <span class="model-tag">
+                <i class="fas fa-tag me-1"></i> {{ ai.category }}
+              </span>
+              {% if ai.series %}
+              <span class="model-tag">
+                <i class="fas fa-layer-group me-1"></i> {{ ai.series }}
+              </span>
+              {% endif %}
+              <span class="model-tag">
+                <i class="fas fa-file-alt me-1"></i> 
+                {% if ai.modality == 'text-to-text' %}Text to Text
+                {% elif ai.modality == 'text-image-to-text' %}Text & Image to Text
+                {% else %}{{ ai.modality|title }}
+                {% endif %}
+              </span>
+              {% if ai.api_type != 'none' %}
+              <span class="model-tag">
+                <i class="fas fa-plug me-1"></i> API Connected
+              </span>
+              {% endif %}
+            </div>
+            
+            <!-- Basic metrics in grid layout -->
+            <div class="model-metrics-basic">
+              <div class="model-metric model-metric-help" data-tooltip="Maximum context length in tokens">
+                <div class="model-metric-label">Context</div>
+                <div class="model-metric-value">
+                  {% if ai.context_length == 4096 %}4K
+                  {% elif ai.context_length == 8192 %}8K
+                  {% elif ai.context_length == 16384 %}16K
+                  {% elif ai.context_length == 32768 %}32K
+                  {% elif ai.context_length == 65536 %}64K
+                  {% elif ai.context_length == 128000 %}128K
+                  {% else %}{{ ai.context_length }}
+                  {% endif %}
+                </div>
+              </div>
+              
+              <div class="model-metric model-metric-help" data-tooltip="Input cost per million tokens">
+                <div class="model-metric-label">Input</div>
+                <div class="model-metric-value">${{ ai.prompt_pricing }}</div>
+              </div>
+              
+              <div class="model-metric model-metric-help" data-tooltip="Output cost per million tokens">
+                <div class="model-metric-label">Output</div>
+                <div class="model-metric-value">${{ ai.completion_pricing }}</div>
+              </div>
+              
+              <div class="model-metric model-metric-help" data-tooltip="Popularity score out of 10">
+                <div class="model-metric-label">Rating</div>
+                <div class="model-metric-value">
+                  <i class="fas fa-star text-warning me-1"></i>{{ ai.popularity }}
+                </div>
+              </div>
+            </div>
+          </div>
           
-          <p class="provider-badge">
-            <i class="fas fa-building me-1"></i> {{ ai.provider }}
-          </p>
-          
-          <p class="card-text text-muted mb-4">{{ ai.description|truncatechars:100 }}</p>
-          
-          <div class="d-grid gap-2">
-            <div class="d-flex">
-              <a href="{% url 'presentationAI' ai.id %}" class="btn btn-outline-primary btn-sm me-2">
-                View Details
-              </a>
-              <a href="{% url 'chat' ai.id %}" class="btn btn-primary btn-sm">
+          <!-- Model footer with actions -->
+          <div class="model-footer">
+            <div class="model-pricing">
+              <div class="model-price-tag">
+                <i class="fas fa-tag me-1"></i>
+                ${{ ai.prompt_pricing }}/{{ ai.completion_pricing }}
+              </div>
+            </div>
+            <div class="model-actions">
+              <a href="{% url 'chat' ai.id %}" class="btn btn-primary model-action-btn">
                 <i class="fas fa-comment-alt me-1"></i> Try It
               </a>
+              <a href="{% url 'presentationAI' ai.id %}" class="btn btn-outline-secondary model-action-btn">
+                <i class="fas fa-info-circle me-1"></i> Details
+              </a>
+              <button class="btn btn-outline-danger model-action-btn" title="Add to favorites" 
+                      onclick="toggleFavorite(event, '{{ ai.id }}')">
+                <i class="far fa-heart"></i>
+              </button>
             </div>
-            <a href="{% url 'compare' %}?tool1={{ ai.id }}" class="btn btn-outline-secondary btn-sm">
-              <i class="fas fa-balance-scale me-1"></i> Compare
-            </a>
           </div>
-          
-          <!-- Favorite button -->
-          <button class="favorite-btn" title="Add to favorites" 
-                  data-ai-id="{{ ai.id }}" 
-                  onclick="toggleFavorite(event, '{{ ai.id }}')">
-            <i class="far fa-heart"></i>
-          </button>
         </div>
+        {% endfor %}
       </div>
-    </div>
-    {% endfor %}
-  </div>
-  
-  <!-- Pagination -->
-  {% if ai_tools.count > 9 %}
-  <nav aria-label="Page navigation">
-    <ul class="pagination justify-content-center">
-      <li class="page-item disabled">
-        <a class="page-link" href="#" tabindex="-1" aria-disabled="true">
-          <i class="fas fa-chevron-left me-1"></i> Previous
-        </a>
-      </li>
-      <li class="page-item active"><a class="page-link" href="#">1</a></li>
-      <li class="page-item"><a class="page-link" href="#">2</a></li>
-      <li class="page-item"><a class="page-link" href="#">3</a></li>
-      <li class="page-item">
-        <a class="page-link" href="#">
-          Next <i class="fas fa-chevron-right ms-1"></i>
-        </a>
-      </li>
-    </ul>
-  </nav>
-  {% endif %}
-  
-{% else %}
-  <!-- Empty state -->
-  <div class="empty-state">
-    <div class="empty-state-icon">
-      <i class="fas fa-search"></i>
-    </div>
-    <h3 class="fw-bold mb-3">No AI tools found</h3>
-    <p class="text-muted mb-4">We couldn't find any AI tools matching your search criteria. Try adjusting your filters or search terms.</p>
-    <a href="{% url 'catalog' %}" class="btn btn-primary">
-      Clear All Filters
-    </a>
-  </div>
-{% endif %}
+      
+    {% else %}
+      <!-- Empty state -->
+      <div class="bg-light p-5 rounded text-center">
+        <div class="mb-3">
+          <i class="fas fa-search fa-3x text-muted"></i>
+        </div>
+        <h3 class="fs-4 fw-bold">No models found</h3>
+        <p class="text-muted">We couldn't find any models matching your filters. Try adjusting your criteria or reset all filters.</p>
+        <a href="{% url 'catalog' %}" class="btn btn-primary mt-2">Reset All Filters</a>
+      </div>
+    {% endif %}
+  </main>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
-    // Grid/List view toggle
-    const gridViewBtn = document.getElementById('gridViewBtn');
-    const listViewBtn = document.getElementById('listViewBtn');
-    const toolsContainer = document.getElementById('toolsContainer');
-    
-    gridViewBtn.addEventListener('click', function() {
-      toolsContainer.classList.remove('list-view-tools');
-      toolsContainer.classList.add('grid-view-tools');
-      gridViewBtn.classList.add('active');
-      listViewBtn.classList.remove('active');
-    });
-    
-    listViewBtn.addEventListener('click', function() {
-      toolsContainer.classList.remove('grid-view-tools');
-      toolsContainer.classList.add('list-view-tools');
-      listViewBtn.classList.add('active');
-      gridViewBtn.classList.remove('active');
-    });
-  });
-  
   // Toggle favorite
   async function toggleFavorite(event, aiId) {
     event.preventDefault();
@@ -569,22 +855,101 @@
     
     try {
       // Call favorite API endpoint (would need to be implemented)
-      // const response = await fetch(`/ai/${aiId}/favorite/`, { method: 'POST' });
+      // const response = await fetch(`/api/models/${aiId}/favorite`, { 
+      //   method: 'POST',
+      //   headers: {
+      //     'Content-Type': 'application/json',
+      //     'X-CSRFToken': getCookie('csrftoken')
+      //   }
+      // });
       // const data = await response.json();
       
       // For demo purposes, toggle the icon
       if (icon.classList.contains('far')) {
         icon.classList.remove('far');
         icon.classList.add('fas');
-        showFeedback('Added to favorites!', 'success');
+        button.classList.remove('btn-outline-danger');
+        button.classList.add('btn-danger');
+        showToast('Added to favorites', 'success');
       } else {
         icon.classList.remove('fas');
         icon.classList.add('far');
-        showFeedback('Removed from favorites', 'info');
+        button.classList.remove('btn-danger');
+        button.classList.add('btn-outline-danger');
+        showToast('Removed from favorites', 'info');
       }
     } catch (error) {
-      showFeedback('Error updating favorites', 'danger');
+      showToast('Error updating favorites', 'danger');
+      console.error('Error toggling favorite:', error);
     }
   }
+  
+  // Show toast notification
+  function showToast(message, type = 'info') {
+    // Create toast container if it doesn't exist
+    let toastContainer = document.querySelector('.toast-container');
+    if (!toastContainer) {
+      toastContainer = document.createElement('div');
+      toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+      document.body.appendChild(toastContainer);
+    }
+    
+    // Create toast element
+    const toastEl = document.createElement('div');
+    toastEl.className = `toast align-items-center text-white bg-${type} border-0`;
+    toastEl.setAttribute('role', 'alert');
+    toastEl.setAttribute('aria-live', 'assertive');
+    toastEl.setAttribute('aria-atomic', 'true');
+    
+    // Create toast content
+    toastEl.innerHTML = `
+      <div class="d-flex">
+        <div class="toast-body">
+          ${message}
+        </div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+    `;
+    
+    // Add toast to container
+    toastContainer.appendChild(toastEl);
+    
+    // Initialize and show toast
+    const toast = new bootstrap.Toast(toastEl, {
+      autohide: true,
+      delay: 3000
+    });
+    toast.show();
+    
+    // Remove toast after it's hidden
+    toastEl.addEventListener('hidden.bs.toast', () => {
+      toastEl.remove();
+    });
+  }
+
+  // Get CSRF token from cookies (for POST requests)
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+  
+  // Initialize tooltips
+  document.addEventListener('DOMContentLoaded', function() {
+    // Enable Bootstrap tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
+      return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+  });
 </script>
 {% endblock %}
