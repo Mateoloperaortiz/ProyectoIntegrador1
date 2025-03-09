@@ -34,6 +34,7 @@
       --radius-lg: 0.5rem;
       --radius-xl: 0.75rem;
       --radius-2xl: 1rem;
+      --radius-full: 9999px;
       
       /* Shadow variables */
       --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
@@ -49,37 +50,49 @@
       line-height: 1.5;
     }
     
-    /* Component styling */
+    /* OpenRouter-inspired Component styling */
     .navbar-custom {
-      background-color: white;
-      box-shadow: var(--shadow-sm);
+      background-color: rgba(255, 255, 255, 0.85);
+      background-image: linear-gradient(to right, rgba(255, 255, 255, 0.95), rgba(239, 246, 255, 0.85), rgba(255, 255, 255, 0.95));
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
       padding: 0.75rem 0;
+      border-bottom: 1px solid rgba(229, 231, 235, 0.5);
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 20px -5px rgba(0, 0, 0, 0.05);
     }
     
     .navbar-custom .navbar-brand {
       font-weight: 700;
-      color: var(--primary-color);
-      font-size: 1.25rem;
+      background: linear-gradient(90deg, var(--primary-color), #8B5CF6);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      font-size: 1.35rem;
+      letter-spacing: -0.02em;
     }
     
     .navbar-light .navbar-nav .nav-link {
       color: var(--neutral-700);
       font-weight: 500;
-      padding: 0.5rem 1rem;
-      border-radius: var(--radius-md);
+      font-size: 0.95rem;
+      padding: 0.5rem 0.75rem;
+      margin: 0 0.25rem;
+      border-radius: var(--radius-full);
       transition: all 0.2s ease;
     }
     
     .navbar-light .navbar-nav .nav-link:hover,
     .navbar-light .navbar-nav .nav-link:focus {
       color: var(--primary-color);
-      background-color: var(--neutral-50);
+      background-color: rgba(91, 70, 244, 0.08);
     }
     
     .navbar-light .navbar-nav .active > .nav-link,
     .navbar-light .navbar-nav .nav-link.active {
       color: var(--primary-color);
       font-weight: 600;
+      background-color: rgba(91, 70, 244, 0.1);
     }
     
     /* Button styling */
@@ -241,6 +254,41 @@
       100% { opacity: 0; transform: translateY(-20px); }
     }
     
+    /* OpenRouter-inspired dropdown styling */
+    .dropdown-menu {
+      border: none;
+      background-color: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 5px 10px -5px rgba(0, 0, 0, 0.04);
+      animation: dropdown-fade 0.2s ease;
+    }
+    
+    @keyframes dropdown-fade {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .dropdown-menu .dropdown-item {
+      padding: 0.6rem 1rem;
+      border-radius: var(--radius-md);
+      font-weight: 500;
+      font-size: 0.9rem;
+      transition: all 0.15s ease;
+      margin-bottom: 2px;
+    }
+    
+    .dropdown-menu .dropdown-item:hover,
+    .dropdown-menu .dropdown-item:focus {
+      background-color: rgba(91, 70, 244, 0.08);
+      color: var(--primary-color);
+    }
+    
+    .dropdown-menu .dropdown-item:active {
+      background-color: rgba(91, 70, 244, 0.15);
+      color: var(--primary-color);
+    }
+    
     /* Utility classes */
     .bg-gradient-primary {
       background: linear-gradient(135deg, var(--primary-color) 0%, #8C65F7 100%);
@@ -331,55 +379,129 @@
 <nav class="navbar navbar-expand-lg navbar-light navbar-custom sticky-top">
   <div class="container">
     <a class="navbar-brand d-flex align-items-center" href="/">
-      <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="currentColor" class="bi bi-stars text-primary me-2" viewBox="0 0 16 16">
-        <path d="M7.657 6.247c.11-.33.576-.33.686 0l.645 1.937a3 3 0 0 1 1.182 1.182l1.937.645c.33.11.33.576 0 .686l-1.937.645a3 3 0 0 1-1.182 1.182l-.645 1.937c-.11.33-.576.33-.686 0l-.645-1.937a3 3 0 0 1-1.182-1.182l-1.937-.645c-.33-.11-.33-.576 0-.686l1.937-.645a3 3 0 0 1 1.182-1.182z"/>
-        <path d="M7.707 1.5a.5.5 0 0 1 .672.21l.75 1.5a.5.5 0 0 1-.21.672l-1.5.75a.5.5 0 0 1-.672-.21l-.75-1.5a.5.5 0 0 1 .21-.672l1.5-.75zm-2.188 9-.75 1.5a.5.5 0 0 0 .21.672l1.5.75a.5.5 0 0 0 .672-.21l.75-1.5a.5.5 0 0 0-.21-.672l-1.5-.75a.5.5 0 0 0-.672.21zM11.909 11.55a.5.5 0 0 0-.246-.64l-1.6-.8a.5.5 0 0 0-.64.246l-.8 1.6a.5.5 0 0 0 .246.64l1.6.8a.5.5 0 0 0 .64-.246l.8-1.6z"/>
-      </svg>
+      <div class="d-flex align-items-center justify-content-center me-2" style="background: linear-gradient(135deg, #5B46F4, #8B5CF6); width: 36px; height: 36px; border-radius: 8px; box-shadow: 0 2px 8px rgba(91, 70, 244, 0.25);">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="white" class="bi bi-stars" viewBox="0 0 16 16">
+          <path d="M7.657 6.247c.11-.33.576-.33.686 0l.645 1.937a3 3 0 0 1 1.182 1.182l1.937.645c.33.11.33.576 0 .686l-1.937.645a3 3 0 0 1-1.182 1.182l-.645 1.937c-.11.33-.576.33-.686 0l-.645-1.937a3 3 0 0 1-1.182-1.182l-1.937-.645c-.33-.11-.33-.576 0-.686l1.937-.645a3 3 0 0 1 1.182-1.182z"/>
+          <path d="M7.707 1.5a.5.5 0 0 1 .672.21l.75 1.5a.5.5 0 0 1-.21.672l-1.5.75a.5.5 0 0 1-.672-.21l-.75-1.5a.5.5 0 0 1 .21-.672l1.5-.75zm-2.188 9-.75 1.5a.5.5 0 0 0 .21.672l1.5.75a.5.5 0 0 0 .672-.21l.75-1.5a.5.5 0 0 0-.21-.672l-1.5-.75a.5.5 0 0 0-.672.21zM11.909 11.55a.5.5 0 0 0-.246-.64l-1.6-.8a.5.5 0 0 0-.64.246l-.8 1.6a.5.5 0 0 0 .246.64l1.6.8a.5.5 0 0 0 .64-.246l.8-1.6z"/>
+        </svg>
+      </div>
       <span>InspireAI</span>
     </a>
+    
+    <div class="search-container ms-4 me-auto d-none d-md-block" style="max-width: 320px;">
+      <div class="position-relative">
+        <input type="text" class="form-control" placeholder="Search models" 
+               style="border-radius: var(--radius-full); background-color: rgba(243, 244, 246, 0.8); border: 1px solid rgba(209, 213, 219, 0.5); padding: 0.5rem 1rem 0.5rem 2.5rem;">
+        <i class="fas fa-search position-absolute" style="left: 1rem; top: 50%; transform: translateY(-50%); color: var(--neutral-500);"></i>
+      </div>
+    </div>
+    
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
       <span class="navbar-toggler-icon"></span>
     </button>
     
     <div class="collapse navbar-collapse" id="navbarMain">
-      <ul class="navbar-nav mx-auto">
-        <li class="nav-item mx-1">
-          <a class="nav-link {% if request.path == '/' %}active{% endif %}" href="/">Home</a>
-        </li>
-        <li class="nav-item mx-1">
-          <a class="nav-link {% if '/catalog/' in request.path and not '/presentation/' in request.path and not '/chat/' in request.path %}active{% endif %}" href="{% url 'catalog' %}">Browse AI Tools</a>
-        </li>
-        <li class="nav-item dropdown mx-1">
-          <a class="nav-link dropdown-toggle" href="#" id="categoriesDropdown" role="button" data-bs-toggle="dropdown">
-            Categories
-          </a>
-          <ul class="dropdown-menu" aria-labelledby="categoriesDropdown">
-            <li><a class="dropdown-item" href="{% url 'catalog' %}?category=Transcription">Transcription</a></li>
-            <li><a class="dropdown-item" href="{% url 'catalog' %}?category=Image Generator">Image Generator</a></li>
-            <li><a class="dropdown-item" href="{% url 'catalog' %}?category=Word Processor">Word Processor</a></li>
-          </ul>
-        </li>
-      </ul>
+      <div class="d-lg-none pt-3 pb-2 border-bottom"></div>
       
-      <div class="d-flex">
+      <div class="d-md-none mt-3 mb-3">
+        <div class="search-container w-100">
+          <div class="position-relative">
+            <input type="text" class="form-control" placeholder="Search models" 
+                  style="border-radius: var(--radius-full); background-color: rgba(243, 244, 246, 0.8); border: 1px solid rgba(209, 213, 219, 0.5); padding: 0.5rem 1rem 0.5rem 2.5rem;">
+            <i class="fas fa-search position-absolute" style="left: 1rem; top: 50%; transform: translateY(-50%); color: var(--neutral-500);"></i>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Empty space pushing content to the right -->
+      <div class="me-auto d-none d-lg-block"></div>
+      
+      <div class="d-flex align-items-center">
+        <!-- Desktop navigation -->
+        <ul class="navbar-nav d-none d-lg-flex flex-row me-3">
+          <li class="nav-item mx-1">
+            <a class="nav-link d-flex align-items-center py-2 px-3 {% if '/catalog/' in request.path %}active{% endif %}" 
+               style="border-radius: var(--radius-full);" href="{% url 'catalog' %}">
+              <i class="fas fa-cube me-1"></i>
+              <span>Models</span>
+            </a>
+          </li>
+          <li class="nav-item mx-1">
+            <a class="nav-link d-flex align-items-center py-2 px-3 {% if '/chat/' in request.path %}active{% endif %}" 
+               style="border-radius: var(--radius-full);" href="{% url 'chat_selection' %}">
+              <i class="fas fa-comment-alt me-1"></i>
+              <span>Chat</span>
+            </a>
+          </li>
+          <li class="nav-item mx-1">
+            <a class="nav-link d-flex align-items-center py-2 px-3 {% if '/rankings/' in request.path %}active{% endif %}" 
+               style="border-radius: var(--radius-full);" href="{% url 'catalog' %}">
+              <i class="fas fa-trophy me-1"></i>
+              <span>Rankings</span>
+            </a>
+          </li>
+        </ul>
+      
+        <!-- Mobile navigation -->
+        <div class="d-lg-none w-100 mb-3">
+          <ul class="navbar-nav">
+            <li class="nav-item mb-2">
+              <a class="nav-link d-flex align-items-center py-2 {% if '/catalog/' in request.path %}active{% endif %}" href="{% url 'catalog' %}">
+                <i class="fas fa-cube me-2"></i>
+                <span>Models</span>
+              </a>
+            </li>
+            <li class="nav-item mb-2">
+              <a class="nav-link d-flex align-items-center py-2 {% if '/chat/' in request.path %}active{% endif %}" href="{% url 'chat_selection' %}">
+                <i class="fas fa-comment-alt me-2"></i>
+                <span>Chat</span>
+              </a>
+            </li>
+            <li class="nav-item mb-2">
+              <a class="nav-link d-flex align-items-center py-2 {% if '/rankings/' in request.path %}active{% endif %}" href="{% url 'catalog' %}">
+                <i class="fas fa-trophy me-2"></i>
+                <span>Rankings</span>
+              </a>
+            </li>
+          </ul>
+          <div class="border-top my-3"></div>
+        </div>
         {% if user.is_authenticated %}
           <div class="dropdown">
-            <button class="btn btn-outline-primary dropdown-toggle d-flex align-items-center" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-              <div class="rounded-circle bg-light-purple d-inline-flex align-items-center justify-content-center me-2" style="width: 24px; height: 24px;">
-                <span class="text-primary" style="font-size: 0.8rem; font-weight: 600;">{{ user.username.0|upper }}</span>
+            <button class="btn dropdown-toggle d-flex align-items-center py-2 px-3" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false" 
+                    style="border-radius: var(--radius-full); background: linear-gradient(to right, rgba(91, 70, 244, 0.1), rgba(139, 92, 246, 0.05)); border: 1px solid rgba(91, 70, 244, 0.2);">
+              <div class="rounded-circle d-inline-flex align-items-center justify-content-center me-2" 
+                   style="width: 28px; height: 28px; background: linear-gradient(135deg, var(--primary-color), #8B5CF6);">
+                <span style="color: white; font-size: 0.8rem; font-weight: 600;">{{ user.username.0|upper }}</span>
               </div>
-              <span>{{ user.username }}</span>
+              <span style="color: var(--primary-color); font-weight: 500;">{{ user.username }}</span>
             </button>
-            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" aria-labelledby="userDropdown">
-              <li><a class="dropdown-item" href="{% url 'profile' %}"><i class="fas fa-user-circle me-2 text-primary"></i>My Profile</a></li>
-              <li><a class="dropdown-item" href="#"><i class="fas fa-heart me-2 text-danger"></i>Favorites</a></li>
-              <li><hr class="dropdown-divider"></li>
-              <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="fas fa-sign-out-alt me-2 text-muted"></i>Logout</a></li>
+            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" aria-labelledby="userDropdown" 
+                style="border-radius: var(--radius-md); padding: 0.5rem; min-width: 220px; margin-top: 0.5rem;">
+              <li><a class="dropdown-item rounded d-flex align-items-center" href="{% url 'profile' %}">
+                <i class="fas fa-user-circle me-2 text-primary"></i>
+                <span>My Profile</span>
+              </a></li>
+              <li><a class="dropdown-item rounded d-flex align-items-center" href="#">
+                <i class="fas fa-heart me-2 text-danger"></i>
+                <span>Favorites</span>
+              </a></li>
+              <li><hr class="dropdown-divider my-2"></li>
+              <li><a class="dropdown-item rounded d-flex align-items-center" href="{% url 'logout' %}">
+                <i class="fas fa-sign-out-alt me-2 text-muted"></i>
+                <span>Logout</span>
+              </a></li>
             </ul>
           </div>
         {% else %}
-          <a href="{% url 'login' %}" class="btn btn-outline-primary me-2">Login</a>
-          <a href="{% url 'register' %}" class="btn btn-primary">Register</a>
+          <a href="{% url 'login' %}" class="btn me-2 py-2 px-3" 
+             style="border-radius: var(--radius-full); background-color: rgba(91, 70, 244, 0.08); color: var(--primary-color); border: 1px solid rgba(91, 70, 244, 0.2); font-weight: 500;">
+            Login
+          </a>
+          <a href="{% url 'register' %}" class="btn py-2 px-3" 
+             style="border-radius: var(--radius-full); background: linear-gradient(90deg, var(--primary-color), #8B5CF6); color: white; font-weight: 500; box-shadow: 0 2px 8px rgba(91, 70, 244, 0.25);">
+            Register
+          </a>
         {% endif %}
       </div>
     </div>

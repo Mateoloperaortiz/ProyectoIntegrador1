@@ -390,6 +390,61 @@ def toggle_favorite(request, ai_id):
     })
 
 
+def chat_selection(request):
+    """Display a page to select an AI model to chat with."""
+    # Get filter parameters from request
+    searchTerm = request.GET.get('searchAITool', '')
+    category = request.GET.get('category', '')
+    sort = request.GET.get('sort', '')
+    
+    # Start with all AI tools
+    ai_tools = AITool.objects.all()
+
+    # Apply category filter if provided and valid
+    if category in CATEGORIES:
+        ai_tools = ai_tools.filter(category=category)
+    
+    # Apply search filter if provided (search in name, provider, and description)
+    if searchTerm:
+        ai_tools = ai_tools.filter(
+            Q(name__icontains=searchTerm) | 
+            Q(provider__icontains=searchTerm) | 
+            Q(description__icontains=searchTerm)
+        )
+    
+    # Apply sorting if provided
+    if sort:
+        if sort == 'popularity_desc':
+            ai_tools = ai_tools.order_by('-popularity')
+        elif sort == 'popularity_asc':
+            ai_tools = ai_tools.order_by('popularity')
+        elif sort == 'name_asc':
+            ai_tools = ai_tools.order_by('name')
+        elif sort == 'name_desc':
+            ai_tools = ai_tools.order_by('-name')
+    else:
+        # Default sorting by popularity (highest first)
+        ai_tools = ai_tools.order_by('-popularity')
+    
+    # Get the featured AI (highest popularity)
+    featured_ai = AITool.objects.all().order_by('-popularity').first()
+
+    # Get user's recent conversations
+    recent_conversations = []
+    if request.user.is_authenticated:
+        recent_conversations = Conversation.objects.filter(user=request.user).order_by('-updated_at')[:5]
+
+    return render(request, 'catalog/chat_selection.html', {
+        'ai_tools': ai_tools,
+        'categories': CATEGORIES,
+        'searchTerm': searchTerm,
+        'current_category': category,
+        'sort': sort,
+        'featured_ai': featured_ai,
+        'recent_conversations': recent_conversations,
+    })
+
+
 def compare_tools(request):
     """Compare two AI tools side by side."""
     tool1_id = request.GET.get('tool1')

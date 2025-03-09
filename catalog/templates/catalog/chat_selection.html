@@ -1,0 +1,502 @@
+{% extends 'base.html' %}
+
+{% block title %}Chat with AI Models - InspireAI{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* Chat selection page specific styles */
+  .ai-card {
+    border-radius: var(--radius-lg);
+    transition: all 0.3s ease;
+    border: 1px solid var(--neutral-200);
+    box-shadow: var(--shadow-sm);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .ai-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--primary-color);
+  }
+
+  .ai-card .card-img-top {
+    height: 140px;
+    object-fit: cover;
+    border-top-left-radius: var(--radius-lg);
+    border-top-right-radius: var(--radius-lg);
+  }
+
+  .ai-card .ai-provider {
+    color: var(--neutral-500);
+    font-size: 0.85rem;
+  }
+
+  .ai-rating {
+    color: var(--warning-color);
+  }
+
+  .badge-category {
+    background-color: rgba(91, 70, 244, 0.1);
+    color: var(--primary-color);
+    font-weight: 500;
+  }
+
+  .quick-chat-btn {
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+  }
+
+  .quick-chat-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, rgba(255,255,255,0.2), rgba(255,255,255,0.5), rgba(255,255,255,0.2));
+    transition: all 0.5s ease;
+    z-index: -1;
+  }
+
+  .quick-chat-btn:hover::before {
+    left: 100%;
+  }
+
+  .recent-conversation {
+    border-left: 3px solid var(--primary-color);
+    transition: all 0.2s ease;
+  }
+
+  .recent-conversation:hover {
+    background-color: rgba(91, 70, 244, 0.05);
+  }
+
+  /* Filters and sorting section */
+  .filters-section {
+    background-color: white;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--neutral-200);
+    padding: 1.25rem;
+    margin-bottom: 2rem;
+  }
+
+  /* Featured AI section */
+  .featured-ai {
+    background: linear-gradient(135deg, rgba(91, 70, 244, 0.05), rgba(139, 92, 246, 0.1));
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(91, 70, 244, 0.2);
+    box-shadow: var(--shadow-md);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .featured-badge {
+    background: linear-gradient(90deg, var(--primary-color), #8B5CF6);
+    color: white;
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    padding: 0.35em 0.7em;
+    border-radius: var(--radius-full);
+  }
+
+  /* Table view styling */
+  .ai-table {
+    background-color: white;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .ai-table th {
+    background-color: var(--neutral-50);
+    font-weight: 600;
+    color: var(--neutral-700);
+    border-bottom: 1px solid var(--neutral-200);
+    padding: 1rem;
+  }
+
+  .ai-table td {
+    padding: 1rem;
+    border-bottom: 1px solid var(--neutral-200);
+    vertical-align: middle;
+  }
+
+  .ai-table tr:last-child td {
+    border-bottom: none;
+  }
+
+  .ai-table tr:hover {
+    background-color: var(--neutral-50);
+  }
+
+  .ai-logo {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: var(--radius-md);
+  }
+
+  .ai-name {
+    font-weight: 600;
+    color: var(--neutral-900);
+    text-decoration: none;
+  }
+
+  .ai-name:hover {
+    color: var(--primary-color);
+  }
+
+  .rating-stars .active {
+    color: var(--warning-color);
+  }
+
+  .rating-stars .inactive {
+    color: var(--neutral-300);
+  }
+
+  /* Category filter pills */
+  .category-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .category-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.4rem 1rem;
+    border-radius: var(--radius-full);
+    font-size: 0.875rem;
+    font-weight: 500;
+    background-color: var(--neutral-100);
+    color: var(--neutral-700);
+    transition: all 0.2s ease;
+    text-decoration: none;
+    border: 1px solid transparent;
+  }
+
+  .category-pill:hover {
+    background-color: var(--neutral-200);
+    color: var(--neutral-900);
+  }
+
+  .category-pill.active {
+    background-color: rgba(91, 70, 244, 0.1);
+    color: var(--primary-color);
+    border-color: rgba(91, 70, 244, 0.2);
+  }
+
+  /* View toggle buttons */
+  .view-toggle .btn {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.875rem;
+  }
+
+  /* Recent chats sidebar */
+  .recent-chats-sidebar {
+    background-color: white;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--neutral-200);
+    height: 100%;
+  }
+
+  .recent-chats-header {
+    padding: 1.25rem;
+    border-bottom: 1px solid var(--neutral-200);
+    font-weight: 600;
+  }
+
+  .sidebar-divider {
+    height: 1px;
+    background-color: var(--neutral-200);
+    margin: 0.5rem 0;
+  }
+
+  .chat-item {
+    padding: 0.75rem 1.25rem;
+    cursor: pointer;
+    border-left: 3px solid transparent;
+    transition: all 0.2s ease;
+  }
+
+  .chat-item:hover {
+    background-color: var(--neutral-50);
+    border-left-color: var(--primary-color);
+  }
+
+  .chat-item.active {
+    background-color: rgba(91, 70, 244, 0.05);
+    border-left-color: var(--primary-color);
+  }
+
+  .chat-item-title {
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .chat-item-info {
+    color: var(--neutral-500);
+    font-size: 0.8rem;
+  }
+
+  /* Loading animation */
+  .loader-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 300px;
+  }
+
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    .filters-section {
+      padding: 1rem;
+    }
+    
+    .featured-ai {
+      padding: 1rem;
+    }
+    
+    .ai-table th, .ai-table td {
+      padding: 0.75rem;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <!-- Page header -->
+  <div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+      <h1 class="fw-bold mb-1">Chat with AI</h1>
+      <p class="text-muted">Select a model to start chatting or continue a recent conversation</p>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- Main content area - AI model selection -->
+    <div class="col-lg-8 mb-4">
+      <!-- Featured AI model (if available) -->
+      {% if featured_ai %}
+      <div class="featured-ai mb-4">
+        <div class="d-flex align-items-center mb-3">
+          <span class="featured-badge me-2">Featured</span>
+          <h3 class="mb-0 fw-bold">{{ featured_ai.name }}</h3>
+        </div>
+        <div class="d-flex flex-wrap align-items-center mb-3">
+          <span class="me-3 text-muted">{{ featured_ai.provider }}</span>
+          <div class="rating-stars me-3">
+            {% for i in "12345" %}
+              {% if forloop.counter <= featured_ai.rating %}
+                <i class="fas fa-star active"></i>
+              {% else %}
+                <i class="far fa-star inactive"></i>
+              {% endif %}
+            {% endfor %}
+          </div>
+          <span class="badge badge-category">{{ featured_ai.category }}</span>
+        </div>
+        <p class="mb-3">{{ featured_ai.description }}</p>
+        <a href="{% url 'chat' ai_id=featured_ai.id %}" class="btn btn-primary quick-chat-btn">
+          <i class="fas fa-comment-alt me-2"></i> Start Chatting
+        </a>
+      </div>
+      {% endif %}
+
+      <!-- Filters -->
+      <div class="filters-section mb-4">
+        <div class="row g-3">
+          <!-- Search input -->
+          <div class="col-md-6">
+            <div class="search-container">
+              <form action="{% url 'chat_selection' %}" method="get" id="searchForm">
+                <input type="hidden" name="category" value="{{ current_category }}">
+                <input type="hidden" name="sort" value="{{ sort }}">
+                <div class="position-relative">
+                  <input type="text" class="form-control" 
+                         name="searchAITool" 
+                         placeholder="Search models" 
+                         value="{{ searchTerm }}"
+                         style="border-radius: var(--radius-full); padding-left: 2.5rem;"
+                         onchange="document.getElementById('searchForm').submit()">
+                  <i class="fas fa-search search-icon"></i>
+                </div>
+              </form>
+            </div>
+          </div>
+          
+          <!-- Sort dropdown -->
+          <div class="col-md-6">
+            <form action="{% url 'chat_selection' %}" method="get" id="sortForm">
+              <input type="hidden" name="searchAITool" value="{{ searchTerm }}">
+              <input type="hidden" name="category" value="{{ current_category }}">
+              <select class="form-select" name="sort" onchange="document.getElementById('sortForm').submit()">
+                <option value="popularity_desc" {% if sort == 'popularity_desc' %}selected{% endif %}>Most Popular</option>
+                <option value="popularity_asc" {% if sort == 'popularity_asc' %}selected{% endif %}>Least Popular</option>
+                <option value="name_asc" {% if sort == 'name_asc' %}selected{% endif %}>Name (A-Z)</option>
+                <option value="name_desc" {% if sort == 'name_desc' %}selected{% endif %}>Name (Z-A)</option>
+              </select>
+            </form>
+          </div>
+        </div>
+        
+        <!-- Category filter pills -->
+        <div class="category-filters mt-3">
+          <a href="{% url 'chat_selection' %}?searchAITool={{ searchTerm }}&sort={{ sort }}" 
+             class="category-pill {% if not current_category %}active{% endif %}">
+            All Categories
+          </a>
+          {% for category in categories %}
+            <a href="{% url 'chat_selection' %}?searchAITool={{ searchTerm }}&category={{ category }}&sort={{ sort }}" 
+               class="category-pill {% if current_category == category %}active{% endif %}">
+              {{ category }}
+            </a>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- AI Models Table -->
+      <div class="ai-table">
+        <table class="table table-hover mb-0">
+          <thead>
+            <tr>
+              <th>Model</th>
+              <th>Category</th>
+              <th class="text-center">Rating</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for ai in ai_tools %}
+            <tr>
+              <td>
+                <div class="d-flex align-items-center">
+                  {% if ai.image %}
+                    <img src="{{ ai.image.url }}" alt="{{ ai.name }}" class="ai-logo me-3">
+                  {% else %}
+                    <div class="ai-logo me-3 d-flex align-items-center justify-content-center" 
+                         style="background-color: rgba(91, 70, 244, 0.1); color: var(--primary-color);">
+                      <i class="fas fa-robot"></i>
+                    </div>
+                  {% endif %}
+                  <div>
+                    <a href="{% url 'presentationAI' id=ai.id %}" class="ai-name d-block">{{ ai.name }}</a>
+                    <small class="text-muted">{{ ai.provider }}</small>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <span class="badge badge-category">{{ ai.category }}</span>
+              </td>
+              <td class="text-center">
+                <div class="rating-stars">
+                  {% for i in "12345" %}
+                    {% if forloop.counter <= ai.rating %}
+                      <i class="fas fa-star active"></i>
+                    {% else %}
+                      <i class="far fa-star inactive"></i>
+                    {% endif %}
+                  {% endfor %}
+                </div>
+              </td>
+              <td class="text-end">
+                <a href="{% url 'chat' ai_id=ai.id %}" class="btn btn-sm btn-primary">
+                  <i class="fas fa-comment-alt me-1"></i> Chat
+                </a>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="4" class="text-center py-4">
+                <p class="mb-0 text-muted">No AI models found matching your criteria.</p>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    
+    <!-- Sidebar - Recent conversations -->
+    <div class="col-lg-4">
+      <div class="recent-chats-sidebar">
+        <div class="recent-chats-header">
+          <i class="fas fa-history me-2 text-primary"></i> 
+          Recent Conversations
+        </div>
+        
+        <div class="sidebar-divider"></div>
+        
+        {% if user.is_authenticated %}
+          {% if recent_conversations %}
+            <div class="p-3">
+              {% for conversation in recent_conversations %}
+                <a href="{% url 'chat' ai_id=conversation.ai_tool.id %}?conversation_id={{ conversation.id }}" class="text-decoration-none">
+                  <div class="chat-item rounded-3 mb-2">
+                    <div class="d-flex align-items-center">
+                      {% if conversation.ai_tool.image %}
+                        <img src="{{ conversation.ai_tool.image.url }}" alt="{{ conversation.ai_tool.name }}" 
+                             class="ai-logo me-2" style="width: 32px; height: 32px;">
+                      {% else %}
+                        <div class="ai-logo me-2 d-flex align-items-center justify-content-center" 
+                             style="width: 32px; height: 32px; background-color: rgba(91, 70, 244, 0.1); color: var(--primary-color);">
+                          <i class="fas fa-robot"></i>
+                        </div>
+                      {% endif %}
+                      <div class="flex-grow-1">
+                        <div class="chat-item-title">{{ conversation.title }}</div>
+                        <div class="chat-item-info">
+                          <i class="far fa-clock me-1"></i> 
+                          {{ conversation.updated_at|date:"M d, Y" }}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </a>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="p-4 text-center">
+              <div class="mb-3">
+                <i class="fas fa-comment-alt text-muted" style="font-size: 2rem; opacity: 0.3;"></i>
+              </div>
+              <p class="text-muted mb-0">You don't have any recent conversations.</p>
+              <p class="text-muted">Select a model from the list to start chatting!</p>
+            </div>
+          {% endif %}
+        {% else %}
+          <div class="p-4 text-center">
+            <div class="mb-3">
+              <i class="fas fa-lock text-muted" style="font-size: 2rem; opacity: 0.3;"></i>
+            </div>
+            <p class="text-muted mb-2">Sign in to view and continue your conversations</p>
+            <a href="{% url 'login' %}" class="btn btn-outline-primary btn-sm">
+              <i class="fas fa-sign-in-alt me-1"></i> Login
+            </a>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // For any additional JavaScript functionality
+  document.addEventListener('DOMContentLoaded', function() {
+    // You can add any JavaScript needed for the page functionality
+  });
+</script>
+{% endblock %}

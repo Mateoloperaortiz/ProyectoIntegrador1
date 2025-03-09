@@ -2,566 +2,644 @@
 {% load static %}
 {% load catalog_extras %}
 
-{% block title %}AI Catalog | InspireAI{% endblock %}
+{% block title %}AI Models | InspireAI{% endblock %}
 
 {% block extra_css %}
 <style>
-  .catalog-header {
-    margin-bottom: 2rem;
+  /* OpenRouter-inspired styles */
+  body {
+    background-color: #f9fafb;
   }
   
-  .featured-badge {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    background-color: var(--secondary-color);
-    color: white;
-    font-size: 0.7rem;
-    font-weight: 500;
-    padding: 0.25rem 0.75rem;
-    border-radius: 2rem;
-    z-index: 2;
+  .models-header {
+    padding: 1.5rem 0;
   }
   
-  .filter-card {
-    border: none;
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-sm);
-    background-color: white;
-    margin-bottom: 2rem;
-  }
-  
-  .tool-card {
-    border: none;
-    border-radius: var(--radius-lg);
-    overflow: hidden;
-    transition: all 0.3s ease;
-    height: 100%;
-    position: relative;
-    background-color: white;
-    box-shadow: var(--shadow-sm);
-  }
-  
-  .tool-card:hover {
-    transform: translateY(-5px);
-    box-shadow: var(--shadow-lg);
-  }
-  
-  .tool-card .card-img-wrapper {
-    height: 180px;
-    overflow: hidden;
+  .models-wrapper {
     position: relative;
   }
   
-  .tool-card .card-img-top {
-    height: 100%;
+  .model-table {
+    border-collapse: separate;
+    border-spacing: 0;
     width: 100%;
-    object-fit: cover;
-    transition: transform 0.5s ease;
-  }
-  
-  .tool-card:hover .card-img-top {
-    transform: scale(1.05);
-  }
-  
-  .tool-card .card-img-overlay {
-    background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.6) 100%);
-    display: flex;
-    align-items: flex-end;
-    padding: 1rem;
-  }
-  
-  .tool-card .card-body {
-    padding: 1.25rem;
-  }
-  
-  .popularity-badge {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background-color: rgba(0, 0, 0, 0.6);
-    color: white;
-    padding: 0.25rem 0.75rem;
-    border-radius: 2rem;
-    font-size: 0.75rem;
-    z-index: 2;
-  }
-  
-  .category-pill {
-    border-radius: 2rem;
-    padding: 0.3rem 0.8rem;
-    font-size: 0.8rem;
-    font-weight: 500;
-    display: inline-block;
-    margin-right: 0.5rem;
-    margin-bottom: 0.5rem;
-    background-color: rgba(91, 70, 244, 0.1);
-    color: var(--primary-color);
-    transition: all 0.2s ease;
-  }
-  
-  .category-pill:hover {
-    text-decoration: none;
-    background-color: rgba(91, 70, 244, 0.2);
-  }
-  
-  .category-pill.active {
-    background-color: var(--primary-color);
-    color: white;
-  }
-  
-  .provider-badge {
-    font-size: 0.8rem;
-    color: var(--neutral-500);
-    margin-bottom: 0.75rem;
-    display: inline-block;
-  }
-  
-  .favorite-btn {
-    position: absolute;
-    bottom: 1rem;
-    right: 1rem;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
+    margin-bottom: 2rem;
     background-color: white;
-    border: none;
+    border-radius: 1rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+  }
+  
+  .model-table thead {
+    background-color: rgba(249, 250, 251, 0.8);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  
+  .model-table th {
+    padding: 1rem;
+    border-bottom: 1px solid #e5e7eb;
+    font-weight: 600;
+    color: #4b5563;
+    text-align: left;
+    font-size: 0.875rem;
+    white-space: nowrap;
+  }
+  
+  .model-table td {
+    padding: 1rem;
+    border-bottom: 1px solid #e5e7eb;
+    color: #111827;
+    vertical-align: middle;
+  }
+  
+  .model-table tr:last-child td {
+    border-bottom: none;
+  }
+  
+  .model-table tr:hover {
+    background-color: rgba(249, 250, 251, 0.5);
+  }
+  
+  .model-logo {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    overflow: hidden;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: var(--shadow-sm);
+    background: linear-gradient(135deg, var(--primary-color), #8B5CF6);
+    box-shadow: 0 2px 4px rgba(91, 70, 244, 0.25);
+  }
+  
+  .model-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  .model-info-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  
+  .model-name {
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    color: #111827;
+  }
+  
+  .model-provider {
+    color: #6B7280;
+    font-size: 0.875rem;
+  }
+  
+  .model-category {
+    display: inline-flex;
+    align-items: center;
+    background-color: rgba(91, 70, 244, 0.1);
+    color: var(--primary-color);
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+  
+  .rating-wrapper {
+    display: flex;
+    align-items: center;
+  }
+  
+  .rating-value {
+    font-weight: 600;
+    color: #111827;
+  }
+  
+  .rating-stars {
+    color: #FBBF24;
+    margin-right: 0.5rem;
+  }
+  
+  .rating-count {
+    color: #6B7280;
+    font-size: 0.875rem;
+  }
+  
+  .model-action-btn {
+    padding: 0.5rem 1rem;
+    border-radius: 9999px;
+    font-weight: 500;
+    font-size: 0.875rem;
     transition: all 0.2s ease;
-    z-index: 3;
+    white-space: nowrap;
   }
   
-  .favorite-btn:hover {
-    transform: scale(1.1);
+  .try-btn {
+    background: linear-gradient(90deg, var(--primary-color), #8B5CF6);
+    color: white !important;
+    border: none;
+    box-shadow: 0 2px 4px rgba(91, 70, 244, 0.25);
   }
   
-  .favorite-btn i {
-    color: var(--danger-color);
+  .try-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(91, 70, 244, 0.3);
   }
   
-  .search-form {
+  .compare-btn {
+    background-color: rgba(91, 70, 244, 0.1);
+    color: var(--primary-color) !important;
+    border: 1px solid rgba(91, 70, 244, 0.2);
+  }
+  
+  .compare-btn:hover {
+    background-color: rgba(91, 70, 244, 0.15);
+  }
+  
+  .view-btn {
+    color: #6B7280 !important;
+    border: 1px solid #E5E7EB;
+    background-color: white;
+  }
+  
+  .view-btn:hover {
+    background-color: #F9FAFB;
+    color: #111827 !important;
+  }
+  
+  .badge-api {
+    background-color: #10B981;
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 0.25rem 0.5rem;
+    border-radius: 9999px;
+    margin-left: 0.5rem;
+  }
+  
+  .badge-featured {
+    background-color: #F59E0B;
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 0.25rem 0.5rem;
+    border-radius: 9999px;
+    margin-left: 0.5rem;
+  }
+  
+  /* Filters section */
+  .filters-section {
+    background-color: white;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  }
+  
+  .search-box {
     position: relative;
   }
   
-  .search-form .form-control {
-    border-radius: 2rem;
-    padding-left: 2.5rem;
-    border: 1px solid var(--neutral-200);
-    box-shadow: var(--shadow-sm);
+  .search-box input {
+    padding-left: 2.75rem;
+    height: 3rem;
+    border-radius: 9999px;
+    border: 1px solid #E5E7EB;
+    width: 100%;
+    background-color: #F9FAFB;
+    transition: all 0.2s ease;
   }
   
-  .search-form .search-icon {
+  .search-box input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(91, 70, 244, 0.1);
+  }
+  
+  .search-icon {
     position: absolute;
     left: 1rem;
     top: 50%;
     transform: translateY(-50%);
-    color: var(--neutral-500);
-    z-index: 4;
+    color: #9CA3AF;
   }
   
-  .badge-filter {
-    border-radius: 2rem;
-    padding: 0.5rem 1rem;
-    margin-right: 0.5rem;
-    margin-bottom: 0.5rem;
+  .filter-tag {
     display: inline-flex;
     align-items: center;
-    font-weight: 500;
-  }
-  
-  .badge-filter .close-icon {
-    margin-left: 0.5rem;
-    opacity: 0.8;
-    transition: opacity 0.2s ease;
-  }
-  
-  .badge-filter .close-icon:hover {
-    opacity: 1;
-  }
-  
-  .grid-view-tools {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 1.5rem;
-  }
-  
-  .list-view-tools .tool-card {
-    display: flex;
-    flex-direction: row;
-    max-height: 200px;
-  }
-  
-  .list-view-tools .tool-card .card-img-wrapper {
-    width: 200px;
-    height: 100%;
-  }
-  
-  .list-view-tools .tool-card .card-body {
-    flex: 1;
-  }
-  
-  .view-toggle-btn {
-    padding: 0.5rem;
-    border-radius: 0.5rem;
-    background-color: var(--neutral-100);
-    border: 1px solid var(--neutral-200);
-    color: var(--neutral-700);
+    padding: 0.5rem 1rem;
+    background-color: white;
+    border: 1px solid #E5E7EB;
+    border-radius: 9999px;
+    margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+    color: #4B5563;
+    cursor: pointer;
     transition: all 0.2s ease;
   }
   
-  .view-toggle-btn:hover {
-    background-color: var(--neutral-200);
+  .filter-tag:hover {
+    background-color: #F9FAFB;
   }
   
-  .view-toggle-btn.active {
+  .filter-tag.active {
     background-color: var(--primary-color);
     color: white;
     border-color: var(--primary-color);
   }
   
-  .api-connected-badge {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    background-color: var(--success-color);
-    color: white;
-    font-size: 0.7rem;
-    padding: 0.2rem 0.6rem;
-    border-radius: 2rem;
-    z-index: 2;
+  .filter-tag.active:hover {
+    background-color: #4935c8;
   }
   
-  /* Animation classes */
-  .fade-in {
-    animation: fadeIn 0.5s ease-in-out;
+  .filters-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #4B5563;
+    margin-bottom: 0.75rem;
   }
   
+  .active-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
+  
+  .active-filter-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    background-color: rgba(91, 70, 244, 0.1);
+    color: var(--primary-color);
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+  
+  .remove-filter {
+    margin-left: 0.5rem;
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+  }
+  
+  .remove-filter:hover {
+    opacity: 1;
+  }
+  
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    background-color: white;
+    border-radius: 1rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  }
+  
+  .empty-icon {
+    font-size: 3rem;
+    color: #D1D5DB;
+    margin-bottom: 1.5rem;
+  }
+  
+  /* Mobile optimizations */
+  @media (max-width: 768px) {
+    .model-table {
+      display: block;
+      overflow-x: auto;
+    }
+    
+    .hide-mobile {
+      display: none;
+    }
+    
+    .action-column {
+      min-width: 140px;
+    }
+  }
+  
+  /* Animation */
   @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
   }
   
-  /* Empty state styling */
-  .empty-state {
-    text-align: center;
-    padding: 3rem 2rem;
-    background-color: var(--neutral-50);
-    border-radius: var(--radius-lg);
-  }
-  
-  .empty-state-icon {
-    font-size: 3rem;
-    color: var(--neutral-300);
-    margin-bottom: 1rem;
+  .fade-in {
+    animation: fadeIn 0.3s ease-out forwards;
   }
   
   /* Pagination styling */
-  .pagination .page-link {
-    border-radius: 0.5rem;
+  .pagination {
+    display: flex;
+    justify-content: center;
+    margin: 2rem 0;
+  }
+  
+  .pagination .page-item .page-link {
     margin: 0 0.25rem;
-    color: var(--neutral-700);
-    border: 1px solid var(--neutral-200);
+    border-radius: 0.5rem;
+    color: #4B5563;
+    border: 1px solid #E5E7EB;
+    transition: all 0.2s ease;
   }
   
   .pagination .page-item.active .page-link {
     background-color: var(--primary-color);
     border-color: var(--primary-color);
+    color: white;
   }
   
-  .pagination .page-link:hover {
-    background-color: var(--neutral-100);
+  .pagination .page-item .page-link:hover:not(.active) {
+    background-color: #F9FAFB;
     color: var(--primary-color);
   }
   
-  .pagination .page-item.active .page-link:hover {
-    background-color: var(--primary-color);
-    color: white;
+  /* Favorites button */
+  .favorite-btn {
+    background: none;
+    border: none;
+    color: #9CA3AF;
+    transition: all 0.2s ease;
+    font-size: 1.25rem;
+    cursor: pointer;
+    padding: 0.25rem;
+  }
+  
+  .favorite-btn:hover, .favorite-btn.active {
+    color: #EF4444;
+  }
+  
+  .favorite-btn.active {
+    transform: scale(1.1);
+  }
+  
+  /* Sort dropdown */
+  .sort-dropdown {
+    border-radius: 9999px;
+    padding: 0.5rem 1rem;
+    border: 1px solid #E5E7EB;
+    background-color: white;
+    font-size: 0.875rem;
+    color: #4B5563;
+    max-width: 200px;
+  }
+  
+  .sort-dropdown:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(91, 70, 244, 0.1);
   }
 </style>
 {% endblock %}
 
 {% block content %}
-<!-- Catalog Header -->
-<div class="catalog-header">
-  <div class="row align-items-center">
-    <div class="col-lg-8">
-      <h1 class="fw-bold mb-2">AI Tools Catalog</h1>
-      <p class="text-muted">Discover and compare {{ ai_tools.count }} AI tools across multiple categories.</p>
-    </div>
-    <div class="col-lg-4 text-lg-end">
-      <div class="d-flex justify-content-lg-end align-items-center">
-        <a href="{% url 'compare' %}" class="btn btn-outline-primary me-3 d-none d-md-inline-flex">
-          <i class="fas fa-balance-scale me-1"></i>Compare Tools
-        </a>
-        
-        <div class="btn-group me-3" role="group" aria-label="View toggle">
-          <button type="button" class="view-toggle-btn active" id="gridViewBtn">
-            <i class="fas fa-th"></i>
-          </button>
-          <button type="button" class="view-toggle-btn" id="listViewBtn">
-            <i class="fas fa-list"></i>
-          </button>
-        </div>
-        
-        {% if featured_ai %}
-        <div class="d-none d-md-flex align-items-center">
-          <div class="me-2">
-            <span class="badge bg-warning text-dark">Featured</span>
-          </div>
-          <a href="{% url 'presentationAI' featured_ai.id %}" class="d-flex align-items-center text-decoration-none">
-            {% if featured_ai.image %}
-              <img src="{{ featured_ai.image.url }}" alt="{{ featured_ai.name }}" class="rounded" width="40" height="40" style="object-fit: cover;">
-            {% else %}
-              <div class="rounded bg-light-purple text-primary d-inline-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                <span class="fw-bold">{{ featured_ai.name.0|upper }}</span>
-              </div>
-            {% endif %}
-            <span class="ms-2 text-truncate" style="max-width: 120px;">{{ featured_ai.name }}</span>
-          </a>
-        </div>
-        {% endif %}
+<!-- Models Header -->
+<div class="models-header">
+  <div class="container">
+    <div class="row align-items-center">
+      <div class="col-lg-6">
+        <h1 class="fw-bold mb-2" style="letter-spacing: -0.02em;">AI Models</h1>
+        <p class="text-muted">{{ ai_tools.count }} models available across multiple providers and categories</p>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Search and Filters Section -->
-<div class="filter-card p-4 mb-4">
-  <div class="row g-3">
-    <!-- Search bar -->
-    <div class="col-lg-8">
-      <form action="" method="GET" class="search-form">
-        <i class="fas fa-search search-icon"></i>
-        <input type="text" class="form-control form-control-lg" name="searchAITool" placeholder="Search by name, provider, or description..." value="{{ searchTerm }}" aria-label="Search AI tools">
-        
-        <!-- Hidden inputs to preserve other parameters -->
-        {% if current_category %}<input type="hidden" name="category" value="{{ current_category }}">{% endif %}
-        {% if sort %}<input type="hidden" name="sort" value="{{ sort }}">{% endif %}
-      </form>
+<!-- Filters Section -->
+<div class="container mb-4">
+  <div class="filters-section">
+    <div class="row g-3 mb-4">
+      <!-- Search bar -->
+      <div class="col-lg-9">
+        <form action="" method="GET" class="search-box">
+          <i class="fas fa-search search-icon"></i>
+          <input type="text" class="form-control" name="searchAITool" placeholder="Search models by name, provider, or description..." value="{{ searchTerm }}" aria-label="Search models">
+          
+          <!-- Hidden inputs to preserve other parameters -->
+          {% if current_category %}<input type="hidden" name="category" value="{{ current_category }}">{% endif %}
+          {% if sort %}<input type="hidden" name="sort" value="{{ sort }}">{% endif %}
+        </form>
+      </div>
+      
+      <!-- Sort dropdown -->
+      <div class="col-lg-3">
+        <form action="" method="GET" class="d-flex">
+          <!-- Hidden inputs to preserve other parameters -->
+          {% if searchTerm %}<input type="hidden" name="searchAITool" value="{{ searchTerm }}">{% endif %}
+          {% if current_category %}<input type="hidden" name="category" value="{{ current_category }}">{% endif %}
+          
+          <select class="form-select sort-dropdown" name="sort" onchange="this.form.submit()" aria-label="Sort by">
+            <option value="">Sort: Relevance</option>
+            <option value="popularity_desc" {% if sort == 'popularity_desc' %}selected{% endif %}>Highest Rated</option>
+            <option value="popularity_asc" {% if sort == 'popularity_asc' %}selected{% endif %}>Lowest Rated</option>
+            <option value="name_asc" {% if sort == 'name_asc' %}selected{% endif %}>Name (A-Z)</option>
+            <option value="name_desc" {% if sort == 'name_desc' %}selected{% endif %}>Name (Z-A)</option>
+          </select>
+        </form>
+      </div>
     </div>
     
-    <!-- Sort dropdown -->
-    <div class="col-lg-4">
-      <form action="" method="GET" class="d-flex">
-        <!-- Hidden inputs to preserve other parameters -->
-        {% if searchTerm %}<input type="hidden" name="searchAITool" value="{{ searchTerm }}">{% endif %}
-        {% if current_category %}<input type="hidden" name="category" value="{{ current_category }}">{% endif %}
-        
-        <select class="form-select form-select-lg" name="sort" onchange="this.form.submit()" aria-label="Sort by">
-          <option value="">Sort by: Relevance</option>
-          <option value="popularity_desc" {% if sort == 'popularity_desc' %}selected{% endif %}>Popularity (High to Low)</option>
-          <option value="popularity_asc" {% if sort == 'popularity_asc' %}selected{% endif %}>Popularity (Low to High)</option>
-          <option value="name_asc" {% if sort == 'name_asc' %}selected{% endif %}>Name (A-Z)</option>
-          <option value="name_desc" {% if sort == 'name_desc' %}selected{% endif %}>Name (Z-A)</option>
-        </select>
-      </form>
-    </div>
-  </div>
-  
-  <!-- Category filters -->
-  <div class="mt-4">
-    <h6 class="fw-bold mb-3">Categories</h6>
-    <div class="d-flex flex-wrap">
-      <a href="?{% if searchTerm %}searchAITool={{ searchTerm }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}" 
-         class="category-pill {% if not current_category %}active{% endif %}">
-        All Categories
-      </a>
-      {% for category in categories %}
-        <a href="?category={{ category }}{% if searchTerm %}&searchAITool={{ searchTerm }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}" 
-           class="category-pill {% if current_category == category %}active{% endif %}">
-          {{ category }}
+    <!-- Filter tags -->
+    <div>
+      <div class="filters-title">Categories</div>
+      <div class="filter-tags">
+        <a href="?{% if searchTerm %}searchAITool={{ searchTerm }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}" 
+           class="filter-tag {% if not current_category %}active{% endif %}">
+          All Categories
         </a>
-      {% endfor %}
-    </div>
-  </div>
-  
-  <!-- Active filters -->
-  {% if searchTerm or current_category %}
-  <div class="mt-3">
-    <div class="d-flex flex-wrap">
-      {% if searchTerm %}
-      <div class="badge-filter bg-primary text-white">
-        <span>Search: "{{ searchTerm }}"</span>
-        <a href="?{% if current_category %}category={{ current_category }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}" 
-           class="text-white text-decoration-none close-icon">
-          <i class="fas fa-times-circle"></i>
-        </a>
+        {% for category in categories %}
+          <a href="?category={{ category }}{% if searchTerm %}&searchAITool={{ searchTerm }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}" 
+             class="filter-tag {% if current_category == category %}active{% endif %}">
+            {{ category }}
+          </a>
+        {% endfor %}
       </div>
+    </div>
+    
+    <!-- Active filters -->
+    {% if searchTerm or current_category or sort %}
+    <div class="active-filters">
+      {% if searchTerm %}
+        <div class="active-filter-tag">
+          <span>Search: "{{ searchTerm }}"</span>
+          <a href="?{% if current_category %}category={{ current_category }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}" 
+             class="text-decoration-none remove-filter">
+            <i class="fas fa-times"></i>
+          </a>
+        </div>
       {% endif %}
       
       {% if current_category %}
-      <div class="badge-filter bg-info text-white">
-        <span>Category: {{ current_category }}</span>
-        <a href="?{% if searchTerm %}searchAITool={{ searchTerm }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}" 
-           class="text-white text-decoration-none close-icon">
-          <i class="fas fa-times-circle"></i>
-        </a>
-      </div>
+        <div class="active-filter-tag">
+          <span>Category: {{ current_category }}</span>
+          <a href="?{% if searchTerm %}searchAITool={{ searchTerm }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}" 
+             class="text-decoration-none remove-filter">
+            <i class="fas fa-times"></i>
+          </a>
+        </div>
       {% endif %}
       
       {% if sort %}
-      <div class="badge-filter bg-secondary text-white">
-        <span>
-          Sort: 
-          {% if sort == 'popularity_desc' %}Popularity (High to Low){% endif %}
-          {% if sort == 'popularity_asc' %}Popularity (Low to High){% endif %}
-          {% if sort == 'name_asc' %}Name (A-Z){% endif %}
-          {% if sort == 'name_desc' %}Name (Z-A){% endif %}
-        </span>
-        <a href="?{% if searchTerm %}searchAITool={{ searchTerm }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}" 
-           class="text-white text-decoration-none close-icon">
-          <i class="fas fa-times-circle"></i>
-        </a>
-      </div>
+        <div class="active-filter-tag">
+          <span>
+            Sort: 
+            {% if sort == 'popularity_desc' %}Highest Rated{% endif %}
+            {% if sort == 'popularity_asc' %}Lowest Rated{% endif %}
+            {% if sort == 'name_asc' %}Name (A-Z){% endif %}
+            {% if sort == 'name_desc' %}Name (Z-A){% endif %}
+          </span>
+          <a href="?{% if searchTerm %}searchAITool={{ searchTerm }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}" 
+             class="text-decoration-none remove-filter">
+            <i class="fas fa-times"></i>
+          </a>
+        </div>
       {% endif %}
       
-      <a href="{% url 'catalog' %}" class="btn btn-sm btn-outline-secondary ms-2">
+      <a href="{% url 'catalog' %}" class="active-filter-tag" style="background-color: #F3F4F6; color: #4B5563;">
+        Clear All
+      </a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Models Table -->
+<div class="container models-wrapper">
+  {% if ai_tools %}
+    <div class="table-responsive">
+      <table class="model-table">
+        <thead>
+          <tr>
+            <th>Model</th>
+            <th class="hide-mobile">Category</th>
+            <th>Rating</th>
+            <th class="text-end action-column">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ai in ai_tools %}
+            <tr class="fade-in" style="animation-delay: {{ forloop.counter0|multiply:0.05 }}s">
+              <td>
+                <div class="model-info-wrapper">
+                  <div class="model-logo">
+                    {% if ai.image %}
+                      <img src="{{ ai.image.url }}" alt="{{ ai.name }}">
+                    {% else %}
+                      <span class="text-white fw-bold">{{ ai.name.0|upper }}</span>
+                    {% endif %}
+                  </div>
+                  <div>
+                    <div class="d-flex align-items-center">
+                      <div class="model-name">{{ ai.name }}</div>
+                      {% if ai.api_type != 'none' %}
+                        <span class="badge-api">
+                          <i class="fas fa-plug me-1"></i>API
+                        </span>
+                      {% endif %}
+                      {% if featured_ai and featured_ai.id == ai.id %}
+                        <span class="badge-featured">
+                          <i class="fas fa-award me-1"></i>Featured
+                        </span>
+                      {% endif %}
+                    </div>
+                    <div class="model-provider">{{ ai.provider }}</div>
+                  </div>
+                </div>
+              </td>
+              <td class="hide-mobile">
+                <span class="model-category">{{ ai.category }}</span>
+              </td>
+              <td>
+                <div class="rating-wrapper">
+                  <div class="rating-stars me-2">
+                    {% for i in "12345" %}
+                      {% if forloop.counter <= ai.popularity|floatformat:"0"|add:"0" %}
+                        <i class="fas fa-star"></i>
+                      {% else %}
+                        <i class="far fa-star"></i>
+                      {% endif %}
+                    {% endfor %}
+                  </div>
+                  <span class="rating-value">{{ ai.popularity }}</span>
+                </div>
+              </td>
+              <td class="text-end">
+                <div class="d-flex align-items-center justify-content-end">
+                  <button class="favorite-btn me-3" title="Add to favorites" 
+                          data-ai-id="{{ ai.id }}" 
+                          onclick="toggleFavorite(event, '{{ ai.id }}')">
+                    <i class="far fa-heart"></i>
+                  </button>
+                  <a href="{% url 'chat' ai.id %}" class="model-action-btn try-btn me-2">
+                    <i class="fas fa-comment-alt me-1"></i> Try
+                  </a>
+                  <div class="dropdown d-inline-block">
+                    <button class="model-action-btn view-btn dropdown-toggle" type="button" id="dropdownMenu{{ ai.id }}" data-bs-toggle="dropdown" aria-expanded="false">
+                      More
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenu{{ ai.id }}">
+                      <li><a class="dropdown-item" href="{% url 'presentationAI' ai.id %}">
+                        <i class="fas fa-info-circle me-2 text-primary"></i>View Details
+                      </a></li>
+                      <li><a class="dropdown-item" href="{% url 'compare' %}?tool1={{ ai.id }}">
+                        <i class="fas fa-balance-scale me-2 text-primary"></i>Compare
+                      </a></li>
+                    </ul>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    
+    <!-- Pagination -->
+    {% if ai_tools.count > 9 %}
+    <nav aria-label="Page navigation">
+      <ul class="pagination">
+        <li class="page-item disabled">
+          <a class="page-link" href="#" tabindex="-1" aria-disabled="true">
+            <i class="fas fa-chevron-left me-1"></i> Previous
+          </a>
+        </li>
+        <li class="page-item active"><a class="page-link" href="#">1</a></li>
+        <li class="page-item"><a class="page-link" href="#">2</a></li>
+        <li class="page-item"><a class="page-link" href="#">3</a></li>
+        <li class="page-item">
+          <a class="page-link" href="#">
+            Next <i class="fas fa-chevron-right ms-1"></i>
+          </a>
+        </li>
+      </ul>
+    </nav>
+    {% endif %}
+    
+  {% else %}
+    <!-- Empty state -->
+    <div class="empty-state">
+      <div class="empty-icon">
+        <i class="fas fa-search"></i>
+      </div>
+      <h3 class="fw-bold mb-3">No models found</h3>
+      <p class="text-muted mb-4">We couldn't find any models matching your search criteria. Try adjusting your filters or search terms.</p>
+      <a href="{% url 'catalog' %}" class="model-action-btn try-btn">
         Clear All Filters
       </a>
     </div>
-  </div>
   {% endif %}
 </div>
-
-<!-- AI Tools Grid -->
-{% if ai_tools %}
-  <div id="toolsContainer" class="grid-view-tools mb-5">
-    {% for ai in ai_tools %}
-    <div class="tool-item fade-in" style="animation-delay: {{ forloop.counter0|multiply:0.05 }}s">
-      <div class="tool-card">
-        <!-- API Connected Badge -->
-        {% if ai.api_type != 'none' %}
-        <div class="api-connected-badge">
-          <i class="fas fa-plug me-1"></i> API
-        </div>
-        {% endif %}
-        
-        <!-- Featured Badge (if this is the featured AI) -->
-        {% if featured_ai and featured_ai.id == ai.id %}
-        <div class="featured-badge">
-          <i class="fas fa-award me-1"></i> Featured
-        </div>
-        {% endif %}
-        
-        <!-- Image -->
-        <div class="card-img-wrapper">
-          {% if ai.image %}
-            <img src="{{ ai.image.url }}" class="card-img-top" alt="{{ ai.name }}">
-          {% else %}
-            <div class="bg-light-purple d-flex align-items-center justify-content-center h-100">
-              <h2 class="text-primary m-0">{{ ai.name.0|upper }}</h2>
-            </div>
-          {% endif %}
-          
-          <!-- Popularity badge -->
-          <span class="popularity-badge">
-            <i class="fas fa-star text-warning me-1"></i> {{ ai.popularity }}/10
-          </span>
-        </div>
-        
-        <!-- Content -->
-        <div class="card-body">
-          <div class="mb-2">
-            <span class="category-pill">{{ ai.category }}</span>
-          </div>
-          
-          <h5 class="card-title fw-bold mb-2">{{ ai.name }}</h5>
-          
-          <p class="provider-badge">
-            <i class="fas fa-building me-1"></i> {{ ai.provider }}
-          </p>
-          
-          <p class="card-text text-muted mb-4">{{ ai.description|truncatechars:100 }}</p>
-          
-          <div class="d-grid gap-2">
-            <div class="d-flex">
-              <a href="{% url 'presentationAI' ai.id %}" class="btn btn-outline-primary btn-sm me-2">
-                View Details
-              </a>
-              <a href="{% url 'chat' ai.id %}" class="btn btn-primary btn-sm">
-                <i class="fas fa-comment-alt me-1"></i> Try It
-              </a>
-            </div>
-            <a href="{% url 'compare' %}?tool1={{ ai.id }}" class="btn btn-outline-secondary btn-sm">
-              <i class="fas fa-balance-scale me-1"></i> Compare
-            </a>
-          </div>
-          
-          <!-- Favorite button -->
-          <button class="favorite-btn" title="Add to favorites" 
-                  data-ai-id="{{ ai.id }}" 
-                  onclick="toggleFavorite(event, '{{ ai.id }}')">
-            <i class="far fa-heart"></i>
-          </button>
-        </div>
-      </div>
-    </div>
-    {% endfor %}
-  </div>
-  
-  <!-- Pagination -->
-  {% if ai_tools.count > 9 %}
-  <nav aria-label="Page navigation">
-    <ul class="pagination justify-content-center">
-      <li class="page-item disabled">
-        <a class="page-link" href="#" tabindex="-1" aria-disabled="true">
-          <i class="fas fa-chevron-left me-1"></i> Previous
-        </a>
-      </li>
-      <li class="page-item active"><a class="page-link" href="#">1</a></li>
-      <li class="page-item"><a class="page-link" href="#">2</a></li>
-      <li class="page-item"><a class="page-link" href="#">3</a></li>
-      <li class="page-item">
-        <a class="page-link" href="#">
-          Next <i class="fas fa-chevron-right ms-1"></i>
-        </a>
-      </li>
-    </ul>
-  </nav>
-  {% endif %}
-  
-{% else %}
-  <!-- Empty state -->
-  <div class="empty-state">
-    <div class="empty-state-icon">
-      <i class="fas fa-search"></i>
-    </div>
-    <h3 class="fw-bold mb-3">No AI tools found</h3>
-    <p class="text-muted mb-4">We couldn't find any AI tools matching your search criteria. Try adjusting your filters or search terms.</p>
-    <a href="{% url 'catalog' %}" class="btn btn-primary">
-      Clear All Filters
-    </a>
-  </div>
-{% endif %}
 {% endblock %}
 
 {% block scripts %}
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
-    // Grid/List view toggle
-    const gridViewBtn = document.getElementById('gridViewBtn');
-    const listViewBtn = document.getElementById('listViewBtn');
-    const toolsContainer = document.getElementById('toolsContainer');
-    
-    gridViewBtn.addEventListener('click', function() {
-      toolsContainer.classList.remove('list-view-tools');
-      toolsContainer.classList.add('grid-view-tools');
-      gridViewBtn.classList.add('active');
-      listViewBtn.classList.remove('active');
-    });
-    
-    listViewBtn.addEventListener('click', function() {
-      toolsContainer.classList.remove('grid-view-tools');
-      toolsContainer.classList.add('list-view-tools');
-      listViewBtn.classList.add('active');
-      gridViewBtn.classList.remove('active');
-    });
-  });
-  
-  // Toggle favorite
+  // Toggle favorite function
   async function toggleFavorite(event, aiId) {
     event.preventDefault();
     const button = event.currentTarget;
@@ -576,10 +654,12 @@
       if (icon.classList.contains('far')) {
         icon.classList.remove('far');
         icon.classList.add('fas');
+        button.classList.add('active');
         showFeedback('Added to favorites!', 'success');
       } else {
         icon.classList.remove('fas');
         icon.classList.add('far');
+        button.classList.remove('active');
         showFeedback('Removed from favorites', 'info');
       }
     } catch (error) {
