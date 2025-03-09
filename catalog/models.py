@@ -1,89 +1,90 @@
 import uuid
 from django.db import models
-from django.core.validators import MinValueValidator, MaxValueValidator, URLValidator
-from django.utils.translation import gettext_lazy as _
+from django.conf import settings
 from django.utils import timezone
+import json
 
 class AITool(models.Model):
-    class Category(models.TextChoices):
-        TRANSCRIPTION = 'Transcription', _('Transcription')
-        IMAGE_GENERATOR = 'Image Generator', _('Image Generator')
-        WORD_PROCESSOR = 'Word Processor', _('Word Processor')
-        OTHER = 'Other', _('Other')
-    
-    # Fields
-    id = models.UUIDField(
-        primary_key=True, 
-        default=uuid.uuid4, 
-        editable=False,
-        help_text=_("Unique identifier for the AI tool")
-    )
-    
-    name = models.CharField(
-        max_length=255,
-        help_text=_("Name of the AI tool"),
-        db_index=True  # Add index for better query performance
-    )
-    
-    provider = models.CharField(
-        max_length=255,
-        help_text=_("Provider or company that created the AI tool"),
-        db_index=True  # Add index for better query performance
-    )
-    
-    endpoint = models.URLField(
-        validators=[URLValidator()],
-        help_text=_("URL of the AI service")
-    )
-    
-    category = models.CharField(
-        max_length=100,
-        choices=Category.choices,
-        default=Category.OTHER,
-        help_text=_("Category of the AI tool"),
-        db_index=True  # Add index for better filtering
-    )
-    
-    description = models.TextField(
-        help_text=_("Detailed description of the AI tool")
-    )
-    
-    popularity = models.IntegerField(
-        validators=[
-            MinValueValidator(0, message=_("Popularity must be at least 0")),
-            MaxValueValidator(100, message=_("Popularity cannot exceed 100"))
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=255)
+    provider = models.CharField(max_length=255)
+    endpoint = models.URLField()
+    category = models.CharField(max_length=100)
+    description = models.TextField()
+    popularity = models.IntegerField()
+    image = models.ImageField(upload_to='ai_images/', null=True, blank=True)
+    # New fields for API integration
+    api_type = models.CharField(
+        max_length=50, 
+        choices=[
+            ('openai', 'OpenAI API'),
+            ('huggingface', 'Hugging Face API'),
+            ('custom', 'Custom Integration'),
+            ('none', 'No Integration')
         ],
-        help_text=_("Popularity rating from 0 to 100")
+        default='none'
     )
+    api_model = models.CharField(max_length=100, blank=True, null=True)
+    api_endpoint = models.CharField(max_length=255, blank=True, null=True)
+    is_featured = models.BooleanField(default=False)
     
-    image = models.ImageField(
-        upload_to='ai_images/', 
-        null=True, 
-        blank=True,
-        help_text=_("Image representing the AI tool")
-    )
-    
-    # Meta information
-    created_at = models.DateTimeField(
-        default=timezone.now,
-        help_text=_("Date and time when this record was created")
-    )
-    
-    updated_at = models.DateTimeField(
-        auto_now=True,
-        help_text=_("Date and time when this record was last updated")
-    )
-    
-    # Methods
     def __str__(self):
         return self.name
-    
-    def get_absolute_url(self):
-        """Returns the URL to access a particular instance of the model."""
-        from django.urls import reverse
-        return reverse('presentationAI', args=[str(self.id)])
+
+
+class UserFavorite(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    ai_tool = models.ForeignKey(AITool, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
-        ordering = ['-popularity', 'name']  # Default ordering by popularity (desc) then name
-        verbose_name = _("AI Tool")
-        verbose_name_plural = _("AI Tools")
+        unique_together = ('user', 'ai_tool')
+        
+    def __str__(self):
+        return f"{self.user.username} - {self.ai_tool.name}"
+
+
+class Conversation(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
+    ai_tool = models.ForeignKey(AITool, on_delete=models.CASCADE)
+    title = models.CharField(max_length=255, default="New Conversation")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        user_str = self.user.username if self.user else "Anonymous"
+        return f"{user_str} - {self.ai_tool.name} - {self.title}"
+    
+    def get_messages(self):
+        return self.message_set.all().order_by('timestamp')
+    
+    def to_json(self):
+        """Convert conversation to JSON format for export"""
+        data = {
+            'id': str(self.id),
+            'title': self.title,
+            'ai_tool': self.ai_tool.name,
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat(),
+            'messages': [
+                {
+                    'content': msg.content,
+                    'is_user': msg.is_user,
+                    'timestamp': msg.timestamp.isoformat()
+                }
+                for msg in self.get_messages()
+            ]
+        }
+        return json.dumps(data, indent=2)
+
+
+class Message(models.Model):
+    conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE)
+    content = models.TextField()
+    is_user = models.BooleanField(default=True)  # True if from user, False if from AI
+    timestamp = models.DateTimeField(default=timezone.now)
+    
+    def __str__(self):
+        sender = "User" if self.is_user else "AI"
+        return f"{sender} - {self.timestamp.strftime('%Y-%m-%d %H:%M')}"

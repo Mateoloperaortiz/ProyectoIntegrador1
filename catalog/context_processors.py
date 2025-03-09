@@ -1,8 +1,7 @@
-from catalog.models import AITool
+from catalog.views import CATEGORIES
 
 def ai_categories(request):
     """
     Context processor to make AI tool categories available in all templates.
     """
-    categories = [choice[0] for choice in AITool.Category.choices]
-    return {'categories': categories}
+    return {'categories': CATEGORIES}

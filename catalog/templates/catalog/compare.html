@@ -1,0 +1,521 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load catalog_extras %}
+
+{% block title %}Compare AI Tools | InspireAI{% endblock %}
+
+{% block extra_css %}
+<style>
+  .compare-header {
+    margin-bottom: 2rem;
+  }
+  
+  .compare-card {
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    transition: all 0.3s ease;
+    height: 100%;
+    background-color: white;
+  }
+  
+  .compare-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+  }
+  
+  .compare-tool-header {
+    padding: 1.5rem;
+    text-align: center;
+    background-color: var(--neutral-50);
+    border-bottom: 1px solid var(--neutral-200);
+  }
+  
+  .compare-tool-image {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    border-radius: var(--radius-md);
+    margin-bottom: 1rem;
+    box-shadow: var(--shadow-sm);
+  }
+  
+  .compare-tool-avatar {
+    width: 100px;
+    height: 100px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin: 0 auto 1rem;
+    color: white;
+    background: linear-gradient(135deg, var(--primary-color) 0%, #8C65F7 100%);
+  }
+  
+  .compare-tool-title {
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+  }
+  
+  .compare-tool-provider {
+    color: var(--neutral-500);
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .compare-row {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--neutral-200);
+    display: flex;
+  }
+  
+  .compare-row:nth-child(odd) {
+    background-color: var(--neutral-50);
+  }
+  
+  .compare-feature-name {
+    width: 150px;
+    font-weight: 600;
+    margin-right: 1.5rem;
+    color: var(--neutral-700);
+  }
+  
+  .compare-feature-value {
+    flex: 1;
+  }
+  
+  .compare-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    border-radius: 2rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+  
+  .compare-badge-primary {
+    background-color: rgba(91, 70, 244, 0.1);
+    color: var(--primary-color);
+  }
+  
+  .compare-badge-success {
+    background-color: rgba(16, 185, 129, 0.1);
+    color: var(--success-color);
+  }
+  
+  .compare-badge-warning {
+    background-color: rgba(245, 158, 11, 0.1);
+    color: var(--warning-color);
+  }
+  
+  .compare-rating {
+    display: flex;
+    align-items: center;
+  }
+  
+  .compare-rating-stars {
+    color: var(--warning-color);
+    margin-right: 0.5rem;
+  }
+  
+  .compare-rating-value {
+    font-weight: 600;
+  }
+  
+  .compare-actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    padding: 1.5rem;
+  }
+  
+  .category-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    border-radius: 2rem;
+    font-size: 0.8rem;
+    background-color: var(--primary-color);
+    color: white;
+    margin-bottom: 1rem;
+  }
+  
+  .feature-present {
+    color: var(--success-color);
+  }
+  
+  .feature-not-present {
+    color: var(--danger-color);
+  }
+  
+  .compare-selector {
+    position: relative;
+    margin-bottom: 2rem;
+  }
+  
+  .compare-selector-label {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--neutral-800);
+  }
+  
+  .compare-blank {
+    text-align: center;
+    padding: 3rem 2rem;
+    background-color: var(--neutral-50);
+    border-radius: var(--radius-lg);
+    border: 2px dashed var(--neutral-300);
+  }
+  
+  .compare-blank-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: var(--neutral-100);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+    color: var(--neutral-500);
+  }
+  
+  .animate-on-scroll {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+  
+  .animate-on-scroll.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="compare-header animate-on-scroll">
+  <div class="row align-items-center">
+    <div class="col-lg-8">
+      <h1 class="fw-bold mb-2">Compare AI Tools</h1>
+      <p class="text-muted">Compare features and capabilities of different AI tools side by side</p>
+    </div>
+    <div class="col-lg-4 text-lg-end">
+      <a href="{% url 'catalog' %}" class="btn btn-outline-primary">
+        <i class="fas fa-arrow-left me-2"></i>Back to Catalog
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="row mb-5">
+  <!-- Tool 1 Selector -->
+  <div class="col-md-6">
+    <div class="compare-selector animate-on-scroll" style="animation-delay: 0.1s">
+      <label class="compare-selector-label">First AI Tool</label>
+      <select class="form-select form-select-lg" id="tool1Selector">
+        <option selected>Select an AI tool</option>
+        {% for ai in all_tools %}
+          <option value="{{ ai.id }}" {% if tool1 and tool1.id == ai.id %}selected{% endif %}>{{ ai.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+  
+  <!-- Tool 2 Selector -->
+  <div class="col-md-6">
+    <div class="compare-selector animate-on-scroll" style="animation-delay: 0.2s">
+      <label class="compare-selector-label">Second AI Tool</label>
+      <select class="form-select form-select-lg" id="tool2Selector">
+        <option selected>Select an AI tool</option>
+        {% for ai in all_tools %}
+          <option value="{{ ai.id }}" {% if tool2 and tool2.id == ai.id %}selected{% endif %}>{{ ai.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <!-- Tool 1 Card -->
+  <div class="col-md-6 mb-4">
+    {% if tool1 %}
+      <div class="compare-card shadow-sm animate-on-scroll" style="animation-delay: 0.3s">
+        <div class="compare-tool-header">
+          {% if tool1.image %}
+            <img src="{{ tool1.image.url }}" alt="{{ tool1.name }}" class="compare-tool-image">
+          {% else %}
+            <div class="compare-tool-avatar">
+              {{ tool1.name.0|upper }}
+            </div>
+          {% endif %}
+          
+          <span class="category-badge">{{ tool1.category }}</span>
+          
+          <h2 class="compare-tool-title h4">{{ tool1.name }}</h2>
+          <p class="compare-tool-provider">{{ tool1.provider }}</p>
+          
+          <div class="compare-rating">
+            <div class="compare-rating-stars">
+              {% for i in "12345678910"|make_list %}
+                <i class="{% if forloop.counter <= tool1.popularity %}fas{% else %}far{% endif %} fa-star"></i>
+              {% endfor %}
+            </div>
+            <span class="compare-rating-value">{{ tool1.popularity }}/10</span>
+          </div>
+        </div>
+        
+        <!-- Tool 1 Features -->
+        <div class="compare-features">
+          <div class="compare-row">
+            <div class="compare-feature-name">Description</div>
+            <div class="compare-feature-value">{{ tool1.description|truncatechars:150 }}</div>
+          </div>
+          
+          <div class="compare-row">
+            <div class="compare-feature-name">API Integration</div>
+            <div class="compare-feature-value">
+              {% if tool1.api_type != 'none' %}
+                <span class="compare-badge compare-badge-success">
+                  <i class="fas fa-check-circle me-1"></i>Available
+                </span>
+                <div class="mt-1 small text-muted">{{ tool1.get_api_type_display }}</div>
+              {% else %}
+                <span class="compare-badge compare-badge-warning">
+                  <i class="fas fa-times-circle me-1"></i>Not Available
+                </span>
+              {% endif %}
+            </div>
+          </div>
+          
+          <div class="compare-row">
+            <div class="compare-feature-name">Official Website</div>
+            <div class="compare-feature-value">
+              <a href="{{ tool1.endpoint }}" target="_blank" class="text-truncate d-inline-block" style="max-width: 250px;">
+                {{ tool1.endpoint }}
+              </a>
+            </div>
+          </div>
+          
+          <div class="compare-row">
+            <div class="compare-feature-name">Free Version</div>
+            <div class="compare-feature-value">
+              <i class="fas fa-check-circle feature-present"></i>
+            </div>
+          </div>
+          
+          <div class="compare-row">
+            <div class="compare-feature-name">Mobile Support</div>
+            <div class="compare-feature-value">
+              <i class="fas fa-check-circle feature-present"></i>
+            </div>
+          </div>
+        </div>
+        
+        <div class="compare-actions">
+          <a href="{% url 'presentationAI' tool1.id %}" class="btn btn-primary">
+            <i class="fas fa-info-circle me-1"></i>View Details
+          </a>
+          <a href="{% url 'chat' tool1.id %}" class="btn btn-success">
+            <i class="fas fa-comment-alt me-1"></i>Try It
+          </a>
+        </div>
+      </div>
+    {% else %}
+      <div class="compare-blank animate-on-scroll" style="animation-delay: 0.3s">
+        <div class="compare-blank-icon">
+          <i class="fas fa-robot"></i>
+        </div>
+        <h3 class="h5 fw-bold mb-2">Select First AI Tool</h3>
+        <p class="text-muted">Choose an AI tool from the dropdown above to compare</p>
+      </div>
+    {% endif %}
+  </div>
+  
+  <!-- Tool 2 Card -->
+  <div class="col-md-6 mb-4">
+    {% if tool2 %}
+      <div class="compare-card shadow-sm animate-on-scroll" style="animation-delay: 0.4s">
+        <div class="compare-tool-header">
+          {% if tool2.image %}
+            <img src="{{ tool2.image.url }}" alt="{{ tool2.name }}" class="compare-tool-image">
+          {% else %}
+            <div class="compare-tool-avatar">
+              {{ tool2.name.0|upper }}
+            </div>
+          {% endif %}
+          
+          <span class="category-badge">{{ tool2.category }}</span>
+          
+          <h2 class="compare-tool-title h4">{{ tool2.name }}</h2>
+          <p class="compare-tool-provider">{{ tool2.provider }}</p>
+          
+          <div class="compare-rating">
+            <div class="compare-rating-stars">
+              {% for i in "12345678910"|make_list %}
+                <i class="{% if forloop.counter <= tool2.popularity %}fas{% else %}far{% endif %} fa-star"></i>
+              {% endfor %}
+            </div>
+            <span class="compare-rating-value">{{ tool2.popularity }}/10</span>
+          </div>
+        </div>
+        
+        <!-- Tool 2 Features -->
+        <div class="compare-features">
+          <div class="compare-row">
+            <div class="compare-feature-name">Description</div>
+            <div class="compare-feature-value">{{ tool2.description|truncatechars:150 }}</div>
+          </div>
+          
+          <div class="compare-row">
+            <div class="compare-feature-name">API Integration</div>
+            <div class="compare-feature-value">
+              {% if tool2.api_type != 'none' %}
+                <span class="compare-badge compare-badge-success">
+                  <i class="fas fa-check-circle me-1"></i>Available
+                </span>
+                <div class="mt-1 small text-muted">{{ tool2.get_api_type_display }}</div>
+              {% else %}
+                <span class="compare-badge compare-badge-warning">
+                  <i class="fas fa-times-circle me-1"></i>Not Available
+                </span>
+              {% endif %}
+            </div>
+          </div>
+          
+          <div class="compare-row">
+            <div class="compare-feature-name">Official Website</div>
+            <div class="compare-feature-value">
+              <a href="{{ tool2.endpoint }}" target="_blank" class="text-truncate d-inline-block" style="max-width: 250px;">
+                {{ tool2.endpoint }}
+              </a>
+            </div>
+          </div>
+          
+          <div class="compare-row">
+            <div class="compare-feature-name">Free Version</div>
+            <div class="compare-feature-value">
+              <i class="fas fa-check-circle feature-present"></i>
+            </div>
+          </div>
+          
+          <div class="compare-row">
+            <div class="compare-feature-name">Mobile Support</div>
+            <div class="compare-feature-value">
+              <i class="fas fa-times-circle feature-not-present"></i>
+            </div>
+          </div>
+        </div>
+        
+        <div class="compare-actions">
+          <a href="{% url 'presentationAI' tool2.id %}" class="btn btn-primary">
+            <i class="fas fa-info-circle me-1"></i>View Details
+          </a>
+          <a href="{% url 'chat' tool2.id %}" class="btn btn-success">
+            <i class="fas fa-comment-alt me-1"></i>Try It
+          </a>
+        </div>
+      </div>
+    {% else %}
+      <div class="compare-blank animate-on-scroll" style="animation-delay: 0.4s">
+        <div class="compare-blank-icon">
+          <i class="fas fa-robot"></i>
+        </div>
+        <h3 class="h5 fw-bold mb-2">Select Second AI Tool</h3>
+        <p class="text-muted">Choose an AI tool from the dropdown above to compare</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+{% if tool1 and tool2 %}
+  <div class="mt-4 text-center animate-on-scroll" style="animation-delay: 0.5s">
+    <h3 class="h5 mb-3">Which AI tool is better?</h3>
+    <p class="text-muted mb-4">Based on features and user ratings</p>
+    
+    <div class="d-flex justify-content-center align-items-center">
+      <div class="text-center px-4">
+        <h4 class="fw-bold">{{ tool1.name }}</h4>
+        <div class="display-4 fw-bold text-primary">{{ tool1.popularity }}</div>
+      </div>
+      
+      <div class="px-4">
+        <span class="display-6">vs</span>
+      </div>
+      
+      <div class="text-center px-4">
+        <h4 class="fw-bold">{{ tool2.name }}</h4>
+        <div class="display-4 fw-bold text-primary">{{ tool2.popularity }}</div>
+      </div>
+    </div>
+    
+    <div class="mt-4">
+      {% if tool1.popularity > tool2.popularity %}
+        <div class="alert alert-success">
+          <strong>{{ tool1.name }}</strong> has a higher popularity rating ({{ tool1.popularity }}/10 vs {{ tool2.popularity }}/10)
+        </div>
+      {% elif tool2.popularity > tool1.popularity %}
+        <div class="alert alert-success">
+          <strong>{{ tool2.name }}</strong> has a higher popularity rating ({{ tool2.popularity }}/10 vs {{ tool1.popularity }}/10)
+        </div>
+      {% else %}
+        <div class="alert alert-info">
+          Both tools have the same popularity rating ({{ tool1.popularity }}/10)
+        </div>
+      {% endif %}
+    </div>
+  </div>
+{% endif %}
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Animation on scroll
+    const animatedElements = document.querySelectorAll('.animate-on-scroll');
+    
+    // Initial check for elements in viewport
+    animateElementsInViewport();
+    
+    // Add animation on scroll
+    window.addEventListener('scroll', animateElementsInViewport);
+    
+    function animateElementsInViewport() {
+      animatedElements.forEach(element => {
+        const position = element.getBoundingClientRect();
+        
+        // Check if element is in viewport
+        if(position.top < window.innerHeight * 0.9) {
+          element.classList.add('visible');
+        }
+      });
+    }
+    
+    // Tool selectors
+    const tool1Selector = document.getElementById('tool1Selector');
+    const tool2Selector = document.getElementById('tool2Selector');
+    
+    // Handle tool selection
+    if (tool1Selector && tool2Selector) {
+      tool1Selector.addEventListener('change', function() {
+        updateComparisonUrl();
+      });
+      
+      tool2Selector.addEventListener('change', function() {
+        updateComparisonUrl();
+      });
+      
+      function updateComparisonUrl() {
+        const tool1 = tool1Selector.value;
+        const tool2 = tool2Selector.value;
+        
+        if (tool1 !== 'Select an AI tool' && tool2 !== 'Select an AI tool') {
+          window.location.href = `/catalog/compare/?tool1=${tool1}&tool2=${tool2}`;
+        } else if (tool1 !== 'Select an AI tool') {
+          window.location.href = `/catalog/compare/?tool1=${tool1}`;
+        } else if (tool2 !== 'Select an AI tool') {
+          window.location.href = `/catalog/compare/?tool2=${tool2}`;
+        }
+      }
+    }
+  });
+</script>
+{% endblock %}

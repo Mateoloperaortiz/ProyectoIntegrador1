@@ -1,53 +1,40 @@
 from django.contrib import admin
-from django.utils.html import format_html
-from .models import AITool
+from .models import AITool, UserFavorite, Conversation, Message
 
+class MessageInline(admin.TabularInline):
+    model = Message
+    extra = 0
+    readonly_fields = ('timestamp',)
 
-@admin.register(AITool)
+class ConversationAdmin(admin.ModelAdmin):
+    list_display = ('title', 'ai_tool', 'user', 'created_at', 'updated_at')
+    list_filter = ('ai_tool', 'created_at')
+    search_fields = ('title', 'user__username', 'ai_tool__name')
+    readonly_fields = ('created_at', 'updated_at')
+    inlines = [MessageInline]
+
+class UserFavoriteAdmin(admin.ModelAdmin):
+    list_display = ('user', 'ai_tool', 'created_at')
+    list_filter = ('created_at',)
+    search_fields = ('user__username', 'ai_tool__name')
+
 class AIToolAdmin(admin.ModelAdmin):
-    list_display = ('name', 'provider', 'category', 'popularity_display', 'created_at', 'updated_at')
-    list_filter = ('category', 'provider', 'created_at')
+    list_display = ('name', 'provider', 'category', 'popularity', 'api_type', 'is_featured')
+    list_filter = ('category', 'api_type', 'is_featured')
     search_fields = ('name', 'provider', 'description')
-    readonly_fields = ('created_at', 'updated_at', 'image_preview')
     fieldsets = (
         ('Basic Information', {
-            'fields': ('name', 'provider', 'category')
+            'fields': ('id', 'name', 'provider', 'category', 'description', 'popularity', 'image', 'endpoint')
         }),
-        ('Details', {
-            'fields': ('description', 'endpoint', 'popularity')
-        }),
-        ('Media', {
-            'fields': ('image', 'image_preview')
-        }),
-        ('Metadata', {
-            'fields': ('created_at', 'updated_at'),
-            'classes': ('collapse',)
+        ('API Integration', {
+            'fields': ('api_type', 'api_model', 'api_endpoint', 'is_featured'),
+            'classes': ('collapse',),
+            'description': 'Configure external API integrations for this AI tool'
         }),
     )
-    
-    def popularity_display(self, obj):
-        """Display popularity as a colored bar based on the value."""
-        # Define color based on popularity
-        if obj.popularity >= 80:
-            color = 'green'
-        elif obj.popularity >= 50:
-            color = 'orange'
-        else:
-            color = 'red'
-            
-        return format_html(
-            '<div style="width:100px; height:10px; background-color:#f0f0f0;">'
-            '<div style="width:{}px; height:10px; background-color:{};">&nbsp;</div>'
-            '</div> {}%',
-            obj.popularity, color, obj.popularity
-        )
-    
-    popularity_display.short_description = 'Popularity'
-    
-    def image_preview(self, obj):
-        """Display a preview of the image in the admin."""
-        if obj.image:
-            return format_html('<img src="{}" width="150" height="auto" />', obj.image.url)
-        return "No image available"
-    
-    image_preview.short_description = 'Image Preview'
+    readonly_fields = ('id',)
+
+# Register models
+admin.site.register(AITool, AIToolAdmin)
+admin.site.register(UserFavorite, UserFavoriteAdmin)
+admin.site.register(Conversation, ConversationAdmin)
