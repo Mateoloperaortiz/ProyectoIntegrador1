@@ -214,7 +214,7 @@
     <div class="compare-selector animate-on-scroll" style="animation-delay: 0.1s">
       <label class="compare-selector-label">First AI Tool</label>
       <select class="form-select form-select-lg" id="tool1Selector">
-        <option selected>Select an AI tool</option>
+        <option value="">Select an AI tool</option>
         {% for ai in all_tools %}
           <option value="{{ ai.id }}" {% if tool1 and tool1.id == ai.id %}selected{% endif %}>{{ ai.name }}</option>
         {% endfor %}
@@ -227,7 +227,7 @@
     <div class="compare-selector animate-on-scroll" style="animation-delay: 0.2s">
       <label class="compare-selector-label">Second AI Tool</label>
       <select class="form-select form-select-lg" id="tool2Selector">
-        <option selected>Select an AI tool</option>
+        <option value="">Select an AI tool</option>
         {% for ai in all_tools %}
           <option value="{{ ai.id }}" {% if tool2 and tool2.id == ai.id %}selected{% endif %}>{{ ai.name }}</option>
         {% endfor %}
@@ -507,12 +507,13 @@
         const tool1 = tool1Selector.value;
         const tool2 = tool2Selector.value;
         
-        if (tool1 !== 'Select an AI tool' && tool2 !== 'Select an AI tool') {
-          window.location.href = `/catalog/compare/?tool1=${tool1}&tool2=${tool2}`;
-        } else if (tool1 !== 'Select an AI tool') {
-          window.location.href = `/catalog/compare/?tool1=${tool1}`;
-        } else if (tool2 !== 'Select an AI tool') {
-          window.location.href = `/catalog/compare/?tool2=${tool2}`;
+        // Check if both tools are selected and different from the default option
+        if (tool1 !== 'Select an AI tool' && tool1 !== '' && tool2 !== 'Select an AI tool' && tool2 !== '') {
+          window.location.href = `{% url 'catalog:compare' %}?tool1=${tool1}&tool2=${tool2}`;
+        } else if (tool1 !== 'Select an AI tool' && tool1 !== '') {
+          window.location.href = `{% url 'catalog:compare' %}?tool1=${tool1}`;
+        } else if (tool2 !== 'Select an AI tool' && tool2 !== '') {
+          window.location.href = `{% url 'catalog:compare' %}?tool2=${tool2}`;
         }
       }
     }

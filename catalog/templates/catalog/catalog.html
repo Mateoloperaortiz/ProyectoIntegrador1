@@ -5,22 +5,554 @@
 {% block title %}AI Models | InspireAI{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'catalog/css/openrouter-inspired.css' %}">
-{% endblock %}
-
-{% block styles %}
 <style>
-  @media (max-width: 768px) {
-    .hide-mobile {
-      display: none;
+  /* Modern, clean styling for catalog page */
+  :root {
+    --primary-color: #5B46F4;
+    --primary-light: #7868fa;
+    --primary-dark: #4935c8;
+    --secondary-color: #FF8A3D;
+    --neutral-50: #F9FAFB;
+    --neutral-100: #F3F4F6;
+    --neutral-200: #E5E7EB;
+    --neutral-300: #D1D5DB;
+    --neutral-500: #6B7280;
+    --neutral-700: #374151;
+    --neutral-900: #111827;
+    --success-color: #10B981;
+    --warning-color: #F59E0B;
+    --danger-color: #EF4444;
+    --info-color: #3B82F6;
+    --radius: 12px;
+    --transition: 0.2s ease;
+  }
+  
+  /* Page layout */
+  .catalog-container {
+    background-color: var(--neutral-50);
+    min-height: calc(100vh - 60px);
+    padding-bottom: 3rem;
+  }
+  
+  .catalog-header {
+    background: linear-gradient(180deg, rgba(91, 70, 244, 0.05) 0%, rgba(255, 255, 255, 0) 100%);
+    padding: 3rem 0 2rem;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid var(--neutral-100);
+  }
+  
+  .header-title {
+    font-weight: 800;
+    font-size: 2.5rem;
+    margin-bottom: 0.75rem;
+    color: var(--neutral-900);
+  }
+  
+  .header-subtitle {
+    font-size: 1.125rem;
+    color: var(--neutral-700);
+    max-width: 700px;
+  }
+  
+  /* Layout Grid */
+  .layout-grid {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 2rem;
+  }
+  
+  /* Filters sidebar */
+  .filters-container {
+    position: sticky;
+    top: 1.5rem;
+    background: white;
+    border-radius: var(--radius);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    border: 1px solid var(--neutral-200);
+    height: fit-content;
+  }
+  
+  .filters-header {
+    padding: 1.25rem;
+    border-bottom: 1px solid var(--neutral-200);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .filters-title {
+    font-weight: 600;
+    font-size: 1.125rem;
+    color: var(--neutral-900);
+    margin: 0;
+  }
+  
+  .filters-clear {
+    font-size: 0.875rem;
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 500;
+  }
+  
+  .filters-clear:hover {
+    text-decoration: underline;
+  }
+  
+  .filters-body {
+    padding: 1.25rem;
+  }
+  
+  .filter-group {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--neutral-200);
+  }
+  
+  .filter-group:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+  
+  .filter-group-title {
+    font-weight: 600;
+    font-size: 0.875rem;
+    margin-bottom: 1rem;
+    color: var(--neutral-700);
+  }
+  
+  .search-container {
+    position: relative;
+    margin-bottom: 1rem;
+  }
+  
+  .search-input {
+    width: 100%;
+    padding: 0.75rem 1rem 0.75rem 2.5rem;
+    border: 1px solid var(--neutral-200);
+    border-radius: var(--radius);
+    font-size: 0.875rem;
+    transition: all var(--transition);
+  }
+  
+  .search-input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(91, 70, 244, 0.1);
+    outline: none;
+  }
+  
+  .search-icon {
+    position: absolute;
+    left: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--neutral-500);
+  }
+  
+  /* Filter options list */
+  .filter-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .filter-option {
+    display: flex;
+    align-items: center;
+  }
+  
+  .filter-radio {
+    width: 16px;
+    height: 16px;
+    margin-right: 0.5rem;
+    cursor: pointer;
+  }
+  
+  .filter-label {
+    font-size: 0.875rem;
+    color: var(--neutral-700);
+    cursor: pointer;
+  }
+  
+  /* Active filters */
+  .active-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--neutral-200);
+  }
+  
+  .active-filter-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--neutral-700);
+    margin-right: 0.5rem;
+  }
+  
+  .active-filter-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.375rem 0.75rem;
+    background: white;
+    border: 1px solid var(--neutral-200);
+    border-radius: 100px;
+    font-size: 0.75rem;
+    color: var(--neutral-700);
+  }
+  
+  .tag-remove {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--neutral-500);
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--neutral-100);
+    transition: all var(--transition);
+  }
+  
+  .tag-remove:hover {
+    background: var(--neutral-200);
+    color: var(--neutral-700);
+  }
+  
+  /* Model cards */
+  .models-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+  }
+  
+  .model-card {
+    background: white;
+    border-radius: var(--radius);
+    border: 1px solid var(--neutral-200);
+    transition: all var(--transition);
+    overflow: hidden;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .model-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.05);
+    border-color: var(--primary-light);
+  }
+  
+  .model-header {
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    border-bottom: 1px solid var(--neutral-100);
+  }
+  
+  .model-logo {
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--primary-light), var(--primary-color));
+    color: white;
+    font-weight: 600;
+    font-size: 1.25rem;
+  }
+  
+  .model-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  .model-title {
+    font-weight: 600;
+    font-size: 1.125rem;
+    color: var(--neutral-900);
+    margin-bottom: 0.25rem;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  
+  .model-provider {
+    font-size: 0.875rem;
+    color: var(--neutral-500);
+  }
+  
+  .model-badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.625rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  
+  .badge-api {
+    background-color: rgba(59, 130, 246, 0.1);
+    color: var(--info-color);
+  }
+  
+  .badge-featured {
+    background-color: rgba(245, 158, 11, 0.1);
+    color: var(--warning-color);
+  }
+  
+  .model-content {
+    padding: 1.5rem;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .model-description {
+    font-size: 0.875rem;
+    color: var(--neutral-700);
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+  .model-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: auto;
+    margin-bottom: 1.5rem;
+  }
+  
+  .model-tag {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    background: rgba(91, 70, 244, 0.1);
+    color: var(--primary-color);
+    border-radius: 100px;
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+  
+  .model-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--neutral-100);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .model-price {
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+  
+  .price-free {
+    color: var(--success-color);
+  }
+  
+  .price-paid {
+    color: var(--neutral-700);
+  }
+  
+  .model-actions {
+    display: flex;
+    gap: 0.75rem;
+  }
+  
+  .btn-model {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all var(--transition);
+  }
+  
+  .btn-outline {
+    border: 1px solid var(--neutral-200);
+    color: var(--neutral-700);
+    background: transparent;
+  }
+  
+  .btn-outline:hover {
+    border-color: var(--neutral-300);
+    color: var(--neutral-900);
+    background: var(--neutral-50);
+  }
+  
+  .btn-primary {
+    border: 1px solid var(--primary-color);
+    color: white;
+    background: var(--primary-color);
+  }
+  
+  .btn-primary:hover {
+    background: var(--primary-dark);
+    border-color: var(--primary-dark);
+    color: white;
+  }
+  
+  /* Empty state */
+  .empty-state {
+    padding: 4rem 2rem;
+    text-align: center;
+    background: white;
+    border-radius: var(--radius);
+    border: 1px solid var(--neutral-200);
+  }
+  
+  .empty-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--neutral-100);
+    color: var(--neutral-500);
+    font-size: 1.5rem;
+  }
+  
+  .empty-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    color: var(--neutral-900);
+  }
+  
+  .empty-description {
+    color: var(--neutral-500);
+    margin-bottom: 1.5rem;
+    font-size: 0.95rem;
+    max-width: 450px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  
+  /* Pagination */
+  .pagination-container {
+    margin-top: 2.5rem;
+    display: flex;
+    justify-content: center;
+  }
+  
+  .pagination {
+    display: flex;
+    gap: 0.25rem;
+  }
+  
+  .page-item {
+    display: inline-block;
+  }
+  
+  .page-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    color: var(--neutral-700);
+    background: white;
+    border: 1px solid var(--neutral-200);
+    transition: all var(--transition);
+  }
+  
+  .page-link:hover:not(.disabled):not(.active) {
+    background: var(--neutral-100);
+  }
+  
+  .page-item.active .page-link {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+  }
+  
+  .page-item.disabled .page-link {
+    opacity: 0.5;
+    cursor: default;
+  }
+  
+  /* Mobile filters toggle */
+  .mobile-filters-toggle {
+    display: none;
+    margin-bottom: 1.5rem;
+  }
+  
+  /* Responsive */
+  @media (max-width: 992px) {
+    .header-title {
+      font-size: 2rem;
     }
     
-    .action-column {
-      min-width: 140px;
+    .layout-grid {
+      grid-template-columns: 240px 1fr;
+      gap: 1.5rem;
+    }
+    
+    .models-grid {
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
     }
   }
   
-  /* Animation */
+  @media (max-width: 768px) {
+    .layout-grid {
+      grid-template-columns: 1fr;
+    }
+    
+    .filters-container {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 1000;
+      height: 100%;
+      border-radius: 0;
+      overflow-y: auto;
+    }
+    
+    .filters-container.active {
+      display: block;
+    }
+    
+    .mobile-filters-toggle {
+      display: block;
+    }
+    
+    .models-grid {
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    }
+    
+    .model-header, .model-content, .model-footer {
+      padding: 1rem;
+    }
+  }
+  
+  @media (max-width: 576px) {
+    .models-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  
+  /* Animations */
   @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
@@ -30,177 +562,139 @@
     animation: fadeIn 0.3s ease-out forwards;
   }
   
-  /* Pagination styling */
-  .pagination {
-    display: flex;
-    justify-content: center;
-    margin: 2rem 0;
-  }
-  
-  .pagination .page-item .page-link {
-    margin: 0 0.25rem;
-    border-radius: 0.5rem;
-    color: #4B5563;
-    border: 1px solid #E5E7EB;
-    transition: all 0.2s ease;
-  }
-  
-  .pagination .page-item.active .page-link {
-    background-color: var(--primary-color);
-    border-color: var(--primary-color);
-    color: white;
-  }
-  
-  .pagination .page-item .page-link:hover:not(.active) {
-    background-color: #F9FAFB;
-    color: var(--primary-color);
-  }
-  
-  /* Favorites button */
-  .favorite-btn {
-    background: none;
-    border: none;
-    color: #9CA3AF;
-    transition: all 0.2s ease;
-    font-size: 1.25rem;
-    cursor: pointer;
-    padding: 0.25rem;
-  }
-  
-  .favorite-btn:hover, .favorite-btn.active {
-    color: #EF4444;
-  }
-  
-  .favorite-btn.active {
-    transform: scale(1.1);
-  }
-  
-  /* Sort dropdown */
-  .sort-dropdown {
-    border-radius: 9999px;
-    padding: 0.5rem 1rem;
-    border: 1px solid #E5E7EB;
-    background-color: white;
-    font-size: 0.875rem;
-    color: #4B5563;
-    max-width: 200px;
-  }
-  
-  .sort-dropdown:focus {
-    outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(91, 70, 244, 0.1);
-  }
+  .delay-1 { animation-delay: 0.05s; }
+  .delay-2 { animation-delay: 0.1s; }
+  .delay-3 { animation-delay: 0.15s; }
+  .delay-4 { animation-delay: 0.2s; }
+  .delay-5 { animation-delay: 0.25s; }
+  .delay-6 { animation-delay: 0.3s; }
+  .delay-7 { animation-delay: 0.35s; }
+  .delay-8 { animation-delay: 0.4s; }
+  .delay-9 { animation-delay: 0.45s; }
+  .delay-10 { animation-delay: 0.5s; }
 </style>
 {% endblock %}
 
 {% block content %}
-<!-- Models Header -->
-<header class="models-header">
-  <div class="container">
-    <h1 class="header-title">AI Models</h1>
-    <p class="header-subtitle">Explore our curated collection of AI models and tools to enhance your projects and workflows.</p>
-  </div>
-</header>
+<div class="catalog-container">
+  <!-- Catalog Header -->
+  <header class="catalog-header">
+    <div class="container">
+      <h1 class="header-title">AI Models Catalog</h1>
+      <p class="header-subtitle">Explore our curated collection of AI models and tools to enhance your projects and workflows.</p>
+    </div>
+  </header>
 
-<div class="container">
-  <div class="row">
-    <!-- Filters Sidebar -->
-    <div class="col-lg-3 col-md-4 mb-4">
-      <div class="filters-sidebar">
-        <div class="filters-title">
-          <span>Filters</span>
-          {% if request.GET.q or request.GET.category or request.GET.pricing %}
-            <a href="{% url 'catalog:catalog' %}" class="btn btn-sm btn-outline-secondary">Clear All</a>
-          {% endif %}
-        </div>
-        
-        <!-- Search -->
-        <div class="filter-section">
-          <div class="search-container">
-            <i class="fas fa-search search-icon"></i>
-            <input type="text" class="search-input" placeholder="Search models..." 
-                  id="search-input" value="{{ search_query }}">
+  <div class="container">
+    <!-- Mobile Filters Toggle -->
+    <div class="mobile-filters-toggle">
+      <button class="btn btn-outline-primary w-100" id="show-filters-btn">
+        <i class="fas fa-sliders-h me-2"></i> Show Filters
+      </button>
+    </div>
+    
+    <div class="layout-grid">
+      <!-- Filters Sidebar -->
+      <div class="filters-container" id="filters-container">
+        <div class="filters-header">
+          <h3 class="filters-title">Filters</h3>
+          
+          <div class="d-flex align-items-center gap-3">
+            {% if request.GET.q or request.GET.category or request.GET.pricing %}
+              <a href="{% url 'catalog:catalog' %}" class="filters-clear">Clear All</a>
+            {% endif %}
+            
+            <button class="btn-close d-md-none" id="close-filters-btn"></button>
           </div>
         </div>
         
-        <!-- Category Filter -->
-        <div class="filter-section">
-          <h3 class="filter-section-title">Category</h3>
-          <div class="filter-options">
-            <div class="filter-option">
-              <input type="radio" name="category" id="category-all" value=""
-                    {% if not selected_category %}checked{% endif %}>
-              <label for="category-all" class="filter-option-label">All Categories</label>
+        <div class="filters-body">
+          <!-- Search -->
+          <div class="filter-group">
+            <h4 class="filter-group-title">Search</h4>
+            <div class="search-container">
+              <i class="fas fa-search search-icon"></i>
+              <input type="text" class="search-input" id="search-input" placeholder="Search models..." value="{{ search_query }}">
             </div>
-            {% for category in categories %}
+          </div>
+          
+          <!-- Category Filter -->
+          <div class="filter-group">
+            <h4 class="filter-group-title">Category</h4>
+            <div class="filter-options">
               <div class="filter-option">
-                <input type="radio" name="category" id="category-{{ category|slugify }}" 
-                      value="{{ category }}" {% if selected_category == category %}checked{% endif %}>
-                <label for="category-{{ category|slugify }}" class="filter-option-label">{{ category }}</label>
+                <input type="radio" class="filter-radio" name="category" id="category-all" value=""
+                      {% if not selected_category %}checked{% endif %}>
+                <label for="category-all" class="filter-label">All Categories</label>
               </div>
-            {% endfor %}
-          </div>
-        </div>
-        
-        <!-- Pricing Filter -->
-        <div class="filter-section">
-          <h3 class="filter-section-title">Pricing</h3>
-          <div class="filter-options">
-            <div class="filter-option">
-              <input type="radio" name="pricing" id="pricing-all" value=""
-                    {% if not selected_pricing %}checked{% endif %}>
-              <label for="pricing-all" class="filter-option-label">All Pricing</label>
-            </div>
-            <div class="filter-option">
-              <input type="radio" name="pricing" id="pricing-free" value="free"
-                    {% if selected_pricing == 'free' %}checked{% endif %}>
-              <label for="pricing-free" class="filter-option-label">Free</label>
-            </div>
-            <div class="filter-option">
-              <input type="radio" name="pricing" id="pricing-paid" value="paid"
-                    {% if selected_pricing == 'paid' %}checked{% endif %}>
-              <label for="pricing-paid" class="filter-option-label">Paid</label>
+              {% for category in categories %}
+                <div class="filter-option">
+                  <input type="radio" class="filter-radio" name="category" id="category-{{ category|slugify }}" 
+                        value="{{ category }}" {% if selected_category == category %}checked{% endif %}>
+                  <label for="category-{{ category|slugify }}" class="filter-label">{{ category }}</label>
+                </div>
+              {% endfor %}
             </div>
           </div>
-        </div>
-        
-        <!-- Sort Filter -->
-        <div class="filter-section">
-          <h3 class="filter-section-title">Sort By</h3>
-          <div class="filter-options">
-            <div class="filter-option">
-              <input type="radio" name="sort" id="sort-popularity" value="popularity"
-                    {% if sort_by == 'popularity' %}checked{% endif %}>
-              <label for="sort-popularity" class="filter-option-label">Popularity</label>
+          
+          <!-- Pricing Filter -->
+          <div class="filter-group">
+            <h4 class="filter-group-title">Pricing</h4>
+            <div class="filter-options">
+              <div class="filter-option">
+                <input type="radio" class="filter-radio" name="pricing" id="pricing-all" value=""
+                      {% if not selected_pricing %}checked{% endif %}>
+                <label for="pricing-all" class="filter-label">All Pricing</label>
+              </div>
+              <div class="filter-option">
+                <input type="radio" class="filter-radio" name="pricing" id="pricing-free" value="free"
+                      {% if selected_pricing == 'free' %}checked{% endif %}>
+                <label for="pricing-free" class="filter-label">Free</label>
+              </div>
+              <div class="filter-option">
+                <input type="radio" class="filter-radio" name="pricing" id="pricing-paid" value="paid"
+                      {% if selected_pricing == 'paid' %}checked{% endif %}>
+                <label for="pricing-paid" class="filter-label">Paid</label>
+              </div>
             </div>
-            <div class="filter-option">
-              <input type="radio" name="sort" id="sort-name" value="name"
-                    {% if sort_by == 'name' %}checked{% endif %}>
-              <label for="sort-name" class="filter-option-label">Name</label>
-            </div>
-            <div class="filter-option">
-              <input type="radio" name="sort" id="sort-newest" value="newest"
-                    {% if sort_by == 'newest' %}checked{% endif %}>
-              <label for="sort-newest" class="filter-option-label">Newest</label>
+          </div>
+          
+          <!-- Sort Filter -->
+          <div class="filter-group">
+            <h4 class="filter-group-title">Sort By</h4>
+            <div class="filter-options">
+              <div class="filter-option">
+                <input type="radio" class="filter-radio" name="sort" id="sort-popularity" value="popularity"
+                      {% if sort_by == 'popularity' %}checked{% endif %}>
+                <label for="sort-popularity" class="filter-label">Popularity</label>
+              </div>
+              <div class="filter-option">
+                <input type="radio" class="filter-radio" name="sort" id="sort-name" value="name"
+                      {% if sort_by == 'name' %}checked{% endif %}>
+                <label for="sort-name" class="filter-label">Name (A-Z)</label>
+              </div>
+              <div class="filter-option">
+                <input type="radio" class="filter-radio" name="sort" id="sort-newest" value="newest"
+                      {% if sort_by == 'newest' %}checked{% endif %}>
+                <label for="sort-newest" class="filter-label">Newest</label>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-    
-    <!-- Models Grid -->
-    <div class="col-lg-9 col-md-8">
-      {% if ai_tools %}
-        <!-- Active Filters -->
-        {% if search_query or selected_category or selected_pricing %}
-          <div class="active-filters">
-            <div class="active-filters-title">Active Filters:</div>
-            <div class="active-filter-tags">
+      
+      <!-- Models Content -->
+      <div class="models-content">
+        {% if ai_tools %}
+          <!-- Active Filters -->
+          {% if search_query or selected_category or selected_pricing %}
+            <div class="active-filters">
+              <span class="active-filter-label">Active Filters:</span>
+              
               {% if search_query %}
                 <div class="active-filter-tag">
                   <span>Search: {{ search_query }}</span>
-                  <a href="?{% if selected_category %}category={{ selected_category }}&{% endif %}{% if selected_pricing %}pricing={{ selected_pricing }}&{% endif %}{% if sort_by %}sort={{ sort_by }}{% endif %}" class="filter-remove">
+                  <a href="?{% if selected_category %}category={{ selected_category }}&{% endif %}{% if selected_pricing %}pricing={{ selected_pricing }}&{% endif %}{% if sort_by %}sort={{ sort_by }}{% endif %}" class="tag-remove">
                     <i class="fas fa-times"></i>
                   </a>
                 </div>
@@ -209,7 +703,7 @@
               {% if selected_category %}
                 <div class="active-filter-tag">
                   <span>Category: {{ selected_category }}</span>
-                  <a href="?{% if search_query %}q={{ search_query }}&{% endif %}{% if selected_pricing %}pricing={{ selected_pricing }}&{% endif %}{% if sort_by %}sort={{ sort_by }}{% endif %}" class="filter-remove">
+                  <a href="?{% if search_query %}q={{ search_query }}&{% endif %}{% if selected_pricing %}pricing={{ selected_pricing }}&{% endif %}{% if sort_by %}sort={{ sort_by }}{% endif %}" class="tag-remove">
                     <i class="fas fa-times"></i>
                   </a>
                 </div>
@@ -218,138 +712,136 @@
               {% if selected_pricing %}
                 <div class="active-filter-tag">
                   <span>Pricing: {{ selected_pricing|title }}</span>
-                  <a href="?{% if search_query %}q={{ search_query }}&{% endif %}{% if selected_category %}category={{ selected_category }}&{% endif %}{% if sort_by %}sort={{ sort_by }}{% endif %}" class="filter-remove">
+                  <a href="?{% if search_query %}q={{ search_query }}&{% endif %}{% if selected_category %}category={{ selected_category }}&{% endif %}{% if sort_by %}sort={{ sort_by }}{% endif %}" class="tag-remove">
                     <i class="fas fa-times"></i>
                   </a>
                 </div>
               {% endif %}
             </div>
-          </div>
-        {% endif %}
-        
-        <!-- Models Grid -->
-        <div class="models-grid">
-          {% for ai in ai_tools %}
-            <div class="model-card fade-in model-card-delay-{{ forloop.counter0 }}">
-              <div class="model-card-header">
-                <div class="model-logo">
-                  {% if ai.image %}
-                    <img src="{{ ai.image.url }}" alt="{{ ai.name }}">
-                  {% else %}
-                    <span class="model-logo-placeholder">{{ ai.name|first }}</span>
-                  {% endif %}
-                </div>
-                <div class="model-info">
-                  <h3 class="model-name">
-                    {{ ai.name }}
-                    {% if ai.api_type != 'none' %}
-                      <span class="badge badge-api">API</span>
-                    {% endif %}
-                    {% if ai.is_featured %}
-                      <span class="badge badge-featured">Featured</span>
-                    {% endif %}
-                  </h3>
-                  <div class="model-provider">{{ ai.provider }}</div>
-                </div>
-              </div>
-              <div class="model-card-body">
-                <div class="model-description">{{ ai.description }}</div>
-                <div class="model-tags">
-                  <span class="model-tag">{{ ai.category }}</span>
-                  {% if ai.api_type != 'none' %}
-                    <span class="model-tag">{{ ai.api_type }}</span>
-                  {% endif %}
-                </div>
-              </div>
-              <div class="model-card-footer">
-                <div class="model-pricing">
-                  <span class="model-price">
-                    {% if ai.is_free %}
-                      Free
+          {% endif %}
+          
+          <!-- Models Grid -->
+          <div class="models-grid">
+            {% for ai in ai_tools %}
+              <div class="model-card fade-in delay-{{ forloop.counter0|add:1 }}">
+                <div class="model-header">
+                  <div class="model-logo">
+                    {% if ai.image %}
+                      <img src="{{ ai.image.url }}" alt="{{ ai.name }}">
                     {% else %}
-                      Paid
+                      {{ ai.name|first }}
                     {% endif %}
-                  </span>
+                  </div>
+                  <div>
+                    <h3 class="model-title">
+                      {{ ai.name }}
+                      {% if ai.api_type != 'none' %}
+                        <span class="model-badge badge-api">API</span>
+                      {% endif %}
+                      {% if ai.is_featured %}
+                        <span class="model-badge badge-featured">Featured</span>
+                      {% endif %}
+                    </h3>
+                    <div class="model-provider">
+                      <i class="fas fa-building me-1"></i> {{ ai.provider }}
+                    </div>
+                  </div>
                 </div>
-                <div class="model-actions">
-                  <a href="{% url 'catalog:presentationAI' ai.id %}" class="model-action-btn view-btn">
-                    <i class="fas fa-eye"></i> View
-                  </a>
-                  <a href="{% url 'catalog:compare' %}?tool_id={{ ai.id }}" class="model-action-btn compare-btn">
-                    <i class="fas fa-balance-scale"></i> Compare
-                  </a>
-                  <a href="{% url 'catalog:presentationAI' ai.id %}" class="model-action-btn try-btn">
-                    <i class="fas fa-rocket"></i> Try
-                  </a>
+                
+                <div class="model-content">
+                  <div class="model-description">{{ ai.description }}</div>
+                  <div class="model-tags">
+                    <span class="model-tag">{{ ai.category }}</span>
+                    {% if ai.api_type != 'none' %}
+                      <span class="model-tag">{{ ai.api_type }}</span>
+                    {% endif %}
+                  </div>
+                </div>
+                
+                <div class="model-footer">
+                  <div class="model-price {% if ai.is_free %}price-free{% else %}price-paid{% endif %}">
+                    {% if ai.is_free %}
+                      <i class="fas fa-tag me-1"></i> Free
+                    {% else %}
+                      <i class="fas fa-dollar-sign me-1"></i> Paid
+                    {% endif %}
+                  </div>
+                  <div class="model-actions">
+                    <a href="{% url 'catalog:presentationAI' ai.id %}" class="btn-model btn-outline">
+                      <i class="fas fa-eye"></i> Details
+                    </a>
+                    <a href="{% url 'interaction:chat' ai_id=ai.id %}" class="btn-model btn-primary">
+                      <i class="fas fa-rocket"></i> Try
+                    </a>
+                  </div>
                 </div>
               </div>
-            </div>
-          {% endfor %}
-        </div>
-        
-        <!-- Pagination -->
-        {% if is_paginated %}
-            <!-- Pagination -->
-            <nav aria-label="Page navigation" class="d-flex justify-content-center mb-5">
-              <ul class="pagination">
-                <!-- Previous page link -->
+            {% endfor %}
+          </div>
+          
+          <!-- Pagination -->
+          {% if is_paginated %}
+            <div class="pagination-container">
+              <div class="pagination">
+                <!-- Previous page -->
                 {% if page_obj.has_previous %}
-                  <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_pricing %}&pricing={{ selected_pricing }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}" aria-label="Previous">
+                  <span class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_pricing %}&pricing={{ selected_pricing }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}">
                       <i class="fas fa-chevron-left"></i>
                     </a>
-                  </li>
+                  </span>
                 {% else %}
-                  <li class="page-item disabled">
+                  <span class="page-item disabled">
                     <span class="page-link"><i class="fas fa-chevron-left"></i></span>
-                  </li>
+                  </span>
                 {% endif %}
                 
                 <!-- Page numbers -->
                 {% for num in page_range %}
                   {% if num == page_obj.number %}
-                    <li class="page-item active">
+                    <span class="page-item active">
                       <span class="page-link">{{ num }}</span>
-                    </li>
+                    </span>
                   {% elif num == '...' %}
-                    <li class="page-item disabled">
+                    <span class="page-item disabled">
                       <span class="page-link">{{ num }}</span>
-                    </li>
+                    </span>
                   {% else %}
-                    <li class="page-item">
+                    <span class="page-item">
                       <a class="page-link" href="?page={{ num }}{% if search_query %}&q={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_pricing %}&pricing={{ selected_pricing }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}">{{ num }}</a>
-                    </li>
+                    </span>
                   {% endif %}
                 {% endfor %}
                 
-                <!-- Next page link -->
+                <!-- Next page -->
                 {% if page_obj.has_next %}
-                  <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_pricing %}&pricing={{ selected_pricing }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}" aria-label="Next">
+                  <span class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_pricing %}&pricing={{ selected_pricing }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}">
                       <i class="fas fa-chevron-right"></i>
                     </a>
-                  </li>
+                  </span>
                 {% else %}
-                  <li class="page-item disabled">
+                  <span class="page-item disabled">
                     <span class="page-link"><i class="fas fa-chevron-right"></i></span>
-                  </li>
+                  </span>
                 {% endif %}
-              </ul>
-            </nav>
-        {% endif %}
-      {% else %}
-        <!-- Empty state -->
-        <div class="empty-state">
-          <div class="empty-icon">
-            <i class="fas fa-search"></i>
+              </div>
+            </div>
+          {% endif %}
+        {% else %}
+          <!-- Empty state -->
+          <div class="empty-state">
+            <div class="empty-icon">
+              <i class="fas fa-search"></i>
+            </div>
+            <h2 class="empty-title">No models found</h2>
+            <p class="empty-description">
+              We couldn't find any models matching your search criteria. Try adjusting your filters or search term.
+            </p>
+            <a href="{% url 'catalog:catalog' %}" class="btn btn-primary">Clear Filters</a>
           </div>
-          <h2 class="empty-title">No models found</h2>
-          <p class="empty-description">
-            We couldn't find any models matching your search criteria. Try adjusting your filters or search term.
-          </p>
-          <a href="{% url 'catalog:catalog' %}" class="btn btn-primary">Clear Filters</a>
-        </div>
-      {% endif %}
+        {% endif %}
+      </div>
     </div>
   </div>
 </div>
@@ -357,40 +849,15 @@
 
 {% block scripts %}
 <script>
-  // Toggle favorite function
-  async function toggleFavorite(event, aiId) {
-    event.preventDefault();
-    const button = event.currentTarget;
-    const icon = button.querySelector('i');
-    
-    try {
-      // Call favorite API endpoint (would need to be implemented)
-      // const response = await fetch(`/ai/${aiId}/favorite/`, { method: 'POST' });
-      // const data = await response.json();
-      
-      // For demo purposes, toggle the icon
-      if (icon.classList.contains('far')) {
-        icon.classList.remove('far');
-        icon.classList.add('fas');
-        button.classList.add('active');
-        showFeedback('Added to favorites!', 'success');
-      } else {
-        icon.classList.remove('fas');
-        icon.classList.add('far');
-        button.classList.remove('active');
-        showFeedback('Removed from favorites', 'info');
-      }
-    } catch (error) {
-      showFeedback('Error updating favorites', 'danger');
-    }
-  }
-  
-  // Filter functionality
   document.addEventListener('DOMContentLoaded', function() {
+    // Filter functionality
     const searchInput = document.getElementById('search-input');
     const categoryRadios = document.querySelectorAll('input[name="category"]');
     const pricingRadios = document.querySelectorAll('input[name="pricing"]');
     const sortRadios = document.querySelectorAll('input[name="sort"]');
+    const showFiltersBtn = document.getElementById('show-filters-btn');
+    const closeFiltersBtn = document.getElementById('close-filters-btn');
+    const filtersContainer = document.getElementById('filters-container');
     
     // Apply filters function
     function applyFilters() {
@@ -402,34 +869,40 @@
       }
       
       // Add category
-      const selectedCategory = document.querySelector('input[name="category"]:checked');
-      if (selectedCategory && selectedCategory.value) {
-        url.searchParams.append('category', selectedCategory.value);
+      for (let radio of categoryRadios) {
+        if (radio.checked && radio.value) {
+          url.searchParams.append('category', radio.value);
+          break;
+        }
       }
       
       // Add pricing
-      const selectedPricing = document.querySelector('input[name="pricing"]:checked');
-      if (selectedPricing && selectedPricing.value) {
-        url.searchParams.append('pricing', selectedPricing.value);
+      for (let radio of pricingRadios) {
+        if (radio.checked && radio.value) {
+          url.searchParams.append('pricing', radio.value);
+          break;
+        }
       }
       
       // Add sort
-      const selectedSort = document.querySelector('input[name="sort"]:checked');
-      if (selectedSort && selectedSort.value) {
-        url.searchParams.append('sort', selectedSort.value);
+      for (let radio of sortRadios) {
+        if (radio.checked) {
+          url.searchParams.append('sort', radio.value);
+          break;
+        }
       }
       
+      // Navigate to filtered URL
       window.location.href = url.toString();
     }
     
-    // Search on enter key
-    searchInput.addEventListener('keyup', function(event) {
-      if (event.key === 'Enter') {
+    // Add event listeners
+    searchInput.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
         applyFilters();
       }
     });
     
-    // Apply filters on radio button change
     categoryRadios.forEach(radio => {
       radio.addEventListener('change', applyFilters);
     });
@@ -441,25 +914,19 @@
     sortRadios.forEach(radio => {
       radio.addEventListener('change', applyFilters);
     });
+    
+    // Mobile filters toggle
+    if (showFiltersBtn && closeFiltersBtn) {
+      showFiltersBtn.addEventListener('click', function() {
+        filtersContainer.classList.add('active');
+        document.body.style.overflow = 'hidden';
+      });
+      
+      closeFiltersBtn.addEventListener('click', function() {
+        filtersContainer.classList.remove('active');
+        document.body.style.overflow = '';
+      });
+    }
   });
-  
-  // Feedback message function
-  function showFeedback(message, type) {
-    const feedbackDiv = document.createElement('div');
-    feedbackDiv.className = `alert alert-${type} feedback-message`;
-    feedbackDiv.innerHTML = message;
-    document.body.appendChild(feedbackDiv);
-    
-    setTimeout(() => {
-      feedbackDiv.classList.add('show');
-    }, 10);
-    
-    setTimeout(() => {
-      feedbackDiv.classList.remove('show');
-      setTimeout(() => {
-        document.body.removeChild(feedbackDiv);
-      }, 300);
-    }, 3000);
-  }
 </script>
 {% endblock %}

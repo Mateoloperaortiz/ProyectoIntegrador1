@@ -1,10 +1,13 @@
 import uuid
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-from typing import List
+from typing import List, Union, Optional
 
 class CustomUser(AbstractUser):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    # Use CharField instead of UUIDField to support both UUID and integer IDs
+    # This allows existing users with integer IDs to continue working
+    # while new users will get UUID IDs
+    id = models.CharField(primary_key=True, max_length=36, editable=False)
     email = models.EmailField(unique=True, help_text="User email")
     first_name = models.CharField(max_length=255, help_text="User first name")
     bio = models.TextField(blank=True, max_length=500, help_text="User biography")
@@ -27,3 +30,9 @@ class CustomUser(AbstractUser):
 
     def __str__(self) -> str:
         return self.email
+        
+    def save(self, *args, **kwargs):
+        # Generate a UUID for new users (if ID is not set)
+        if not self.id:
+            self.id = str(uuid.uuid4())
+        super().save(*args, **kwargs)

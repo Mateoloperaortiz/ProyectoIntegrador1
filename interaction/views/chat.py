@@ -3,11 +3,12 @@ Chat views for the interaction app.
 
 This module contains views related to chatting with AI tools, including direct chat and conversation views.
 """
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 import json
 import uuid
 from django.contrib import messages as django_messages
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ValidationError
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_http_methods
@@ -415,8 +416,8 @@ def chat_selection(request: HttpRequest) -> HttpResponse:
 
 
 @login_required
-def chat_view(request: HttpRequest, ai_id: Optional[uuid.UUID] = None, 
-               conversation_id: Optional[uuid.UUID] = None) -> HttpResponse:
+def chat_view(request: HttpRequest, ai_id=None, 
+               conversation_id=None) -> HttpResponse:
     """
     View for the chat interface.
     
@@ -486,7 +487,13 @@ def chat_view(request: HttpRequest, ai_id: Optional[uuid.UUID] = None,
             form = MessageForm()
     # If an AI tool ID is provided, load that tool and create a form for a new conversation
     elif ai_id:
-        ai_tool = get_object_or_404(AITool, id=ai_id)
+        try:
+            # Try to get the AI tool by ID (handles both UUID and integer IDs)
+            ai_tool = get_object_or_404(AITool, id=ai_id)
+        except (ValueError, ValidationError):
+            # If there's a validation error (invalid UUID), redirect to chat selection
+            django_messages.error(request, f"Invalid AI tool ID: {ai_id}")
+            return redirect('interaction:chat_selection')
         form = MessageForm()
         
         # Handle form submission for creating a new conversation and sending the first message

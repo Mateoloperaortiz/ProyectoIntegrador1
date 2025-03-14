@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select Tools to Compare</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .tool-selection {
+            margin: 2rem 0;
+        }
+        .tool-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+        .tool-card:hover {
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .tool-card.selected {
+            border-color: #0d6efd;
+            background-color: rgba(13, 110, 253, 0.1);
+        }
+        .compare-btn {
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-10">
+                <h1 class="text-center my-4">Select AI Tools to Compare</h1>
+                <p class="text-center mb-4">Select at least two AI tools to compare their features and capabilities.</p>
+                
+                <form id="compare-form" action="{% url 'catalog:compare' %}" method="get">
+                    <div class="tool-selection">
+                        <div class="row">
+                            {% for tool in all_tools %}
+                                <div class="col-md-4 mb-3">
+                                    <div class="tool-card" id="tool-{{ tool.id }}">
+                                        <div class="form-check">
+                                            <input class="form-check-input tool-checkbox" type="checkbox" name="tool_id" value="{{ tool.id }}" id="check-{{ tool.id }}">
+                                            <label class="form-check-label" for="check-{{ tool.id }}">
+                                                <h5>{{ tool.name }}</h5>
+                                                <p>{{ tool.category }}</p>
+                                                <p class="text-muted">{{ tool.provider }}</p>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="text-center compare-btn">
+                        <button type="submit" class="btn btn-primary" id="compare-button" disabled>Compare Selected Tools</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap and custom JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get all checkboxes
+            const checkboxes = document.querySelectorAll('.tool-checkbox');
+            const compareButton = document.getElementById('compare-button');
+            
+            // Add event listeners to checkboxes
+            checkboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const toolCard = document.getElementById('tool-' + this.value);
+                    if (this.checked) {
+                        toolCard.classList.add('selected');
+                    } else {
+                        toolCard.classList.remove('selected');
+                    }
+                    
+                    // Count selected tools and enable/disable compare button
+                    const selectedCount = document.querySelectorAll('.tool-checkbox:checked').length;
+                    compareButton.disabled = selectedCount < 2;
+                    
+                    if (selectedCount < 2) {
+                        compareButton.textContent = 'Select at least 2 tools';
+                    } else {
+                        compareButton.textContent = `Compare ${selectedCount} Selected Tools`;
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html> 
