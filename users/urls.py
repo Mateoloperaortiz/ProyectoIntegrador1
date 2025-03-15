@@ -1,6 +1,7 @@
 from typing import List, Union
 from django.urls import path, URLPattern, URLResolver
 from django.views.generic.base import RedirectView
+# Authentication views are now in auth_app
 from .views.auth import login_view, logout_view, register
 from .views.dashboard import dashboard
 # Import directly from the module file

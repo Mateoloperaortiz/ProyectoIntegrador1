@@ -38,6 +38,8 @@ INSTALLED_APPS: List[str] = [
     'users',
     'interaction',
     'api',
+    'auth_app',
+    'profile_app',
 ]
 
 MIDDLEWARE: List[str] = [

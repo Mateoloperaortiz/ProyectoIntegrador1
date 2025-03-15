@@ -8,10 +8,16 @@ from django.http import HttpResponseRedirect, HttpRequest
 from django.core.management import call_command
 from typing import List, Dict, Any, Optional, Union, Tuple, Set, Callable, Type, cast
 from django.db.models.query import QuerySet
+from utils.admin_utils import (
+    OptimizedQuerysetMixin, 
+    AdminActionMessageMixin, 
+    DuplicateModelMixin, 
+    ExportModelMixin,
+    admin_display
+)
 
 
-
-class AIToolAdmin(admin.ModelAdmin):
+class AIToolAdmin(OptimizedQuerysetMixin, AdminActionMessageMixin, DuplicateModelMixin, admin.ModelAdmin):
     list_display = ('name', 'provider', 'category', 'popularity', 'api_type', 'is_featured', 'view_favorites_count', 'image_preview')
     list_filter = ('category', 'api_type', 'is_featured', 'provider')
     search_fields = ('name', 'provider', 'description', 'category')
@@ -30,28 +36,35 @@ class AIToolAdmin(admin.ModelAdmin):
     )
     readonly_fields = ('id',)
     
+    # OptimizedQuerysetMixin configuration
+    prefetch_related_fields = ['favorited_by']
+    
+    # DuplicateModelMixin configuration
+    duplicate_name_field = 'name'
+    duplicate_name_prefix = 'Copy of'
+    duplicate_reset_fields = {
+        'popularity': 0,
+        'is_featured': False,
+    }
+    duplicate_file_fields = ['image']
+    
     actions = [
         'feature_tools', 
         'unfeature_tools', 
         'increase_popularity', 
         'reset_popularity',
-        'duplicate_tools',
+        'duplicate_objects',  # From DuplicateModelMixin
         'refresh_logos'
     ]
-
     
-    def get_queryset(self, request: HttpRequest) -> QuerySet[AITool]:
-        """Optimize query by annotating with favorites count"""
-        qs = super().get_queryset(request)
-        return qs.prefetch_related('favorited_by')
-    
+    @admin_display(description='Favorited by')
     def view_favorites_count(self, obj: AITool) -> str:
         """Display the number of users who have favorited this tool"""
         count = obj.favorited_by.count()
         url = reverse('admin:users_customuser_changelist') + f'?favorites__id__exact={obj.id}'
         return format_html('<a href="{}">{} users</a>', url, count)
-    view_favorites_count.short_description = 'Favorited by'
     
+    @admin_display(description='Logo')
     def image_preview(self, obj: AITool) -> str:
         """Display a thumbnail of the AI tool image"""
         if obj.image:
@@ -64,25 +77,28 @@ class AIToolAdmin(admin.ModelAdmin):
             '<div style="width:50px; height:50px; border-radius:8px; background:linear-gradient(135deg, #5f4b8b, #9168c0); color:white; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:20px;">{}</div>',
             obj.name[0].upper()
         )
-    image_preview.short_description = 'Logo'
     
     def feature_tools(self, request, queryset):
         """Mark selected tools as featured"""
         updated = queryset.update(is_featured=True)
-        self.message_user(
+        self.message_custom_result(
             request, 
-            f"{updated} AI {'tool was' if updated == 1 else 'tools were'} marked as featured and will appear prominently in the catalog.", 
-            messages.SUCCESS
+            updated, 
+            "marked as featured and will appear prominently in the catalog", 
+            "AI tool was", 
+            "AI tools were"
         )
     feature_tools.short_description = "✨ Feature selected AI tools"
     
     def unfeature_tools(self, request, queryset):
         """Unmark selected tools as featured"""
         updated = queryset.update(is_featured=False)
-        self.message_user(
+        self.message_custom_result(
             request, 
-            f"{updated} AI {'tool was' if updated == 1 else 'tools were'} unmarked as featured and will no longer appear in featured sections.", 
-            messages.SUCCESS
+            updated, 
+            "unmarked as featured and will no longer appear in featured sections", 
+            "AI tool was", 
+            "AI tools were"
         )
     unfeature_tools.short_description = "⬇️ Unfeature selected AI tools"
     
@@ -91,55 +107,26 @@ class AIToolAdmin(admin.ModelAdmin):
         for tool in queryset:
             tool.popularity += 10
             tool.save()
-        self.message_user(
+        self.message_custom_result(
             request, 
-            f"Increased popularity for {queryset.count()} AI {'tool' if queryset.count() == 1 else 'tools'} by 10 points.", 
-            messages.SUCCESS
+            queryset.count(), 
+            "increased in popularity by 10 points", 
+            "AI tool", 
+            "AI tools"
         )
     increase_popularity.short_description = "📈 Increase popularity by 10"
     
     def reset_popularity(self, request, queryset):
         """Reset popularity of selected tools to 0"""
         updated = queryset.update(popularity=0)
-        self.message_user(
+        self.message_custom_result(
             request, 
-            f"Reset popularity for {updated} AI {'tool' if updated == 1 else 'tools'} to 0.", 
-            messages.SUCCESS
+            updated, 
+            "reset to 0 popularity", 
+            "AI tool", 
+            "AI tools"
         )
     reset_popularity.short_description = "🔄 Reset popularity to 0"
-    
-    def duplicate_tools(self, request, queryset):
-        """Duplicate selected AI tools"""
-        count = 0
-        for tool in queryset:
-            # Create a copy of the tool
-            tool_copy = AITool.objects.create(
-                name=f"Copy of {tool.name}",
-                provider=tool.provider,
-                endpoint=tool.endpoint,
-                category=tool.category,
-                description=tool.description,
-                popularity=0,  # Start with 0 popularity
-                api_type=tool.api_type,
-                api_model=tool.api_model,
-                api_endpoint=tool.api_endpoint,
-                is_featured=False  # New copies are not featured by default
-            )
-            
-            # If there's an image, we need to handle it separately
-            if tool.image:
-                # This will create a copy of the image file
-                tool_copy.image = tool.image
-                tool_copy.save()
-                
-            count += 1
-            
-        self.message_user(
-            request, 
-            f"Successfully duplicated {count} AI {'tool' if count == 1 else 'tools'}. The new copies have 0 popularity and are not featured.", 
-            messages.SUCCESS
-        )
-    duplicate_tools.short_description = "🔄 Duplicate selected AI tools"
     
     def refresh_logos(self, request, queryset):
         """Refresh logos for selected AI tools using high-quality sources"""
@@ -165,7 +152,7 @@ class AIToolAdmin(admin.ModelAdmin):
     refresh_logos.short_description = "🖼️ Refresh logos for selected tools"
 
 
-class RatingAdmin(admin.ModelAdmin):
+class RatingAdmin(OptimizedQuerysetMixin, admin.ModelAdmin):
     # Display fields in list view
     list_display = ('get_user_info', 'get_tool_info', 'stars', 'comment', 'created_at')
     
@@ -175,6 +162,9 @@ class RatingAdmin(admin.ModelAdmin):
     
     # Read-only fields
     readonly_fields = ('id', 'created_at')
+    
+    # OptimizedQuerysetMixin configuration
+    select_related_fields = ['user', 'ai_tool']
     
     # Field organization
     fieldsets = (
@@ -191,15 +181,15 @@ class RatingAdmin(admin.ModelAdmin):
         })
     )
 
+    @admin_display(description='User')
     def get_user_info(self, obj):
         """Display user ID and email"""
         return f"{obj.user.email} (ID: {obj.user.id})"
-    get_user_info.short_description = 'User'
 
+    @admin_display(description='AI Tool')
     def get_tool_info(self, obj):
         """Display tool name and ID"""
         return f"{obj.ai_tool.name} (ID: {obj.ai_tool.id})"
-    get_tool_info.short_description = 'AI Tool'
 
     
 # Register models with our custom admin site

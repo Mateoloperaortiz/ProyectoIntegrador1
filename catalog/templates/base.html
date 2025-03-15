@@ -500,27 +500,27 @@
             </button>
             <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" aria-labelledby="userDropdown" 
                 style="border-radius: var(--radius-md); padding: 0.5rem; min-width: 220px; margin-top: 0.5rem;">
-              <li><a class="dropdown-item rounded d-flex align-items-center" href="{% url 'users:profile' %}">
+              <li><a class="dropdown-item rounded d-flex align-items-center" href="{% url 'profile_app:dashboard' %}">
                 <i class="fas fa-user-circle me-2 text-primary"></i>
                 <span>My Profile</span>
               </a></li>
-              <li><a class="dropdown-item rounded d-flex align-items-center" href="#">
+              <li><a class="dropdown-item rounded d-flex align-items-center" href="{% url 'profile_app:dashboard' %}?tab=favorites">
                 <i class="fas fa-heart me-2 text-danger"></i>
                 <span>Favorites</span>
               </a></li>
               <li><hr class="dropdown-divider my-2"></li>
-              <li><a class="dropdown-item rounded d-flex align-items-center" href="{% url 'users:logout' %}">
+              <li><a class="dropdown-item rounded d-flex align-items-center" href="{% url 'auth_app:logout' %}">
                 <i class="fas fa-sign-out-alt me-2 text-muted"></i>
                 <span>Logout</span>
               </a></li>
             </ul>
           </div>
         {% else %}
-          <a href="{% url 'users:login' %}" class="btn me-2 py-2 px-3" 
+          <a href="{% url 'auth_app:login' %}" class="btn me-2 py-2 px-3" 
              style="border-radius: var(--radius-full); background-color: rgba(91, 70, 244, 0.08); color: var(--primary-color); border: 1px solid rgba(91, 70, 244, 0.2); font-weight: 500;">
             Login
           </a>
-          <a href="{% url 'users:register' %}" class="btn py-2 px-3" 
+          <a href="{% url 'auth_app:register' %}" class="btn py-2 px-3" 
              style="border-radius: var(--radius-full); background: linear-gradient(90deg, var(--primary-color), #8B5CF6); color: white; font-weight: 500; box-shadow: 0 2px 8px rgba(91, 70, 244, 0.25);">
             Register
           </a>

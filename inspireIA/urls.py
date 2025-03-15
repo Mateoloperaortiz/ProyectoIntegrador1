@@ -31,6 +31,12 @@ urlpatterns: List[Union[URLPattern, URLResolver]] = [
     # Interaction app - handles chats, favorites, sharing
     path('interaction/', include('interaction.urls', namespace='interaction')),
     
+    # Authentication app - centralized auth functionality
+    path('auth/', include('auth_app.urls', namespace='auth_app')),
+    
+    # Profile app - unified profile functionality
+    path('profile/', include('profile_app.urls', namespace='profile_app')),
+    
     # Users app
     path('users/', include('users.urls')),
     

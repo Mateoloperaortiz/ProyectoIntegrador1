@@ -11,35 +11,25 @@ from .models import CustomUser
 
 
 def register(request: HttpRequest) -> HttpResponse:
-    if request.method == 'POST':
-        form = CustomUserCreationForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            login(request, user)  # Inicia sesión automáticamente después del registro
-            return redirect('catalog:home')  # Redirige a home después del registro
-    else:
-        form = CustomUserCreationForm()
-    return render(request, 'users/register.html', {'form': form})  # 🔹 CORREGIDO
+    """
+    Redirect to the centralized register view.
+    """
+    # For backward compatibility, redirect to auth_app register view
+    return redirect('auth_app:register')
 
 def user_login(request: HttpRequest) -> HttpResponse:
-    if request.method == 'POST':
-        form = AuthenticationForm(request, data=request.POST)
-        if form.is_valid():
-            username = form.cleaned_data.get('username')
-            password = form.cleaned_data.get('password')
-            user = authenticate(request, username=username, password=password)
-            if user is not None:
-                login(request, user)
-                return redirect('catalog:home')  # Redirige al home después de iniciar sesión
-        else:
-            return render(request, 'users/login.html', {'form': form, 'error': 'Invalid credentials'})  # 🔹 CORREGIDO
-    else:
-        form = AuthenticationForm()
-    return render(request, 'users/login.html', {'form': form})  # 🔹 CORREGIDO
+    """
+    Redirect to the centralized login view.
+    """
+    # For backward compatibility, redirect to auth_app login view
+    return redirect('auth_app:login')
 
 def user_logout(request: HttpRequest) -> HttpResponse:
-    logout(request)
-    return redirect('catalog:home')  # Redirige al login después de cerrar sesión
+    """
+    Redirect to the centralized logout view.
+    """
+    # For backward compatibility, redirect to auth_app logout view
+    return redirect('auth_app:logout')
 
 @login_required
 def profile(request: HttpRequest) -> HttpResponse:

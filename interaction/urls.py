@@ -10,6 +10,11 @@ urlpatterns: List[Union[URLPattern, URLResolver]] = [
     # Direct chat URLs
     path('direct-chat/', chat.direct_chat, name='direct_chat'),
     path('direct-chat/message/', chat.direct_chat_message, name='direct_chat_message'),
+    # Unified chat templates
+    path('unified/chat/', chat.direct_chat, {'template': 'interaction/unified/direct_chat.html'}, name='unified_chat'),
+    path('unified/chat/modern/', chat.direct_chat, {'template': 'interaction/unified/modern_chat.html'}, name='modern_chat'),
+    path('unified/chat/minimal/', chat.direct_chat, {'template': 'interaction/unified/minimal_debug_chat.html'}, name='minimal_chat'),
+    path('unified/chat/enhanced/', chat.direct_chat, {'template': 'interaction/unified/enhanced_chat.html'}, name='enhanced_chat'),
     # Chat URLs
     path('chat/', chat.chat_selection, name='chat_selection'),
     # Important: Order matters! More specific patterns should come first

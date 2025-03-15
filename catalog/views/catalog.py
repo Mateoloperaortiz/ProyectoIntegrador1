@@ -10,6 +10,7 @@ from django.shortcuts import render
 from django.views.generic import ListView
 
 from catalog.models import AITool
+from catalog.services import filter_ai_tools, get_ai_models
 from core.mixins import PaginationMixin, FilterMixin
 
 
@@ -33,38 +34,8 @@ class CatalogView(PaginationMixin, FilterMixin, ListView):
             Filtered queryset of AI tools
         """
         queryset = super().get_queryset()
-        
-        # Apply search filter
-        search_query = self.request.GET.get('q', None)
-        if search_query:
-            queryset = queryset.filter(
-                Q(name__icontains=search_query) |
-                Q(description__icontains=search_query) |
-                Q(provider__icontains=search_query)
-            )
-            
-        # Apply category filter
-        category = self.request.GET.get('category', None)
-        if category:
-            queryset = queryset.filter(category=category)
-            
-        # Apply pricing filter
-        pricing = self.request.GET.get('pricing', None)
-        if pricing == 'free':
-            queryset = queryset.filter(is_free=True)
-        elif pricing == 'paid':
-            queryset = queryset.filter(is_free=False)
-            
-        # Apply sorting
-        sort_by = self.request.GET.get('sort', 'popularity')
-        if sort_by == 'name':
-            queryset = queryset.order_by('name')
-        elif sort_by == 'popularity':
-            queryset = queryset.order_by('-popularity')
-        elif sort_by == 'newest':
-            queryset = queryset.order_by('-created_at')
-            
-        return queryset
+        filtered_queryset, _ = filter_ai_tools(request=self.request, queryset=queryset)
+        return filtered_queryset
     
     def get_context_data(self, **kwargs: Any) -> Dict[str, Any]:
         """
@@ -78,15 +49,9 @@ class CatalogView(PaginationMixin, FilterMixin, ListView):
         """
         context = super().get_context_data(**kwargs)
         
-        # Add filter parameters to context
-        context['search_query'] = self.request.GET.get('q', '')
-        context['selected_category'] = self.request.GET.get('category', '')
-        context['selected_pricing'] = self.request.GET.get('pricing', '')
-        context['sort_by'] = self.request.GET.get('sort', 'popularity')
-        
-        # Add categories for filter dropdown
-        categories = AITool.objects.values_list('category', flat=True).distinct()
-        context['categories'] = [cat for cat in categories if cat]
+        # Get filter context
+        _, filter_context = filter_ai_tools(request=self.request)
+        context.update(filter_context)
         
         # Add pagination context
         context = self.get_pagination_context(context)
@@ -106,53 +71,13 @@ def catalog_view(request: HttpRequest) -> HttpResponse:
     Returns:
         Rendered catalog page
     """
-    # Get filter parameters from request
-    search_query = request.GET.get('q', '')
-    category = request.GET.get('category', '')
-    pricing = request.GET.get('pricing', '')
-    sort_by = request.GET.get('sort', 'popularity')
+    # Use the shared service function to filter AI tools
+    queryset, context = filter_ai_tools(request=request)
     
-    # Start with all AI tools
-    queryset = AITool.objects.all()
+    # Add AI tools to the context
+    context['ai_tools'] = queryset
     
-    # Apply search filter
-    if search_query:
-        queryset = queryset.filter(
-            Q(name__icontains=search_query) |
-            Q(description__icontains=search_query) |
-            Q(provider__icontains=search_query)
-        )
-        
-    # Apply category filter
-    if category:
-        queryset = queryset.filter(category=category)
-        
-    # Apply pricing filter
-    if pricing == 'free':
-        queryset = queryset.filter(is_free=True)
-    elif pricing == 'paid':
-        queryset = queryset.filter(is_free=False)
-        
-    # Apply sorting
-    if sort_by == 'name':
-        queryset = queryset.order_by('name')
-    elif sort_by == 'popularity':
-        queryset = queryset.order_by('-popularity')
-    elif sort_by == 'newest':
-        queryset = queryset.order_by('-created_at')
-    
-    # Get categories for filter dropdown
-    categories = AITool.objects.values_list('category', flat=True).distinct()
-    categories = [cat for cat in categories if cat]
-    
-    return render(request, 'catalog/catalog.html', {
-        'ai_tools': queryset,
-        'search_query': search_query,
-        'selected_category': category,
-        'selected_pricing': pricing,
-        'sort_by': sort_by,
-        'categories': categories
-    })
+    return render(request, 'catalog/catalog.html', context)
 
 
 class ModelsView(PaginationMixin, ListView):
@@ -173,8 +98,8 @@ class ModelsView(PaginationMixin, ListView):
         Returns:
             Filtered queryset of AI models
         """
-        # Filter to only include AI models
-        return AITool.objects.filter(category='Model').order_by('-popularity')
+        # Use the shared service function to get AI models
+        return get_ai_models()
     
     def get_context_data(self, **kwargs: Any) -> Dict[str, Any]:
         """
@@ -206,8 +131,8 @@ def models_view(request: HttpRequest) -> HttpResponse:
     Returns:
         Rendered models page
     """
-    # Get AI models
-    ai_models = AITool.objects.filter(category='Model').order_by('-popularity')
+    # Use the shared service function to get AI models
+    ai_models = get_ai_models()
     
     return render(request, 'catalog/models.html', {
         'ai_models': ai_models

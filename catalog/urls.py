@@ -12,13 +12,13 @@ urlpatterns: List[Union[URLPattern, URLResolver]] = [
     path(' presentation/<uuid:id>/', views.presentationAI, name='presentationAI'),
     path('compare/', views.compare_tools, name='compare'),
     
-    # User authentication
+    # User authentication - Redirects to centralized auth_app
     path('register/', views.register_view, name='register'),
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
-    path('profile/', views.profile_view, name='profile'),
+    path('profile/', views.profile_view, name='profile'),  # Redirects to profile_app
 
     
     # Favorites
-    path('ai/<uuid:ai_id>/favorite/', views.toggle_favorite, name='toggle_favorite'),
+    path('ai/<uuid:ai_id>/favorite/', views.toggle_favorite, name='toggle_favorite'),  # Redirects to profile_app
 ]

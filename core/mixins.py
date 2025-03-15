@@ -5,6 +5,7 @@ This module contains mixins that can be used across different apps
 to provide common functionality to class-based views.
 """
 from typing import Any, Dict, List, Optional, TypeVar, Union, cast
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db.models.query import QuerySet
 from django.http import HttpRequest
 
@@ -15,42 +16,86 @@ class PaginationMixin:
     
     This mixin provides methods for paginating querysets and adding
     pagination context to templates.
-    """
     
-    def get_pagination_context(self, context: Dict[str, Any], **kwargs: Any) -> Dict[str, Any]:
+    Attributes:
+        paginate_by (int): Number of items per page
+        page_kwarg (str): The name of the URL query parameter for the page number
+    """
+    paginate_by = 10
+    page_kwarg = 'page'
+    
+    # These attributes are expected to be provided by the view that uses this mixin
+    request: HttpRequest
+    
+    def get_queryset(self) -> QuerySet:
+        # This method is expected to be implemented by the view that uses this mixin
+        raise NotImplementedError("Subclasses must implement get_queryset()")
+    
+    def paginate_queryset(self, queryset: QuerySet, page_size: Optional[int] = None) -> tuple:
         """
-        Add pagination context to the template context.
+        Paginate the queryset.
         
         Args:
-            context: The existing context dictionary
-            **kwargs: Additional keyword arguments
+            queryset: The queryset to paginate
+            page_size (int, optional): Number of items per page. Defaults to self.paginate_by.
             
         Returns:
-            The updated context dictionary with pagination information
+            tuple: (paginator, page, page_obj, is_paginated)
         """
-        page_obj = context.get('page_obj')
-        if not page_obj:
-            return context
+        page_size = page_size or self.paginate_by
+        paginator = Paginator(queryset, page_size)
+        page_number = self.request.GET.get(self.page_kwarg, 1)
+        
+        try:
+            page = paginator.page(page_number)
+        except PageNotAnInteger:
+            page = paginator.page(1)
+        except EmptyPage:
+            page = paginator.page(paginator.num_pages)
             
-        # Add pagination range
-        paginator = page_obj.paginator
-        current_page = page_obj.number
+        is_paginated = paginator.num_pages > 1
+        return (paginator, page, page.object_list, is_paginated)
+    
+    def get_context_data(self, **kwargs) -> Dict[str, Any]:
+        """
+        Add pagination context data.
         
-        # Calculate page range to display (show 5 pages around current page)
-        page_range_start = max(current_page - 2, 1)
-        page_range_end = min(current_page + 2, paginator.num_pages)
+        Returns:
+            dict: Context data with pagination information
+        """
+        # Using Any for the parent class since we don't know what it is
+        # This is a mixin that can be used with different view types
+        context = super().get_context_data(**kwargs)  # type: ignore
+        queryset = self.get_queryset()
+        paginator, page, queryset, is_paginated = self.paginate_queryset(queryset)
         
-        # Ensure we always show 5 pages if possible
-        if page_range_end - page_range_start < 4 and paginator.num_pages > 4:
-            if page_range_start == 1:
-                page_range_end = min(5, paginator.num_pages)
-            elif page_range_end == paginator.num_pages:
-                page_range_start = max(paginator.num_pages - 4, 1)
-                
-        context['page_range'] = range(page_range_start, page_range_end + 1)
-        context['show_first'] = page_range_start > 1
-        context['show_last'] = page_range_end < paginator.num_pages
+        context.update({
+            'paginator': paginator,
+            'page_obj': page,
+            'is_paginated': is_paginated,
+            'object_list': queryset
+        })
         
+        # Add pagination range for better navigation
+        if is_paginated:
+            # Calculate page range to display (show 5 pages around current page)
+            current_page = page.number
+            
+            # Calculate page range to display (show 5 pages around current page)
+            page_range_start = max(current_page - 2, 1)
+            page_range_end = min(current_page + 2, paginator.num_pages)
+            
+            # Ensure we always show 5 pages if possible
+            if page_range_end - page_range_start < 4 and paginator.num_pages > 4:
+                if page_range_start == 1:
+                    page_range_end = min(5, paginator.num_pages)
+                elif page_range_end == paginator.num_pages:
+                    page_range_start = max(paginator.num_pages - 4, 1)
+                    
+            context['page_range'] = range(page_range_start, page_range_end + 1)
+            context['show_first'] = page_range_start > 1
+            context['show_last'] = page_range_end < paginator.num_pages
+            
         return context
 
 

@@ -22,7 +22,7 @@ from interaction.utils import route_message_to_ai_tool
 
 
 @login_required
-def direct_chat(request: HttpRequest) -> HttpResponse:
+def direct_chat(request: HttpRequest, template: str = 'interaction/unified/direct_chat.html') -> HttpResponse:
     """
     View for the direct chat interface.
     
@@ -31,6 +31,7 @@ def direct_chat(request: HttpRequest) -> HttpResponse:
     
     Args:
         request: The HTTP request object
+        template: Optional template path to use for rendering (for variant chat interfaces)
         
     Returns:
         Rendered direct chat page
@@ -93,18 +94,19 @@ def direct_chat(request: HttpRequest) -> HttpResponse:
     # Get all AI tools for the tool selector
     ai_tools = AITool.objects.all().order_by('name')
     
-    return render(request, 'interaction/direct_chat.html', {
+    return render(request, template, {
         'conversation': conversation,
         'conversation_id': conversation_id,  # Pass the original conversation_id as well
         'messages_list': messages_list,
         'chat_messages': messages_list,  # Add an alternative name to avoid potential conflicts
         'ai_tools': ai_tools,
-        'form': form
+        'form': form,
+        'form_action': 'interaction:direct_chat_message'
     })
 
 
 @login_required
-def conversation_view(request: HttpRequest, conversation_id: uuid.UUID) -> HttpResponse:
+def conversation_view(request: HttpRequest, conversation_id: uuid.UUID, template: str = 'interaction/unified/direct_chat.html') -> HttpResponse:
     """
     View for a specific conversation.
     
@@ -114,6 +116,7 @@ def conversation_view(request: HttpRequest, conversation_id: uuid.UUID) -> HttpR
     Args:
         request: The HTTP request object
         conversation_id: The UUID of the conversation
+        template: Optional template path to use for rendering (for variant chat interfaces)
         
     Returns:
         Rendered conversation page
@@ -169,11 +172,16 @@ def conversation_view(request: HttpRequest, conversation_id: uuid.UUID) -> HttpR
     # Get all AI tools for the tool selector
     ai_tools = AITool.objects.all().order_by('name')
     
-    return render(request, 'interaction/conversation.html', {
+    return render(request, template, {
         'conversation': conversation,
-        'messages': messages_list,
+        'messages_list': messages_list,
+        'chat_messages': messages_list,  # For backward compatibility
+        'messages': messages_list,       # For backward compatibility
         'ai_tools': ai_tools,
-        'form': form
+        'form': form,
+        'form_action': 'interaction:send_message',
+        'conversation_id': conversation_id,
+        'chat_header_title': f"Conversation with {conversation.ai_tool.name}" if conversation.ai_tool else "Conversation"
     })
 
 
@@ -417,7 +425,7 @@ def chat_selection(request: HttpRequest) -> HttpResponse:
 
 @login_required
 def chat_view(request: HttpRequest, ai_id=None, 
-               conversation_id=None) -> HttpResponse:
+               conversation_id=None, template: str = 'interaction/unified/direct_chat.html') -> HttpResponse:
     """
     View for the chat interface.
     
@@ -427,6 +435,7 @@ def chat_view(request: HttpRequest, ai_id=None,
         request: The HTTP request object
         ai_id: The UUID of the AI tool, if starting a new conversation
         conversation_id: The UUID of the conversation, if continuing an existing one
+        template: Optional template path to use for rendering (for variant chat interfaces)
         
     Returns:
         Rendered chat page
@@ -540,12 +549,18 @@ def chat_view(request: HttpRequest, ai_id=None,
     # Get all AI tools for the tool selector
     ai_tools = AITool.objects.all().order_by('name')
     
-    return render(request, 'interaction/chat.html', {
+    return render(request, template, {
         'ai_tool': ai_tool,
         'conversation': conversation,
-        'messages': messages_list,
+        'messages_list': messages_list, 
+        'messages': messages_list,      # For backward compatibility
+        'chat_messages': messages_list, # For backward compatibility
         'ai_tools': ai_tools,
-        'form': form
+        'form': form,
+        'form_action': 'interaction:send_message' if conversation else 'interaction:message_view',
+        'conversation_id': conversation.id if conversation else None,
+        'chat_header_title': f"Chat with {ai_tool.name}" if ai_tool else "Chat with AI Assistant",
+        'show_debug': request.GET.get('debug', 'false').lower() == 'true'
     })
 
 
