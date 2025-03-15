@@ -7,59 +7,86 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}InspireAI - AI Tools Hub{% endblock %}</title>
     {% bootstrap_css %}
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <!-- Custom Styles -->
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
     {% block extra_css %}{% endblock %}
 </head>
 <body>
     <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
         <div class="container">
-            <a class="navbar-brand" href="{% url 'catalog:home' %}">
-                <img src="{% static 'images/logo.png' %}" alt="InspireAI Logo" height="30" class="d-inline-block align-top me-2">
-                InspireAI
+            <a class="navbar-brand d-flex align-items-center" href="{% url 'catalog:home' %}">
+                <div class="me-2 d-flex align-items-center justify-content-center rounded-circle bg-white" style="width: 36px; height: 36px;">
+                    <i class="fas fa-robot text-primary" style="font-size: 20px;"></i>
+                </div>
+                <span>Inspire<span class="fw-bold">AI</span></span>
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'catalog:home' %}">Home</a>
+                        <a class="nav-link" href="{% url 'catalog:home' %}">
+                            <i class="fas fa-home me-1"></i> Home
+                        </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'catalog:catalog' %}">AI Catalog</a>
+                        <a class="nav-link" href="{% url 'catalog:catalog' %}">
+                            <i class="fas fa-th-large me-1"></i> AI Catalog
+                        </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'catalog:statistics' %}">Statistics</a>
+                        <a class="nav-link" href="{% url 'catalog:statistics' %}">
+                            <i class="fas fa-chart-bar me-1"></i> Statistics
+                        </a>
                     </li>
                 </ul>
                 
                 <!-- Search Form -->
-                <form class="d-flex" method="GET" action="{% url 'catalog:search' %}">
-                    <input class="form-control me-2" type="search" name="q" placeholder="Search AI tools" aria-label="Search">
-                    <button class="btn btn-light" type="submit">Search</button>
+                <form class="d-flex mx-auto" method="GET" action="{% url 'catalog:search' %}" style="max-width: 400px;">
+                    <div class="input-group">
+                        <input class="form-control border-0 shadow-sm" type="search" name="q" placeholder="Search AI tools..." aria-label="Search">
+                        <button class="btn btn-light shadow-sm" type="submit">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
                 </form>
                 
                 <!-- User Authentication -->
                 <ul class="navbar-nav ms-auto">
                     {% if user.is_authenticated %}
                         <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" 
+                            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="navbarDropdown" role="button" 
                               data-bs-toggle="dropdown" aria-expanded="false">
+                              <div class="d-flex align-items-center justify-content-center bg-white rounded-circle me-2" style="width: 28px; height: 28px;">
+                                {% if user.profile_picture %}
+                                    <img src="{{ user.profile_picture.url }}" alt="{{ user.username }}" class="rounded-circle" style="width: 28px; height: 28px; object-fit: cover;">
+                                {% else %}
+                                    <i class="fas fa-user text-primary" style="font-size: 14px;"></i>
+                                {% endif %}
+                              </div>
                               {{ user.username }}
                             </a>
-                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                                <li><a class="dropdown-item" href="{% url 'users:profile' %}">Profile</a></li>
+                            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-custom" aria-labelledby="navbarDropdown">
+                                <li><a class="dropdown-item" href="{% url 'users:profile' %}"><i class="fas fa-user-circle me-2"></i> Profile</a></li>
+                                <li><a class="dropdown-item" href="{% url 'interaction:conversation_list' %}"><i class="fas fa-comments me-2"></i> Conversations</a></li>
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="{% url 'users:logout' %}">Logout</a></li>
+                                <li><a class="dropdown-item" href="{% url 'users:logout' %}"><i class="fas fa-sign-out-alt me-2"></i> Logout</a></li>
                             </ul>
                         </li>
                     {% else %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'users:login' %}">Login</a>
+                            <a class="nav-link btn btn-light text-primary px-3 mx-1 shadow-sm" href="{% url 'users:login' %}">Login</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'users:register' %}">Register</a>
+                            <a class="nav-link btn btn-accent px-3 mx-1 shadow-sm" href="{% url 'users:register' %}">Register</a>
                         </li>
                     {% endif %}
                 </ul>
@@ -68,27 +95,81 @@
     </nav>
 
     <!-- Main Content -->
-    <main class="container py-4">
-        {% bootstrap_messages %}
+    <main>
+        <!-- Messages -->
+        {% if messages %}
+            <div class="container mt-3">
+                {% bootstrap_messages %}
+            </div>
+        {% endif %}
+        
+        <!-- Content -->
         {% block content %}{% endblock %}
     </main>
 
     <!-- Footer -->
-    <footer class="bg-dark text-white py-4">
+    <footer class="bg-dark text-white py-5">
         <div class="container">
             <div class="row">
-                <div class="col-md-6">
-                    <h5>InspireAI</h5>
-                    <p>Your centralized hub for AI tools discovery</p>
+                <div class="col-lg-4 mb-4 mb-lg-0">
+                    <h5 class="mb-3 d-flex align-items-center">
+                        <div class="me-2 d-flex align-items-center justify-content-center rounded-circle bg-white" style="width: 28px; height: 28px;">
+                            <i class="fas fa-robot text-primary" style="font-size: 14px;"></i>
+                        </div>
+                        Inspire<span class="fw-bold">AI</span>
+                    </h5>
+                    <p class="text-muted mb-3">Your centralized hub for discovering, accessing, and interacting with the best AI tools.</p>
+                    <div class="d-flex gap-3">
+                        <a href="#" class="text-white">
+                            <i class="fab fa-twitter"></i>
+                        </a>
+                        <a href="#" class="text-white">
+                            <i class="fab fa-github"></i>
+                        </a>
+                        <a href="#" class="text-white">
+                            <i class="fab fa-linkedin"></i>
+                        </a>
+                    </div>
                 </div>
-                <div class="col-md-6 text-md-end">
-                    <p>&copy; {% now "Y" %} InspireAI. All rights reserved.</p>
+                <div class="col-lg-2 col-md-4 col-6 mb-4 mb-md-0">
+                    <h6 class="mb-3">Navigation</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><a href="{% url 'catalog:home' %}" class="text-muted">Home</a></li>
+                        <li class="mb-2"><a href="{% url 'catalog:catalog' %}" class="text-muted">AI Catalog</a></li>
+                        <li class="mb-2"><a href="{% url 'catalog:statistics' %}" class="text-muted">Statistics</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-2 col-md-4 col-6 mb-4 mb-md-0">
+                    <h6 class="mb-3">Categories</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><a href="{% url 'catalog:catalog' %}?category=TEXT" class="text-muted">Text Generation</a></li>
+                        <li class="mb-2"><a href="{% url 'catalog:catalog' %}?category=IMAGE" class="text-muted">Image Generation</a></li>
+                        <li class="mb-2"><a href="{% url 'catalog:catalog' %}?category=CHAT" class="text-muted">Conversational</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-4 col-md-4">
+                    <h6 class="mb-3">Subscribe to our newsletter</h6>
+                    <p class="text-muted mb-3">Get the latest updates on new AI tools and features.</p>
+                    <div class="input-group mb-3">
+                        <input type="email" class="form-control" placeholder="Your email" aria-label="Your email">
+                        <button class="btn btn-accent" type="button">Subscribe</button>
+                    </div>
+                </div>
+            </div>
+            <hr class="my-4 bg-secondary opacity-25">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-center">
+                <p class="mb-2 mb-md-0 text-muted">&copy; {% now "Y" %} InspireAI. All rights reserved.</p>
+                <div>
+                    <a href="#" class="text-muted me-3">Privacy Policy</a>
+                    <a href="#" class="text-muted me-3">Terms of Service</a>
+                    <a href="#" class="text-muted">Contact Us</a>
                 </div>
             </div>
         </div>
     </footer>
 
     {% bootstrap_javascript %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/js/all.min.js"></script>
     <script src="{% static 'js/main.js' %}"></script>
     {% block extra_js %}{% endblock %}
 </body>
