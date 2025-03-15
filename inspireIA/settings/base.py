@@ -59,8 +59,8 @@ TEMPLATES: List[Dict[str, Any]] = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
+            BASE_DIR / 'core' / 'templates',  # Core templates first for priority
             BASE_DIR / 'inspireIA' / 'templates',
-            BASE_DIR / 'core' / 'templates',
         ],
         'APP_DIRS': True,
         'OPTIONS': {
@@ -70,6 +70,7 @@ TEMPLATES: List[Dict[str, Any]] = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'catalog.context_processors.ai_categories',
+                'core.context_processors.version_info',  # Added version info
             ],
         },
     },
