@@ -1,5 +1,6 @@
 from django.urls import path, URLPattern, URLResolver
 from typing import List, Union
+from django.views.generic.base import RedirectView
 from . import views
 
 app_name = 'catalog'
@@ -13,12 +14,11 @@ urlpatterns: List[Union[URLPattern, URLResolver]] = [
     path('compare/', views.compare_tools, name='compare'),
     
     # User authentication - Redirects to centralized auth_app
-    path('register/', views.register_view, name='register'),
-    path('login/', views.login_view, name='login'),
-    path('logout/', views.logout_view, name='logout'),
-    path('profile/', views.profile_view, name='profile'),  # Redirects to profile_app
-
+    path('register/', RedirectView.as_view(pattern_name='auth_app:register', query_string=True), name='register'),
+    path('login/', RedirectView.as_view(pattern_name='auth_app:login', query_string=True), name='login'),
+    path('logout/', RedirectView.as_view(pattern_name='auth_app:logout', query_string=True), name='logout'),
+    path('profile/', RedirectView.as_view(pattern_name='profile_app:dashboard', query_string=True), name='profile'),
     
-    # Favorites
-    path('ai/<uuid:ai_id>/favorite/', views.toggle_favorite, name='toggle_favorite'),  # Redirects to profile_app
+    # Favorites - Redirect to profile_app
+    path('ai/<uuid:ai_id>/favorite/', RedirectView.as_view(pattern_name='profile_app:toggle_favorite', query_string=True), name='toggle_favorite'),
 ]

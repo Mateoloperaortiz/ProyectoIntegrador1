@@ -1,7 +1,12 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Dashboard - {{ user.username }}{% endblock %}
+<!-- This template is deprecated. Please use profile_app/templates/profile_app/dashboard.html instead. -->
+<!-- This template automatically redirects to the profile_app dashboard -->
+
+<meta http-equiv="refresh" content="0;url={% url 'profile_app:dashboard' %}">
+
+{% block title %}Redirecting to Dashboard...{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'users/css/dashboard.css' %}">

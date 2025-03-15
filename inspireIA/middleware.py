@@ -5,6 +5,8 @@ from typing import Any, Callable, Dict, Optional
 from django.http import HttpRequest, HttpResponse
 from django.utils import timezone
 
+from core.logging_utils import get_client_ip, redact_sensitive_data
+
 class RequestLogMiddleware:
     """
     Middleware to log request details including timing information.
@@ -65,7 +67,7 @@ class RequestLogMiddleware:
             'path': request.path,
             'status_code': response.status_code,
             'duration': f"{duration:.3f}s",
-            'ip_address': self._get_client_ip(request),
+            'ip_address': get_client_ip(request),
         }
         
         # Add user info if authenticated
@@ -105,24 +107,8 @@ class RequestLogMiddleware:
         
         return log_data
     
-    def _get_client_ip(self, request: HttpRequest) -> str:
-        """
-        Get the client IP address from the request.
-        
-        Args:
-            request: The HTTP request object
-            
-        Returns:
-            Client IP address as string
-        """
-        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-        if x_forwarded_for:
-            # X-Forwarded-For can be a comma-separated list of IPs.
-            # The client's IP will be the first one.
-            ip = x_forwarded_for.split(',')[0].strip()
-        else:
-            ip = request.META.get('REMOTE_ADDR', 'unknown')
-        return ip
+    # The _get_client_ip method has been replaced by the centralized version
+    # in core.logging_utils.get_client_ip
     
     def _filter_sensitive_params(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -134,14 +120,5 @@ class RequestLogMiddleware:
         Returns:
             Dictionary with sensitive parameters redacted
         """
-        sensitive_keys = ['password', 'token', 'key', 'secret', 'auth', 'credentials']
-        filtered_params = {}
-        
-        for key, value in params.items():
-            # Check if this key contains any sensitive terms
-            if any(sensitive in key.lower() for sensitive in sensitive_keys):
-                filtered_params[key] = '********'
-            else:
-                filtered_params[key] = value
-                
-        return filtered_params
+        # Use the centralized function for consistent redaction
+        return redact_sensitive_data(params)

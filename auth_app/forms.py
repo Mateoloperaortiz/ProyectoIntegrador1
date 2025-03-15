@@ -6,7 +6,7 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.core.validators import FileExtensionValidator
 
-from core.logging_utils import get_logger, log_user_activity
+from core.logging_utils import get_logger, log_user_activity, redact_sensitive_data
 
 # Get a logger for this module
 logger = get_logger(__name__)

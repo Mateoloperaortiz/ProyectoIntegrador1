@@ -1,8 +1,6 @@
 from typing import List, Union
 from django.urls import path, URLPattern, URLResolver
 from django.views.generic.base import RedirectView
-# Authentication views are now in auth_app
-from .views.auth import login_view, logout_view, register
 # Import directly from the module file
 from users.views_admin import check_user_permissions
 
@@ -11,10 +9,10 @@ app_name = 'users'
 
 # Type hint for URL patterns
 urlpatterns: List[Union[URLPattern, URLResolver]] = [
-    # Authentication URLs
-    path('login/', login_view, name='login'),
-    path('logout/', logout_view, name='logout'),
-    path('register/', register, name='register'),
+    # Authentication URLs - Redirect to centralized auth_app
+    path('login/', RedirectView.as_view(pattern_name='auth_app:login', query_string=True), name='login'),
+    path('logout/', RedirectView.as_view(pattern_name='auth_app:logout', query_string=True), name='logout'),
+    path('register/', RedirectView.as_view(pattern_name='auth_app:register', query_string=True), name='register'),
     
     # Redirect dashboard and profile URLs to profile_app
     path('dashboard/', RedirectView.as_view(pattern_name='profile_app:dashboard', query_string=True), name='dashboard'),

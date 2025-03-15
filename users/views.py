@@ -1,6 +1,8 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.forms import AuthenticationForm
+# Forms are now centralized in auth_app - this import is only kept for backward compatibility
+# and actually imports from auth_app under the hood
 from .forms import CustomUserCreationForm
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import Permission

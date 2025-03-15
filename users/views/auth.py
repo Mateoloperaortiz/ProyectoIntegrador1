@@ -1,26 +1,8 @@
 """
 Authentication views for the users app.
 
-This module contains views related to user authentication, including registration, login, and logout.
-These functions now redirect to the centralized auth_app views.
+DEPRECATED: These views are no longer used. Authentication is handled by direct redirects
+in urls.py to the centralized auth_app views.
+
+This module is kept for backward compatibility but should not be used in new code.
 """
-from django.http import HttpRequest, HttpResponse
-from django.shortcuts import redirect
-
-def register(request: HttpRequest) -> HttpResponse:
-    """
-    Redirects to the centralized register view.
-    """
-    return redirect('auth_app:register')
-
-def login_view(request: HttpRequest) -> HttpResponse:
-    """
-    Redirects to the centralized login view.
-    """
-    return redirect('auth_app:login')
-
-def logout_view(request: HttpRequest) -> HttpResponse:
-    """
-    Redirects to the centralized logout view.
-    """
-    return redirect('auth_app:logout')

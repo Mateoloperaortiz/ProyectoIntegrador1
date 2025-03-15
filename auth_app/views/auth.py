@@ -12,14 +12,17 @@ from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.views.decorators.http import require_http_methods
 
-from core.utils import get_client_ip
+from core.logging_utils import get_client_ip, log_user_activity, get_logger
+
+# Get a logger for this module
+logger = get_logger(__name__)
 from auth_app.forms import CustomUserCreationForm, CustomUserLoginForm
 
 
 @require_http_methods(["GET", "POST"])
 def register(request: HttpRequest, template_name: str = 'auth_app/register.html', 
              success_redirect: str = 'auth_app:login', 
-             authenticated_redirect: str = 'users:dashboard') -> HttpResponse:
+             authenticated_redirect: str = 'profile_app:dashboard') -> HttpResponse:
     """
     View for user registration.
     
@@ -42,9 +45,20 @@ def register(request: HttpRequest, template_name: str = 'auth_app/register.html'
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
-            # Log the registration
+            # Log the registration using centralized logging
             ip_address = get_client_ip(request)
-            # You could add logging here
+            
+            # Log user activity
+            log_user_activity(
+                logger=logger,
+                user_id=user.id,
+                action="user_registered",
+                details={
+                    'username': user.username,
+                    'email': user.email
+                },
+                ip_address=ip_address
+            )
             
             # Redirect to login page
             return redirect(success_redirect)
@@ -59,8 +73,8 @@ def register(request: HttpRequest, template_name: str = 'auth_app/register.html'
 @require_http_methods(["GET", "POST"])
 def login_view(request: HttpRequest, 
                template_name: str = 'auth_app/login.html',
-               success_redirect: str = 'users:dashboard',
-               authenticated_redirect: str = 'users:dashboard') -> HttpResponse:
+               success_redirect: str = 'profile_app:dashboard',
+               authenticated_redirect: str = 'profile_app:dashboard') -> HttpResponse:
     """
     View for user login.
     
@@ -87,9 +101,20 @@ def login_view(request: HttpRequest,
             user = authenticate(username=username, password=password)
             if user is not None:
                 login(request, user)
-                # Log the login
+                # Log the login using centralized logging
                 ip_address = get_client_ip(request)
-                # You could add logging here
+                
+                # Log user activity
+                log_user_activity(
+                    logger=logger,
+                    user_id=user.id,
+                    action="user_login",
+                    details={
+                        'username': username,
+                        'method': 'password'
+                    },
+                    ip_address=ip_address
+                )
                 
                 # Redirect to dashboard or next page
                 next_page = request.GET.get('next', success_redirect)
@@ -116,11 +141,25 @@ def logout_view(request: HttpRequest, success_redirect: str = 'catalog:home') ->
         Redirect to home
     """
     if request.user.is_authenticated:
-        # Log the logout
+        # Get user data before logout
+        user_id = request.user.id
+        username = request.user.username
+        
+        # Log the logout using centralized logging
         ip_address = get_client_ip(request)
-        # You could add logging here
         
         # Logout the user
         logout(request)
+        
+        # Log user activity after logout
+        log_user_activity(
+            logger=logger,
+            user_id=user_id,
+            action="user_logout",
+            details={
+                'username': username
+            },
+            ip_address=ip_address
+        )
         
     return redirect(success_redirect)

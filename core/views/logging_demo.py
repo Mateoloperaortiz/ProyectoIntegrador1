@@ -20,7 +20,8 @@ from core.logging_utils import (
     log_exception,
     log_user_activity,
 )
-from users.forms import CustomUserLoginForm, UserProfileForm
+from auth_app.forms import CustomUserLoginForm  # Centralized in auth_app
+from users.forms import UserProfileForm
 
 # Get a logger for this module
 logger = get_logger(__name__)
