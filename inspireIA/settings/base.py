@@ -70,7 +70,9 @@ TEMPLATES: List[Dict[str, Any]] = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'catalog.context_processors.ai_categories',
-                'core.context_processors.version_info',  # Added version info
+                'core.context_processors.global_settings',  # Global settings
+                'core.context_processors.user_context',     # User context
+                'core.context_processors.version_info',     # Version info
             ],
         },
     },
@@ -122,7 +124,14 @@ DEFAULT_AUTO_FIELD: str = 'django.db.models.BigAutoField'
 # Static files (CSS, JavaScript, Images)
 STATIC_URL: str = get_env_value('STATIC_URL', 'static/')
 STATIC_ROOT: Path = BASE_DIR / 'staticfiles'
-STATICFILES_DIRS: List[Path] = [BASE_DIR / 'static']
+STATICFILES_DIRS: List[Path] = [
+    BASE_DIR / 'static',
+    # Add app static directories directly for development
+    BASE_DIR / 'core' / 'static',
+    BASE_DIR / 'catalog' / 'static',
+    BASE_DIR / 'interaction' / 'static',
+    BASE_DIR / 'users' / 'static',
+]
 
 # Media files
 MEDIA_URL: str = get_env_value('MEDIA_URL', '/media/')

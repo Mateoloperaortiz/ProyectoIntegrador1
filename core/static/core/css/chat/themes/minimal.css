@@ -1,0 +1,109 @@
+/**
+ * Minimal chat theme
+ * A simple, minimalist design with reduced visual elements
+ */
+
+/* Import base styles and override */
+@import url('../themes/default.css');
+
+/* Chat container */
+.chat-container {
+    background-color: #ffffff;
+}
+
+/* Chat header */
+.chat-header {
+    padding: 12px 16px;
+    box-shadow: none;
+    border-bottom: 1px solid #eee;
+}
+
+.chat-title {
+    font-size: 1.25rem;
+}
+
+/* Chat messages area */
+.chat-messages {
+    padding: 12px 16px;
+}
+
+/* Debug panel */
+.debug-panel {
+    background-color: #f8f9fa;
+    padding: 12px;
+    margin-bottom: 12px;
+    border-radius: 4px;
+    border: none;
+}
+
+/* Empty state */
+.empty-state {
+    padding: 24px 16px;
+    box-shadow: none;
+    border: 1px dashed #e5e7eb;
+}
+
+.empty-state-icon i {
+    font-size: 2rem;
+}
+
+/* Message groups and bubbles */
+.message-group {
+    margin-bottom: 16px;
+    max-width: 85%;
+}
+
+.avatar {
+    width: 32px;
+    height: 32px;
+    margin: 0 8px;
+    box-shadow: none;
+}
+
+.user-avatar {
+    background-color: #6366f1;
+}
+
+.ai-avatar {
+    background-color: #f3f4f6;
+}
+
+.message-bubble {
+    padding: 10px 14px;
+    border-radius: 12px;
+    box-shadow: none;
+    border: 1px solid #e5e7eb;
+}
+
+.user-message .message-bubble {
+    border-top-right-radius: 2px;
+    background-color: #6366f1;
+    border: none;
+}
+
+.ai-message .message-bubble {
+    border-top-left-radius: 2px;
+}
+
+/* Input area */
+.chat-input-container {
+    padding: 12px 16px;
+    box-shadow: none;
+    border-top: 1px solid #eee;
+}
+
+.chat-input {
+    border-radius: 8px;
+    padding: 10px 14px;
+}
+
+.chat-send-btn {
+    width: 36px;
+    height: 36px;
+}
+
+/* Typing indicator */
+.typing-indicator span {
+    height: 6px;
+    width: 6px;
+}

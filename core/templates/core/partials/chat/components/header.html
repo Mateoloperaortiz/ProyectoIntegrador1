@@ -1,0 +1,38 @@
+{% comment %}
+Chat header component
+
+Required context variables:
+- title: The title to display in the header
+
+Optional context variables:
+- show_status: Whether to show online status indicator (default: True)
+- ai_tool: AI tool object for displaying tool-specific info (default: None)
+{% endcomment %}
+
+<div class="chat-header">
+    <div class="chat-header-content">
+        <h1 class="chat-title">
+            {% if ai_tool %}
+                {% if ai_tool.image %}
+                    <img src="{{ ai_tool.image.url }}" alt="{{ ai_tool.name }}" class="chat-ai-image" width="24" height="24">
+                {% endif %}
+                {{ ai_tool.name }}
+            {% else %}
+                {{ title|default:"Chat with AI Assistant" }}
+            {% endif %}
+        </h1>
+        
+        {% if show_status|default:True %}
+        <div class="chat-status">
+            <span class="status-indicator"></span>
+            <span class="status-text">Online</span>
+        </div>
+        {% endif %}
+    </div>
+    
+    {% if ai_tool and ai_tool.description %}
+    <div class="chat-subtitle">
+        {{ ai_tool.description|truncatechars:100 }}
+    </div>
+    {% endif %}
+</div>

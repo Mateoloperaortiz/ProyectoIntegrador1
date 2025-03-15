@@ -1,0 +1,49 @@
+{% comment %}
+Input area component
+
+Required context variables:
+- form_action: URL to submit the form to
+- conversation_id: ID of the conversation (or None for new conversation)
+
+Optional context variables:
+- placeholder: Placeholder text for the input (default: "Type your message here...")
+- max_length: Maximum length of the message (default: 4000)
+- rows: Initial number of rows for the textarea (default: 1)
+- form: Form instance for backward compatibility (default: None)
+{% endcomment %}
+
+<div class="chat-input-container">
+    <form id="messageForm" class="chat-input-form" action="{% url form_action %}" method="post">
+        {% csrf_token %}
+        <input type="hidden" name="conversation_id" value="{{ conversation_id|default:'' }}">
+        
+        {% if form %}
+            {# Support for legacy Django form rendering #}
+            <div class="chat-input-wrapper">
+                {{ form.media }}
+                {{ form.non_field_errors }}
+                <div class="chat-input-field">
+                    {{ form.content.errors }}
+                    {{ form.content }}
+                </div>
+            </div>
+        {% else %}
+            {# New component-based rendering #}
+            <div class="chat-input-wrapper">
+                <textarea 
+                    id="messageInput" 
+                    name="message"
+                    class="chat-input" 
+                    placeholder="{{ placeholder|default:'Type your message here...' }}" 
+                    rows="{{ rows|default:1 }}"
+                    maxlength="{{ max_length|default:4000 }}"
+                    required
+                ></textarea>
+            </div>
+        {% endif %}
+        
+        <button type="submit" class="chat-send-btn">
+            <i class="bi bi-send-fill"></i>
+        </button>
+    </form>
+</div>

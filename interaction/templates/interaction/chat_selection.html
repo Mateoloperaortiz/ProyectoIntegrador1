@@ -1,91 +1,1358 @@
 {% extends "base.html" %}
+{% load static %}
 
-{% block title %}Select AI for Chat - Inspire AI{% endblock %}
+{% block title %}Smart AI Chat - Inspire AI{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'interaction/css/chat.css' %}">
+<style>
+    /* Additional styling for the smart chat interface */
+    .chat-wrapper {
+        display: flex;
+        height: calc(100vh - 70px);
+        background-color: #f9fafb;
+        position: relative;
+    }
+    
+    .chat-main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        max-width: 1200px;
+        margin: 0 auto;
+        width: 100%;
+        background-color: white;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
+    }
+    
+    .chat-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid #e5e7eb;
+        background-color: white;
+    }
+    
+    .chat-header-info {
+        display: flex;
+        align-items: center;
+    }
+    
+    .chat-header-title {
+        font-weight: 600;
+        font-size: 1.25rem;
+        margin-bottom: 0;
+    }
+    
+    .chat-container {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 1.5rem;
+        scrollbar-width: thin;
+        scrollbar-color: #d1d5db #f3f4f6;
+    }
+    
+    .chat-messages::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .chat-messages::-webkit-scrollbar-track {
+        background: #f3f4f6;
+    }
+    
+    .chat-messages::-webkit-scrollbar-thumb {
+        background-color: #d1d5db;
+        border-radius: 3px;
+    }
+    
+    .chat-input-container {
+        padding: 1rem 1.5rem;
+        border-top: 1px solid #e5e7eb;
+        background-color: white;
+    }
+    
+    .chat-toolbar {
+        display: flex;
+        margin-bottom: 0.75rem;
+    }
+    
+    .toolbar-button {
+        background: none;
+        border: none;
+        color: #6b7280;
+        font-size: 0.875rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.375rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        margin-right: 0.75rem;
+    }
+    
+    .toolbar-button:hover {
+        background-color: #f3f4f6;
+        color: #111827;
+    }
+    
+    .chat-input-wrapper {
+        display: flex;
+        background-color: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.5rem;
+        padding: 0.75rem;
+    }
+    
+    .chat-input {
+        flex: 1;
+        border: none;
+        background: none;
+        resize: none;
+        outline: none;
+        padding: 0;
+        max-height: 150px;
+        overflow-y: auto;
+    }
+    
+    /* Message styling */
+    .message-group {
+        display: flex !important;
+        margin-bottom: 24px;
+        align-items: flex-start;
+        max-width: 90%;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    
+    .message-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 12px;
+        flex-shrink: 0;
+    }
+    
+    .user-avatar {
+        background-color: #2563eb;
+        color: white;
+    }
+    
+    .ai-avatar {
+        background-color: white;
+        border: 1px solid #e5e7eb;
+        color: #4b5563;
+    }
+    
+    .message-content-wrapper {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .message-sender {
+        font-size: 0.8125rem;
+        font-weight: 500;
+        margin-bottom: 4px;
+        color: #4b5563;
+    }
+    
+    .message-bubbles {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .message {
+        margin-bottom: 8px;
+        display: flex;
+        flex-direction: column;
+        max-width: 100%;
+    }
+    
+    .message-user {
+        align-self: flex-end;
+    }
+    
+    .message-ai {
+        align-self: flex-start;
+    }
+    
+    .message-bubble {
+        padding: 12px 16px;
+        border-radius: 12px;
+        font-size: 0.9375rem;
+        line-height: 1.6;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+    }
+    
+    .message-user .message-bubble {
+        background-color: #2563eb;
+        color: white;
+    }
+    
+    .message-ai .message-bubble {
+        background-color: #f9fafb;
+        color: #1a1a1a;
+    }
+    
+    .message-time {
+        font-size: 0.6875rem;
+        color: #6b7280;
+        margin-top: 4px;
+        text-align: right;
+        opacity: 0.8;
+    }
+    
+    /* Empty state styling */
+    .chat-empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        height: 100%;
+        padding: 2rem;
+        color: #6b7280;
+    }
+    
+    .chat-empty-state-icon {
+        font-size: 3rem;
+        margin-bottom: 1.5rem;
+        width: 80px;
+        height: 80px;
+        background-color: #f3f4f6;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #9ca3af;
+    }
+    
+    .chat-empty-state h3 {
+        font-weight: 600;
+        font-size: 1.5rem;
+        margin-bottom: 0.75rem;
+        color: #111827;
+    }
+    
+    .chat-empty-state p {
+        margin-bottom: 1.5rem;
+        max-width: 600px;
+    }
+    
+    .start-chat-btn {
+        padding: 0.75rem 1.5rem;
+        background-color: #2563eb;
+        color: white;
+        border: none;
+        border-radius: 0.5rem;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .start-chat-btn:hover {
+        background-color: #1d4ed8;
+    }
+    
+    /* Recent conversations sidebar */
+    .recent-conversations {
+        max-width: 350px;
+        border-left: 1px solid rgba(0, 0, 0, 0.1);
+        height: 100%;
+        overflow-y: auto;
+        background-color: white;
+    }
+    
+    .recent-conversations-header {
+        padding: 1.25rem;
+        border-bottom: 1px solid #e5e7eb;
+        font-weight: 600;
+    }
+    
+    .recent-conversation-item {
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid #e5e7eb;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .recent-conversation-item:hover {
+        background-color: #f9fafb;
+    }
+    
+    .recent-conversation-title {
+        font-weight: 500;
+        margin-bottom: 0.25rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .recent-conversation-meta {
+        display: flex;
+        font-size: 0.75rem;
+        color: #6b7280;
+    }
+    
+    .recent-conversation-meta div {
+        margin-right: 0.75rem;
+        display: flex;
+        align-items: center;
+    }
+    
+    .recent-conversation-meta i {
+        margin-right: 0.25rem;
+    }
+    
+    /* Typing indicator */
+    .typing-indicator {
+        display: flex;
+        padding: 0.5rem 1rem;
+        background-color: #f9fafb;
+        border-radius: 1rem;
+        width: fit-content;
+    }
+    
+    .typing-dot {
+        width: 8px;
+        height: 8px;
+        background-color: #9ca3af;
+        border-radius: 50%;
+        margin: 0 2px;
+        animation: typing-animation 1s infinite ease-in-out;
+    }
+    
+    .typing-dot:nth-child(1) {
+        animation-delay: 0s;
+    }
+    
+    .typing-dot:nth-child(2) {
+        animation-delay: 0.2s;
+    }
+    
+    .typing-dot:nth-child(3) {
+        animation-delay: 0.4s;
+    }
+    
+    @keyframes typing-animation {
+        0%, 60%, 100% {
+            transform: translateY(0);
+        }
+        30% {
+            transform: translateY(-5px);
+        }
+    }
+    
+    /* Suggestions chips */
+    .input-suggestions {
+        display: flex;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+        gap: 0.5rem;
+    }
+    
+    .suggestion-chip {
+        background-color: #f3f4f6;
+        border-radius: 1rem;
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+    }
+    
+    .suggestion-chip:hover {
+        background-color: #e5e7eb;
+    }
+    
+    /* Character counter */
+    .char-count {
+        position: absolute;
+        bottom: 0.25rem;
+        right: 0.5rem;
+        font-size: 0.75rem;
+        color: #9ca3af;
+    }
+    
+    .char-count.limit-near {
+        color: #f59e0b;
+    }
+    
+    .char-count.limit-reached {
+        color: #ef4444;
+    }
+    
+    /* Smart routing indicator */
+    .smart-routing-indicator {
+        position: absolute;
+        bottom: 1rem;
+        left: 1rem;
+        font-size: 0.75rem;
+        color: #6b7280;
+        display: flex;
+        align-items: center;
+        background-color: #f3f4f6;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        opacity: 0.8;
+    }
+    
+    .smart-routing-indicator i {
+        margin-right: 0.25rem;
+    }
+    
+    /* Tool selection box */
+    .ai-tool-selection {
+        display: none;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 1.5rem;
+        border-radius: 0.5rem;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        max-width: 500px;
+        width: 90%;
+        z-index: 1000;
+    }
+    
+    .ai-tool-selection-header {
+        font-weight: 600;
+        margin-bottom: 1rem;
+        text-align: center;
+    }
+    
+    .ai-tool-selection-body {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+    }
+    
+    .ai-tool-option {
+        flex: 1 0 calc(50% - 0.75rem);
+        border: 1px solid #e5e7eb;
+        border-radius: 0.5rem;
+        padding: 0.75rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        transition: all 0.2s ease;
+    }
+    
+    .ai-tool-option:hover {
+        border-color: #2563eb;
+        background-color: #f0f7ff;
+    }
+    
+    .ai-tool-option.selected {
+        border-color: #2563eb;
+        background-color: #ebf5ff;
+    }
+    
+    .ai-tool-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 0.25rem;
+        background-color: #f3f4f6;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 0.75rem;
+    }
+    
+    .ai-tool-info {
+        flex: 1;
+    }
+    
+    .ai-tool-name {
+        font-weight: 500;
+        margin-bottom: 0.25rem;
+    }
+    
+    .ai-tool-category {
+        font-size: 0.75rem;
+        color: #6b7280;
+    }
+    
+    .ai-tool-selection-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.75rem;
+    }
+    
+    /* Scroll to bottom button */
+    .scroll-to-bottom {
+        position: absolute;
+        bottom: 5rem;
+        right: 1.5rem;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: white;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.2s ease;
+    }
+    
+    .scroll-to-bottom.show {
+        opacity: 1;
+        visibility: visible;
+    }
+    
+    .scroll-to-bottom:hover {
+        background-color: #f3f4f6;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .chat-wrapper {
+            flex-direction: column;
+        }
+        
+        .chat-main {
+            max-width: 100%;
+            flex: none;
+        }
+        
+        .recent-conversations {
+            width: 100%;
+            max-width: none;
+            height: auto;
+            border-left: none;
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+        }
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="container py-5">
-    <div class="row mb-4">
-        <div class="col-12">
-            <h1 class="display-5 fw-bold text-primary mb-4">Chat with AI Tools</h1>
-            <p class="lead">Select an AI tool to start a new conversation or continue a recent one.</p>
+<div class="chat-wrapper">
+    <!-- Main Chat Area -->
+    <div class="chat-main">
+        <!-- Chat Header -->
+        <div class="chat-header">
+            <div class="chat-header-info">
+                <div class="chat-header-title">
+                    <i class="bi bi-stars me-2"></i> Smart AI Chat
+                </div>
+            </div>
+            <div class="chat-header-actions">
+                <button class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-info-circle me-1"></i> About Smart Routing
+                </button>
+            </div>
+        </div>
+
+        <!-- Chat Container -->
+        <div class="chat-container">
+            <div class="chat-messages" id="chatMessages">
+                <!-- Empty State -->
+                <div class="chat-empty-state">
+                    <div class="chat-empty-state-icon">
+                        <i class="bi bi-chat-dots"></i>
+                    </div>
+                    <h3>Welcome to Smart AI Chat</h3>
+                    <p>Just start typing and our smart routing system will automatically select the best AI tool for your question. No need to choose - we'll handle that for you!</p>
+                    <button class="start-chat-btn" id="focusInputBtn">
+                        <i class="bi bi-chat-text me-2"></i> Start chatting
+                    </button>
+                </div>
+            </div>
             
-            <div class="mt-3 mb-4">
-                <h3 class="h5 mb-3">Try different chat interfaces:</h3>
-                <div class="d-flex flex-wrap gap-2">
-                    <a href="{% url 'interaction:direct_chat' %}" class="btn btn-sm btn-outline-secondary">Original Chat</a>
-                    <a href="{% url 'interaction:unified_chat' %}" class="btn btn-sm btn-outline-primary">Unified Chat</a>
-                    <a href="{% url 'interaction:modern_chat' %}" class="btn btn-sm btn-outline-info">Modern Theme</a>
-                    <a href="{% url 'interaction:minimal_chat' %}" class="btn btn-sm btn-outline-dark">Minimal Debug</a>
-                    <a href="{% url 'interaction:enhanced_chat' %}" class="btn btn-sm btn-outline-success">Enhanced Chat</a>
+            <!-- Chat Input -->
+            <div class="chat-input-container">
+                <div class="chat-toolbar">
+                    <button class="toolbar-button tooltip" id="clearChatBtn">
+                        <i class="bi bi-trash"></i> Clear chat
+                    </button>
+                    <button class="toolbar-button tooltip" id="savePromptBtn">
+                        <i class="bi bi-bookmark"></i> Save prompt
+                    </button>
                 </div>
-                <div class="mt-2">
-                    <small class="text-muted">These are different themes and configurations of our new unified chat system.</small>
+                <div class="chat-input-wrapper">
+                    <textarea id="messageInput" class="chat-input" placeholder="Type your message here..." required></textarea>
+                    <button type="button" class="btn btn-primary" id="sendBtn" style="margin-left: 10px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 8px;">
+                        <i class="bi bi-send-fill"></i>
+                    </button>
                 </div>
+            </div>
+            
+            <!-- Smart Routing Indicator (shows when routing is activated) -->
+            <div class="smart-routing-indicator" style="display: none;">
+                <i class="bi bi-lightning-fill"></i> 
+                <span>Smart routing is finding the best AI tool for your question</span>
             </div>
         </div>
     </div>
-
-    <!-- Recent Conversations -->
+    
     {% if recent_conversations %}
-    <div class="row mb-5">
-        <div class="col-12">
-            <h2 class="h4 mb-3">Recent Conversations</h2>
-            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-                {% for conversation in recent_conversations %}
-                <div class="col">
-                    <div class="card h-100 shadow-sm">
-                        <div class="card-body">
-                            <h5 class="card-title">{{ conversation.title }}</h5>
-                            <p class="card-text text-muted">
-                                <small>{{ conversation.ai_tool.name }} • {{ conversation.updated_at|date:"M d, Y" }}</small>
-                            </p>
-                        </div>
-                        <div class="card-footer bg-transparent border-0">
-                            <a href="{% url 'interaction:continue_conversation' conversation_id=conversation.id %}" class="btn btn-outline-primary">Continue</a>
-                        </div>
+    <!-- Recent Conversations Sidebar -->
+    <div class="recent-conversations d-none d-md-block">
+        <div class="recent-conversations-header">
+            <i class="bi bi-clock-history me-2"></i> Recent Conversations
+        </div>
+        
+        {% for conversation in recent_conversations %}
+        <a href="{% url 'interaction:continue_conversation' conversation_id=conversation.id %}" class="text-decoration-none text-reset">
+            <div class="recent-conversation-item">
+                <div class="recent-conversation-title">{{ conversation.title }}</div>
+                <div class="recent-conversation-meta">
+                    <div>
+                        <i class="bi bi-robot"></i> {{ conversation.ai_tool.name }}
+                    </div>
+                    <div>
+                        <i class="bi bi-calendar3"></i> {{ conversation.updated_at|date:"M d" }}
                     </div>
                 </div>
-                {% endfor %}
             </div>
-            <div class="mt-3">
-                <a href="{% url 'interaction:conversation_history' %}" class="btn btn-link">View all conversations</a>
-            </div>
+        </a>
+        {% endfor %}
+        
+        <div class="p-3 text-center">
+            <a href="{% url 'interaction:conversation_history' %}" class="btn btn-sm btn-outline-primary w-100">
+                <i class="bi bi-list-ul me-1"></i> View All Conversations
+            </a>
         </div>
     </div>
     {% endif %}
+    
+    <!-- Scroll to Bottom Button -->
+    <div class="scroll-to-bottom" id="scrollToBottomBtn">
+        <i class="bi bi-arrow-down"></i>
+    </div>
+</div>
 
-    <!-- AI Tools -->
-    <div class="row">
-        <div class="col-12">
-            <h2 class="h4 mb-3">Available AI Tools</h2>
-            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-                {% for ai_tool in ai_tools %}
-                <div class="col">
-                    <div class="card h-100 shadow-sm">
-                        {% if ai_tool.image %}
-                        <img src="{{ ai_tool.image.url }}" class="card-img-top p-3" alt="{{ ai_tool.name }}" style="height: 180px; object-fit: contain;">
-                        {% else %}
-                        <div class="card-img-top d-flex align-items-center justify-content-center bg-light" style="height: 180px;">
-                            <i class="bi bi-robot fs-1 text-secondary"></i>
-                        </div>
-                        {% endif %}
-                        <div class="card-body">
-                            <h5 class="card-title">{{ ai_tool.name }}</h5>
-                            <p class="card-text">{{ ai_tool.description|truncatechars:100 }}</p>
-                            <div class="d-flex justify-content-between align-items-center">
-                                <span class="badge bg-primary">{{ ai_tool.category }}</span>
-                                <span class="badge bg-secondary">{{ ai_tool.get_api_type_display }}</span>
-                            </div>
-                        </div>
-                        <div class="card-footer bg-transparent border-0">
-                            <a href="{% url 'interaction:chat' ai_id=ai_tool.id %}" class="btn btn-primary">Start Chat</a>
-                            <a href="{% url 'catalog:presentationAI' id=ai_tool.id %}" class="btn btn-link">Details</a>
-                        </div>
+<!-- Save Prompt Modal -->
+<div class="modal fade" id="savePromptModal" tabindex="-1" aria-labelledby="savePromptModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="savePromptModalLabel">
+                    <i class="bi bi-bookmark-plus me-2"></i> Save Prompt
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="savePromptForm" method="post" action="{% url 'interaction:save_favorite_prompt' %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="promptTitle" class="form-label">Prompt Title</label>
+                        <input type="text" class="form-control" id="promptTitle" name="title" required>
                     </div>
-                </div>
-                {% endfor %}
+                    <div class="mb-3">
+                        <label for="promptText" class="form-label">Prompt Text</label>
+                        <textarea class="form-control" id="promptText" name="prompt_text" rows="4" required></textarea>
+                    </div>
+                    <input type="hidden" name="ai_id" id="promptAiId" value="">
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save me-2"></i> Save Prompt
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 </div>
-{% endblock %} 
+
+<!-- Loading Indicator -->
+<div id="loadingIndicator" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center;">
+    <div style="background-color: white; padding: 20px; border-radius: 10px; text-align: center;">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <div class="mt-2">Processing your request...</div>
+    </div>
+</div>
+
+<!-- About Smart Routing Modal -->
+<div class="modal fade" id="aboutSmartRoutingModal" tabindex="-1" aria-labelledby="aboutSmartRoutingModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="aboutSmartRoutingModalLabel">
+                    <i class="bi bi-lightning-fill me-2"></i> About Smart Routing
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Smart Routing automatically selects the most appropriate AI tool for your query based on its content. Here's how it works:</p>
+                
+                <h6 class="mt-3 mb-2">Content Analysis</h6>
+                <p>Our system analyzes your message to determine what type of task you're trying to accomplish.</p>
+                
+                <h6 class="mt-3 mb-2">Tool Selection</h6>
+                <p>Based on the analysis, it selects from specialized AI tools including:</p>
+                <ul>
+                    <li><strong>Text Generator</strong> - For general questions and discussions</li>
+                    <li><strong>Image Generator</strong> - When you want to create or modify images</li>
+                    <li><strong>Code Generator</strong> - For programming help and code generation</li>
+                    <li><strong>Video Generator</strong> - For video creation queries</li>
+                    <li><strong>Word Processor</strong> - For text editing, summarization, or translation</li>
+                </ul>
+                
+                <h6 class="mt-3 mb-2">Smart Defaults</h6>
+                <p>If your query doesn't clearly match a specialized tool, the system defaults to the most versatile Text Generator.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Got it!</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM fully loaded - initializing chat interface');
+        
+        // DOM elements
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const chatMessages = document.getElementById('chatMessages');
+        const clearChatBtn = document.getElementById('clearChatBtn');
+        const savePromptBtn = document.getElementById('savePromptBtn');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const focusInputBtn = document.getElementById('focusInputBtn');
+        const scrollToBottomBtn = document.getElementById('scrollToBottomBtn');
+        const smartRoutingIndicator = document.querySelector('.smart-routing-indicator');
+        const aboutRoutingBtn = document.querySelector('.chat-header-actions button');
+        
+        // Check if essential elements exist
+        if (!messageInput) console.error('Message input element not found!');
+        if (!sendBtn) console.error('Send button element not found!');
+        
+        // Global variables
+        let conversationId = "";
+        let currentAiTool = null;
+        let isProcessing = false;
+        const MAX_MESSAGE_LENGTH = 4000;
+        
+        // Add character counter to input
+        const charCountElement = document.createElement('div');
+        charCountElement.className = 'char-count';
+        document.querySelector('.chat-input-wrapper').appendChild(charCountElement);
+        
+        // Sample suggested prompts
+        const suggestedPrompts = [
+            "Generate an image of a sunset over mountains",
+            "Write a Python function to sort a list",
+            "Summarize this article for me",
+            "Explain quantum computing in simple terms",
+            "Translate 'hello world' to Spanish"
+        ];
+        
+        // Create suggestions chips if there are no messages
+        if (document.querySelector('.chat-empty-state')) {
+            const inputSuggestions = document.createElement('div');
+            inputSuggestions.className = 'input-suggestions';
+            
+            suggestedPrompts.forEach(prompt => {
+                const chip = document.createElement('div');
+                chip.className = 'suggestion-chip';
+                chip.textContent = prompt;
+                chip.addEventListener('click', function() {
+                    messageInput.value = prompt;
+                    messageInput.focus();
+                    updateCharCount();
+                    messageInput.dispatchEvent(new Event('input'));
+                });
+                inputSuggestions.appendChild(chip);
+            });
+            
+            document.querySelector('.chat-input-container').insertBefore(
+                inputSuggestions, 
+                document.querySelector('.chat-input-wrapper')
+            );
+        }
+        
+        // Auto-resize textarea and update character count
+        messageInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+            updateCharCount();
+        });
+        
+        // Update character count
+        function updateCharCount() {
+            const length = messageInput.value.length;
+            charCountElement.textContent = `${length}/${MAX_MESSAGE_LENGTH}`;
+            
+            if (length > MAX_MESSAGE_LENGTH * 0.9 && length <= MAX_MESSAGE_LENGTH) {
+                charCountElement.className = 'char-count limit-near';
+            } else if (length > MAX_MESSAGE_LENGTH) {
+                charCountElement.className = 'char-count limit-reached';
+                messageInput.value = messageInput.value.substring(0, MAX_MESSAGE_LENGTH);
+            } else {
+                charCountElement.className = 'char-count';
+            }
+        }
+        
+        // Initial character count update
+        updateCharCount();
+        
+        // Focus input when clicking the start chat button
+        if (focusInputBtn) {
+            focusInputBtn.addEventListener('click', function() {
+                if (messageInput) {
+                    messageInput.focus();
+                }
+            });
+        }
+        
+        // Show About Smart Routing modal
+        if (aboutRoutingBtn) {
+            aboutRoutingBtn.addEventListener('click', function() {
+                const modal = new bootstrap.Modal(document.getElementById('aboutSmartRoutingModal'));
+                modal.show();
+            });
+        }
+        
+        // Save prompt button
+        if (savePromptBtn) {
+            savePromptBtn.addEventListener('click', function() {
+                const lastUserMessage = document.querySelector('.message-user .message-bubble:last-child');
+                const promptTextArea = document.getElementById('promptText');
+                const promptAiId = document.getElementById('promptAiId');
+                
+                if (lastUserMessage) {
+                    promptTextArea.value = lastUserMessage.textContent.trim();
+                }
+                
+                if (currentAiTool && currentAiTool.id) {
+                    promptAiId.value = currentAiTool.id;
+                }
+                
+                const modal = new bootstrap.Modal(document.getElementById('savePromptModal'));
+                modal.show();
+            });
+        }
+        
+        // Scroll to bottom button
+        if (scrollToBottomBtn) {
+            chatMessages.addEventListener('scroll', function() {
+                const scrollPosition = chatMessages.scrollTop + chatMessages.clientHeight;
+                const scrollHeight = chatMessages.scrollHeight;
+                
+                if (scrollHeight - scrollPosition > 100) {
+                    scrollToBottomBtn.classList.add('show');
+                } else {
+                    scrollToBottomBtn.classList.remove('show');
+                }
+            });
+            
+            scrollToBottomBtn.addEventListener('click', function() {
+                scrollToBottom();
+            });
+        }
+        
+        // Scroll to bottom of chat
+        function scrollToBottom() {
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        // Initial scroll to bottom
+        scrollToBottom();
+        
+        // Send message on Enter (but allow Shift+Enter for new lines)
+        if (messageInput) {
+            messageInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+        }
+        
+        // Send message on button click
+        if (sendBtn) {
+            sendBtn.addEventListener('click', function() {
+                sendMessage();
+            });
+        }
+        
+        // Clear chat
+        if (clearChatBtn) {
+            clearChatBtn.addEventListener('click', function() {
+                if (confirm('Are you sure you want to clear this conversation? This cannot be undone.')) {
+                    if (conversationId) {
+                        // Create a form and submit it to delete the conversation
+                        const form = document.createElement('form');
+                        form.method = 'POST';
+                        form.action = `/interaction/conversations/${conversationId}/delete/`;
+                        
+                        // Add CSRF token
+                        const csrfInput = document.createElement('input');
+                        csrfInput.type = 'hidden';
+                        csrfInput.name = 'csrfmiddlewaretoken';
+                        csrfInput.value = getCookie('csrftoken');
+                        form.appendChild(csrfInput);
+                        
+                        // Append form to body and submit
+                        document.body.appendChild(form);
+                        form.submit();
+                    } else {
+                        // If no conversation ID exists yet, just clear the UI
+                        chatMessages.innerHTML = '';
+                        // Recreate the empty state
+                        const emptyState = document.createElement('div');
+                        emptyState.className = 'chat-empty-state';
+                        emptyState.innerHTML = `
+                            <div class="chat-empty-state-icon">
+                                <i class="bi bi-chat-dots"></i>
+                            </div>
+                            <h3>Welcome to Smart AI Chat</h3>
+                            <p>Just start typing and our smart routing system will automatically select the best AI tool for your question. No need to choose - we'll handle that for you!</p>
+                            <button class="start-chat-btn" id="focusInputBtn">
+                                <i class="bi bi-chat-text me-2"></i> Start chatting
+                            </button>
+                        `;
+                        chatMessages.appendChild(emptyState);
+                        
+                        // Re-add event listener to the new focusInputBtn
+                        const newFocusBtn = document.getElementById('focusInputBtn');
+                        if (newFocusBtn) {
+                            newFocusBtn.addEventListener('click', function() {
+                                messageInput.focus();
+                            });
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Save prompt form submission
+        const savePromptForm = document.getElementById('savePromptForm');
+        if (savePromptForm) {
+            savePromptForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const title = document.getElementById('promptTitle').value.trim();
+                const promptText = document.getElementById('promptText').value.trim();
+                const aiId = document.getElementById('promptAiId').value;
+                
+                if (!title || !promptText) {
+                    alert('Please fill in all fields');
+                    return;
+                }
+                
+                loadingIndicator.style.display = 'flex';
+                
+                fetch('{% url "interaction:save_favorite_prompt" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({
+                        title: title,
+                        prompt_text: promptText,
+                        ai_id: aiId
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    loadingIndicator.style.display = 'none';
+                    
+                    if (data.success) {
+                        // Close modal
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('savePromptModal'));
+                        if (modal) {
+                            modal.hide();
+                        }
+                        
+                        // Show success message
+                        alert('Prompt saved successfully!');
+                    } else {
+                        alert('Error: ' + (data.error || 'An unknown error occurred'));
+                    }
+                })
+                .catch(error => {
+                    loadingIndicator.style.display = 'none';
+                    console.error('Error:', error);
+                    alert('An error occurred while saving the prompt');
+                });
+            });
+        }
+        
+        // Send message function
+        function sendMessage() {
+            const message = messageInput.value.trim();
+            
+            // Validate message
+            if (!message) {
+                return;
+            }
+            if (message.length > MAX_MESSAGE_LENGTH) {
+                alert(`Message is too long. Maximum length is ${MAX_MESSAGE_LENGTH} characters.`);
+                return;
+            }
+            
+            // Prevent multiple submissions
+            if (isProcessing) {
+                return;
+            }
+            
+            isProcessing = true;
+            
+            // Disable input and show loading
+            messageInput.disabled = true;
+            sendBtn.disabled = true;
+            
+            // Add user message to UI immediately
+            addMessageToUI(message, true);
+            
+            // Clear input and reset height
+            messageInput.value = '';
+            messageInput.style.height = 'auto';
+            updateCharCount();
+            
+            // Scroll to bottom
+            scrollToBottom();
+            
+            // Show smart routing indicator
+            smartRoutingIndicator.style.display = 'flex';
+            
+            // Add AI typing indicator
+            const typingIndicator = document.createElement('div');
+            typingIndicator.className = 'message-group typing-indicator-group';
+            typingIndicator.innerHTML = `
+                <div class="message-avatar ai-avatar">
+                    <i class="bi bi-robot"></i>
+                </div>
+                <div class="message-content-wrapper">
+                    <div class="message-sender">AI Assistant</div>
+                    <div class="typing-indicator">
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                    </div>
+                </div>
+            `;
+            chatMessages.appendChild(typingIndicator);
+            scrollToBottom();
+            
+            // Send to server
+            const csrfToken = getCookie('csrftoken');
+            
+            const endpoint = conversationId 
+                ? `/interaction/chat/conversation/${conversationId}/send/` 
+                : '/interaction/direct_chat_message/';
+            
+            fetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    message: message
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Remove typing indicator
+                const indicator = document.querySelector('.typing-indicator-group');
+                if (indicator) chatMessages.removeChild(indicator);
+                
+                // Hide smart routing indicator
+                smartRoutingIndicator.style.display = 'none';
+                
+                if (data.conversation_id && !conversationId) {
+                    conversationId = data.conversation_id;
+                    
+                    // Update the current AI tool info
+                    currentAiTool = {
+                        id: data.ai_tool_id || '',
+                        name: data.ai_tool_name || 'AI Assistant'
+                    };
+                    
+                    // Show tool selection notification
+                    const toolNotification = document.createElement('div');
+                    toolNotification.className = 'alert alert-info mx-auto my-2';
+                    toolNotification.style.maxWidth = '90%';
+                    toolNotification.innerHTML = `
+                        <i class="bi bi-lightning-fill me-2"></i>
+                        Smart routing selected <strong>${data.ai_tool_name}</strong> for your question
+                    `;
+                    chatMessages.appendChild(toolNotification);
+                    
+                    // After 5 seconds, fade out the notification
+                    setTimeout(() => {
+                        toolNotification.style.transition = 'opacity 1s ease';
+                        toolNotification.style.opacity = '0';
+                        setTimeout(() => {
+                            if (toolNotification.parentNode) {
+                                chatMessages.removeChild(toolNotification);
+                            }
+                        }, 1000);
+                    }, 5000);
+                }
+                
+                // Add AI response to UI
+                if (data.message) {
+                    addMessageToUI(data.message, false, data.timestamp);
+                } else if (data.error) {
+                    addErrorMessageToUI(data.error);
+                } else {
+                    addErrorMessageToUI('Received an invalid response format from the server.');
+                }
+            })
+            .catch(error => {
+                console.error('Error in chat request:', error);
+                
+                // Remove typing indicator
+                const indicator = document.querySelector('.typing-indicator-group');
+                if (indicator) chatMessages.removeChild(indicator);
+                
+                // Hide smart routing indicator
+                smartRoutingIndicator.style.display = 'none';
+                
+                // Show error message
+                addErrorMessageToUI('An error occurred while communicating with the server. Please try again later.');
+            })
+            .finally(() => {
+                // Re-enable input
+                messageInput.disabled = false;
+                sendBtn.disabled = false;
+                isProcessing = false;
+                messageInput.focus();
+                
+                // Scroll to bottom
+                scrollToBottom();
+            });
+        }
+        
+        // Add message to UI
+        function addMessageToUI(content, isUser, timestamp) {
+            // Create message group container
+            const messageGroup = document.createElement('div');
+            messageGroup.className = 'message-group';
+            
+            // Get current time or use provided timestamp
+            let timeString;
+            if (timestamp) {
+                timeString = timestamp;
+            } else {
+                const now = new Date();
+                timeString = now.getHours().toString().padStart(2, '0') + ':' + 
+                              now.getMinutes().toString().padStart(2, '0');
+            }
+            
+            // Create avatar element
+            const avatarDiv = document.createElement('div');
+            avatarDiv.className = isUser ? 'message-avatar user-avatar' : 'message-avatar ai-avatar';
+            
+            // Add icon to avatar
+            const icon = document.createElement('i');
+            icon.className = isUser ? 'bi bi-person-fill' : 'bi bi-robot';
+            avatarDiv.appendChild(icon);
+            
+            // Create content wrapper
+            const contentWrapper = document.createElement('div');
+            contentWrapper.className = 'message-content-wrapper';
+            
+            // Create sender div
+            const senderDiv = document.createElement('div');
+            senderDiv.className = 'message-sender';
+            senderDiv.textContent = isUser ? 'You' : (currentAiTool ? currentAiTool.name : 'AI Assistant');
+            
+            // Create message bubbles
+            const bubblesDiv = document.createElement('div');
+            bubblesDiv.className = 'message-bubbles';
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = isUser ? 'message message-user' : 'message message-ai';
+            
+            const bubbleDiv = document.createElement('div');
+            bubbleDiv.className = 'message-bubble';
+            
+            // Process content for better rendering
+            const processedContent = processMessageContent(content);
+            bubbleDiv.innerHTML = processedContent;
+            
+            const timeDiv = document.createElement('div');
+            timeDiv.className = 'message-time';
+            
+            const timeIcon = document.createElement('i');
+            timeIcon.className = 'bi bi-clock';
+            timeDiv.appendChild(timeIcon);
+            timeDiv.appendChild(document.createTextNode(' ' + timeString));
+            
+            // Assemble the message
+            messageDiv.appendChild(bubbleDiv);
+            messageDiv.appendChild(timeDiv);
+            bubblesDiv.appendChild(messageDiv);
+            
+            contentWrapper.appendChild(senderDiv);
+            contentWrapper.appendChild(bubblesDiv);
+            
+            messageGroup.appendChild(avatarDiv);
+            messageGroup.appendChild(contentWrapper);
+            
+            // If this is the first message, remove the empty state
+            const emptyState = document.querySelector('.chat-empty-state');
+            if (emptyState) {
+                chatMessages.innerHTML = '';
+                
+                // Also remove suggestions if they exist
+                const suggestions = document.querySelector('.input-suggestions');
+                if (suggestions) {
+                    suggestions.remove();
+                }
+            }
+            
+            // Add to chat and scroll
+            chatMessages.appendChild(messageGroup);
+            
+            // Add animation class with a slight delay for visual effect
+            setTimeout(() => {
+                messageGroup.classList.add('animate-in');
+            }, 10);
+            
+            scrollToBottom();
+        }
+        
+        // Process message content for better rendering
+        function processMessageContent(content) {
+            if (!content) return '';
+            
+            // First handle code blocks to prevent other formatting from affecting them
+            let processed = content;
+            
+            // Convert markdown code blocks with language specification
+            processed = processed.replace(/```([\w]*)\n([\s\S]*?)```/g, function(match, language, code) {
+                return '<pre><code class="language-' + (language || 'plaintext') + '">' + code + '</code></pre>';
+            });
+            
+            // Convert inline code
+            processed = processed.replace(/`([^`]+)`/g, '<code>$1</code>');
+            
+            // Replace newlines with line breaks
+            processed = processed.replace(/\n/g, '<br>');
+            
+            // Convert URLs to clickable links
+            processed = processed.replace(
+                /(https?:\/\/[^\s<]+)/g, 
+                '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>'
+            );
+            
+            // Convert markdown bold
+            processed = processed.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+            
+            // Convert markdown italic
+            processed = processed.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+            
+            return processed;
+        }
+        
+        // Add error message to UI
+        function addErrorMessageToUI(errorMessage) {
+            // Create message group container
+            const messageGroup = document.createElement('div');
+            messageGroup.className = 'message-group';
+            messageGroup.setAttribute('role', 'alert');
+            
+            // Get current time
+            const now = new Date();
+            const timeString = now.getHours().toString().padStart(2, '0') + ':' + 
+                              now.getMinutes().toString().padStart(2, '0');
+            
+            // Create avatar
+            const avatarDiv = document.createElement('div');
+            avatarDiv.className = 'message-avatar ai-avatar';
+            
+            const icon = document.createElement('i');
+            icon.className = 'bi bi-exclamation-triangle';
+            avatarDiv.appendChild(icon);
+            
+            // Create content wrapper
+            const contentWrapper = document.createElement('div');
+            contentWrapper.className = 'message-content-wrapper';
+            
+            // Create sender div
+            const senderDiv = document.createElement('div');
+            senderDiv.className = 'message-sender';
+            senderDiv.textContent = 'System';
+            
+            // Create message bubbles
+            const bubblesDiv = document.createElement('div');
+            bubblesDiv.className = 'message-bubbles';
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message message-error';
+            
+            const bubbleDiv = document.createElement('div');
+            bubbleDiv.className = 'message-bubble';
+            bubbleDiv.style.backgroundColor = '#fee2e2';
+            bubbleDiv.style.color = '#b91c1c';
+            bubbleDiv.textContent = errorMessage;
+            
+            const timeDiv = document.createElement('div');
+            timeDiv.className = 'message-time';
+            
+            const timeIcon = document.createElement('i');
+            timeIcon.className = 'bi bi-clock';
+            timeDiv.appendChild(timeIcon);
+            timeDiv.appendChild(document.createTextNode(' ' + timeString));
+            
+            // Assemble the message
+            messageDiv.appendChild(bubbleDiv);
+            messageDiv.appendChild(timeDiv);
+            bubblesDiv.appendChild(messageDiv);
+            
+            contentWrapper.appendChild(senderDiv);
+            contentWrapper.appendChild(bubblesDiv);
+            
+            messageGroup.appendChild(avatarDiv);
+            messageGroup.appendChild(contentWrapper);
+            
+            // Add to chat
+            chatMessages.appendChild(messageGroup);
+        }
+        
+        // Get CSRF token
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    });
+</script>
+{% endblock %}

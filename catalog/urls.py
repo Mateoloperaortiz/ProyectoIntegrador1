@@ -8,8 +8,8 @@ app_name = 'catalog'
 urlpatterns: List[Union[URLPattern, URLResolver]] = [
     # Main pages
     path('', views.home, name='home'),
-    path('models/', views.CatalogView.as_view(), name='catalog'),
-    path(' presentation/<uuid:id>/', views.presentationAI, name='presentationAI'),
+    path('list/', views.CatalogView.as_view(), name='catalog'),  # /catalog/list/ for catalog view
+    path('presentation/<uuid:id>/', views.presentationAI, name='presentationAI'),  # Fixed space in URL
     path('compare/', views.compare_tools, name='compare'),
     
     # User authentication - Redirects to centralized auth_app

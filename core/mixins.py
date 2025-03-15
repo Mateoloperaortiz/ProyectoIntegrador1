@@ -97,6 +97,48 @@ class PaginationMixin:
             context['show_last'] = page_range_end < paginator.num_pages
             
         return context
+        
+    def get_pagination_context(self, context: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Separate method to add pagination context to an existing context dict.
+        
+        Args:
+            context: Existing context dictionary
+            
+        Returns:
+            The updated context with pagination data
+        """
+        queryset = self.get_queryset()
+        paginator, page, queryset, is_paginated = self.paginate_queryset(queryset)
+        
+        context.update({
+            'paginator': paginator,
+            'page_obj': page,
+            'is_paginated': is_paginated,
+            'object_list': queryset
+        })
+        
+        # Add pagination range for better navigation
+        if is_paginated:
+            # Calculate page range to display (show 5 pages around current page)
+            current_page = page.number
+            
+            # Calculate page range to display (show 5 pages around current page)
+            page_range_start = max(current_page - 2, 1)
+            page_range_end = min(current_page + 2, paginator.num_pages)
+            
+            # Ensure we always show 5 pages if possible
+            if page_range_end - page_range_start < 4 and paginator.num_pages > 4:
+                if page_range_start == 1:
+                    page_range_end = min(5, paginator.num_pages)
+                elif page_range_end == paginator.num_pages:
+                    page_range_start = max(paginator.num_pages - 4, 1)
+                    
+            context['page_range'] = range(page_range_start, page_range_end + 1)
+            context['show_first'] = page_range_start > 1
+            context['show_last'] = page_range_end < paginator.num_pages
+            
+        return context
 
 
 class FilterMixin:

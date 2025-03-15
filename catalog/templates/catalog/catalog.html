@@ -2,28 +2,28 @@
 {% load static %}
 {% load catalog_extras %}
 
-{% block title %}AI Models | InspireAI{% endblock %}
+{% block title %}AI Tools | InspireAI{% endblock %}
 
 {% block extra_css %}
 <style>
-  /* Modern, clean styling for catalog page */
+  /* Hugging Face Spaces inspired styling */
   :root {
-    --primary-color: #5B46F4;
-    --primary-light: #7868fa;
-    --primary-dark: #4935c8;
-    --secondary-color: #FF8A3D;
-    --neutral-50: #F9FAFB;
-    --neutral-100: #F3F4F6;
-    --neutral-200: #E5E7EB;
-    --neutral-300: #D1D5DB;
-    --neutral-500: #6B7280;
-    --neutral-700: #374151;
-    --neutral-900: #111827;
+    --primary-color: #0EA5E9;
+    --primary-light: #38BDF8;
+    --primary-dark: #0284C7;
+    --secondary-color: #EC4899;
+    --neutral-50: #F8FAFC;
+    --neutral-100: #F1F5F9;
+    --neutral-200: #E2E8F0;
+    --neutral-300: #CBD5E1;
+    --neutral-500: #64748B;
+    --neutral-700: #334155;
+    --neutral-900: #0F172A;
     --success-color: #10B981;
     --warning-color: #F59E0B;
     --danger-color: #EF4444;
-    --info-color: #3B82F6;
-    --radius: 12px;
+    --info-color: #6366F1;
+    --radius: 8px;
     --transition: 0.2s ease;
   }
   
@@ -35,30 +35,72 @@
   }
   
   .catalog-header {
-    background: linear-gradient(180deg, rgba(91, 70, 244, 0.05) 0%, rgba(255, 255, 255, 0) 100%);
-    padding: 3rem 0 2rem;
-    margin-bottom: 2rem;
+    background: linear-gradient(180deg, rgba(14, 165, 233, 0.05) 0%, rgba(56, 189, 248, 0.03) 50%, rgba(255, 255, 255, 0) 100%);
+    padding: 2rem 0 1.5rem;
+    margin-bottom: 1.5rem;
     border-bottom: 1px solid var(--neutral-100);
   }
   
   .header-title {
-    font-weight: 800;
-    font-size: 2.5rem;
-    margin-bottom: 0.75rem;
+    font-weight: 700;
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
     color: var(--neutral-900);
   }
   
   .header-subtitle {
-    font-size: 1.125rem;
+    font-size: 1rem;
     color: var(--neutral-700);
     max-width: 700px;
   }
   
-  /* Layout Grid */
+  /* Category pills - Hugging Face style */
+  .categories-scroll {
+    display: flex;
+    overflow-x: auto;
+    padding-bottom: 1rem;
+    margin-bottom: 1.5rem;
+    gap: 0.5rem;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+  }
+  
+  .categories-scroll::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+  }
+  
+  .category-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    background-color: white;
+    border: 1px solid var(--neutral-200);
+    border-radius: 100px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--neutral-700);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all var(--transition);
+  }
+  
+  .category-pill:hover {
+    background-color: var(--neutral-100);
+    color: var(--primary-color);
+    border-color: var(--primary-light);
+  }
+  
+  .category-pill.active {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+  }
+  
+  /* Layout Grid - Hugging Face style */
   .layout-grid {
     display: grid;
-    grid-template-columns: 280px 1fr;
-    gap: 2rem;
+    grid-template-columns: 240px 1fr;
+    gap: 1.5rem;
   }
   
   /* Filters sidebar */
@@ -67,7 +109,7 @@
     top: 1.5rem;
     background: white;
     border-radius: var(--radius);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
     overflow: hidden;
     border: 1px solid var(--neutral-200);
     height: fit-content;
@@ -221,11 +263,11 @@
     color: var(--neutral-700);
   }
   
-  /* Model cards */
+  /* Model cards - Hugging Face Spaces style */
   .models-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1rem;
   }
   
   .model-card {
@@ -240,24 +282,41 @@
   }
   
   .model-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.05);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
     border-color: var(--primary-light);
   }
   
+  .model-thumbnail {
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    position: relative;
+    background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+  }
+  
+  .model-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+  }
+  
+  .model-card:hover .model-thumbnail img {
+    transform: scale(1.05);
+  }
+  
   .model-header {
-    padding: 1.5rem;
+    padding: 1rem;
     display: flex;
     align-items: center;
-    gap: 1rem;
-    border-bottom: 1px solid var(--neutral-100);
+    gap: 0.75rem;
   }
   
   .model-logo {
-    width: 48px;
-    height: 48px;
+    width: 40px;
+    height: 40px;
     flex-shrink: 0;
-    border-radius: 8px;
+    border-radius: 6px;
     overflow: hidden;
     display: flex;
     align-items: center;
@@ -265,7 +324,8 @@
     background: linear-gradient(135deg, var(--primary-light), var(--primary-color));
     color: white;
     font-weight: 600;
-    font-size: 1.25rem;
+    font-size: 1rem;
+    border: 1px solid var(--neutral-200);
   }
   
   .model-logo img {
@@ -276,87 +336,139 @@
   
   .model-title {
     font-weight: 600;
-    font-size: 1.125rem;
+    font-size: 1rem;
     color: var(--neutral-900);
     margin-bottom: 0.25rem;
     display: flex;
     align-items: center;
-    flex-wrap: wrap;
-    gap: 0.5rem;
+    line-height: 1.3;
   }
   
   .model-provider {
-    font-size: 0.875rem;
+    font-size: 0.8125rem;
     color: var(--neutral-500);
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+  
+  .model-provider-link {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 500;
+  }
+  
+  .model-provider-link:hover {
+    text-decoration: underline;
   }
   
   .model-badge {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
     padding: 0.25rem 0.5rem;
     border-radius: 4px;
-    font-size: 0.625rem;
+    font-size: 0.6875rem;
     font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+    margin-left: 0.5rem;
+    white-space: nowrap;
   }
   
   .badge-api {
-    background-color: rgba(59, 130, 246, 0.1);
+    background-color: rgba(99, 102, 241, 0.1);
     color: var(--info-color);
   }
   
   .badge-featured {
-    background-color: rgba(245, 158, 11, 0.1);
-    color: var(--warning-color);
+    background-color: rgba(236, 72, 153, 0.1);
+    color: var(--secondary-color);
+  }
+  
+  .badge-new {
+    background-color: rgba(14, 165, 233, 0.1);
+    color: var(--primary-color);
   }
   
   .model-content {
-    padding: 1.5rem;
+    padding: 0 1rem 1rem;
     flex-grow: 1;
     display: flex;
     flex-direction: column;
   }
   
   .model-description {
-    font-size: 0.875rem;
+    font-size: 0.8125rem;
     color: var(--neutral-700);
-    margin-bottom: 1.5rem;
-    line-height: 1.6;
+    margin-bottom: 1rem;
+    line-height: 1.5;
     display: -webkit-box;
-    -webkit-line-clamp: 3;
+    -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+  }
+  
+  .model-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-top: auto;
+    gap: 1rem;
+    font-size: 0.75rem;
+    color: var(--neutral-500);
+  }
+  
+  .model-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
   }
   
   .model-tags {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
-    margin-top: auto;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
   }
   
   .model-tag {
-    display: inline-block;
-    padding: 0.25rem 0.75rem;
-    background: rgba(91, 70, 244, 0.1);
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.5rem;
+    background: rgba(14, 165, 233, 0.1);
     color: var(--primary-color);
-    border-radius: 100px;
-    font-size: 0.75rem;
+    border-radius: 4px;
+    font-size: 0.6875rem;
     font-weight: 500;
   }
   
   .model-footer {
-    padding: 1rem 1.5rem;
+    padding: 0.75rem 1rem;
     border-top: 1px solid var(--neutral-100);
     display: flex;
     justify-content: space-between;
     align-items: center;
+    background-color: var(--neutral-50);
+  }
+  
+  .model-stats {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  
+  .stat-item {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.75rem;
+    color: var(--neutral-700);
   }
   
   .model-price {
-    font-size: 0.875rem;
+    font-size: 0.75rem;
     font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
   }
   
   .price-free {
@@ -373,26 +485,26 @@
   }
   
   .btn-model {
-    padding: 0.5rem 1rem;
-    font-size: 0.875rem;
+    padding: 0.375rem 0.75rem;
+    font-size: 0.75rem;
     font-weight: 500;
     border-radius: 6px;
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.25rem;
     transition: all var(--transition);
   }
   
   .btn-outline {
     border: 1px solid var(--neutral-200);
     color: var(--neutral-700);
-    background: transparent;
+    background: white;
   }
   
   .btn-outline:hover {
-    border-color: var(--neutral-300);
-    color: var(--neutral-900);
-    background: var(--neutral-50);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    background: white;
   }
   
   .btn-primary {
@@ -405,6 +517,33 @@
     background: var(--primary-dark);
     border-color: var(--primary-dark);
     color: white;
+    box-shadow: 0 1px 2px rgba(14, 165, 233, 0.3);
+  }
+  
+  /* Like button */
+  .btn-like {
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    background: white;
+    border: 1px solid var(--neutral-200);
+    color: var(--neutral-500);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition);
+  }
+  
+  .btn-like:hover {
+    color: var(--secondary-color);
+    border-color: var(--secondary-color);
+    background-color: rgba(236, 72, 153, 0.05);
+  }
+  
+  .btn-like.active {
+    color: var(--secondary-color);
+    border-color: var(--secondary-color);
+    background-color: rgba(236, 72, 153, 0.1);
   }
   
   /* Empty state */
@@ -580,8 +719,20 @@
   <!-- Catalog Header -->
   <header class="catalog-header">
     <div class="container">
-      <h1 class="header-title">AI Models Catalog</h1>
-      <p class="header-subtitle">Explore our curated collection of AI models and tools to enhance your projects and workflows.</p>
+      <h1 class="header-title">AI Tools & Models</h1>
+      <p class="header-subtitle">Discover and explore AI tools to enhance your projects and workflows.</p>
+      
+      <!-- Category Pills - HF Style -->
+      <div class="categories-scroll">
+        <button class="category-pill {% if not selected_category %}active{% endif %}" data-category="">
+          All Categories
+        </button>
+        {% for category in categories %}
+          <button class="category-pill {% if selected_category == category %}active{% endif %}" data-category="{{ category }}">
+            {{ category }}
+          </button>
+        {% endfor %}
+      </div>
     </div>
   </header>
 
@@ -720,10 +871,22 @@
             </div>
           {% endif %}
           
-          <!-- Models Grid -->
+          <!-- Models Grid - Hugging Face Spaces style -->
           <div class="models-grid">
             {% for ai in ai_tools %}
               <div class="model-card fade-in delay-{{ forloop.counter0|add:1 }}">
+                <!-- Thumbnail -->
+                <div class="model-thumbnail">
+                  {% if ai.image %}
+                    <img src="{{ ai.image.url }}" alt="{{ ai.name }}">
+                  {% else %}
+                    <div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:1.5rem; color:var(--primary-color);">
+                      <i class="fas fa-cube"></i>
+                    </div>
+                  {% endif %}
+                </div>
+                
+                <!-- Header -->
                 <div class="model-header">
                   <div class="model-logo">
                     {% if ai.image %}
@@ -735,43 +898,62 @@
                   <div>
                     <h3 class="model-title">
                       {{ ai.name }}
-                      {% if ai.api_type != 'none' %}
-                        <span class="model-badge badge-api">API</span>
-                      {% endif %}
                       {% if ai.is_featured %}
                         <span class="model-badge badge-featured">Featured</span>
                       {% endif %}
                     </h3>
                     <div class="model-provider">
-                      <i class="fas fa-building me-1"></i> {{ ai.provider }}
+                      by <span class="model-provider-link">{{ ai.provider }}</span>
+                      {% if ai.api_type != 'none' %}
+                        <span class="model-badge badge-api">API</span>
+                      {% endif %}
                     </div>
                   </div>
                 </div>
                 
+                <!-- Content -->
                 <div class="model-content">
                   <div class="model-description">{{ ai.description }}</div>
                   <div class="model-tags">
-                    <span class="model-tag">{{ ai.category }}</span>
+                    <span class="model-tag"><i class="fas fa-tag me-1"></i>{{ ai.category }}</span>
                     {% if ai.api_type != 'none' %}
-                      <span class="model-tag">{{ ai.api_type }}</span>
+                      <span class="model-tag"><i class="fas fa-plug me-1"></i>{{ ai.api_type }}</span>
                     {% endif %}
+                  </div>
+                  
+                  <!-- Meta info -->
+                  <div class="model-meta">
+                    <div class="model-price {% if ai.is_free %}price-free{% else %}price-paid{% endif %}">
+                      {% if ai.is_free %}
+                        <i class="fas fa-tag"></i> Free
+                      {% else %}
+                        <i class="fas fa-dollar-sign"></i> Paid
+                      {% endif %}
+                    </div>
                   </div>
                 </div>
                 
+                <!-- Footer -->
                 <div class="model-footer">
-                  <div class="model-price {% if ai.is_free %}price-free{% else %}price-paid{% endif %}">
-                    {% if ai.is_free %}
-                      <i class="fas fa-tag me-1"></i> Free
-                    {% else %}
-                      <i class="fas fa-dollar-sign me-1"></i> Paid
-                    {% endif %}
+                  <div class="model-stats">
+                    <div class="stat-item">
+                      <i class="fas fa-eye"></i>
+                      {{ ai.popularity|default:"0" }}
+                    </div>
+                    <div class="stat-item">
+                      <i class="fas fa-star"></i>
+                      {{ ai.rating_average|default:"0" }}
+                    </div>
                   </div>
                   <div class="model-actions">
+                    <button class="btn-like" title="Like this model">
+                      <i class="far fa-heart"></i>
+                    </button>
                     <a href="{% url 'catalog:presentationAI' ai.id %}" class="btn-model btn-outline">
-                      <i class="fas fa-eye"></i> Details
+                      Details
                     </a>
                     <a href="{% url 'interaction:chat' ai_id=ai.id %}" class="btn-model btn-primary">
-                      <i class="fas fa-rocket"></i> Try
+                      <i class="fas fa-rocket me-1"></i>Try
                     </a>
                   </div>
                 </div>
@@ -852,12 +1034,14 @@
   document.addEventListener('DOMContentLoaded', function() {
     // Filter functionality
     const searchInput = document.getElementById('search-input');
+    const categoryPills = document.querySelectorAll('.category-pill');
     const categoryRadios = document.querySelectorAll('input[name="category"]');
     const pricingRadios = document.querySelectorAll('input[name="pricing"]');
     const sortRadios = document.querySelectorAll('input[name="sort"]');
     const showFiltersBtn = document.getElementById('show-filters-btn');
     const closeFiltersBtn = document.getElementById('close-filters-btn');
     const filtersContainer = document.getElementById('filters-container');
+    const likeButtons = document.querySelectorAll('.btn-like');
     
     // Apply filters function
     function applyFilters() {
@@ -895,6 +1079,58 @@
       // Navigate to filtered URL
       window.location.href = url.toString();
     }
+    
+    // Category pills
+    categoryPills.forEach(pill => {
+      pill.addEventListener('click', function() {
+        const category = this.getAttribute('data-category');
+        let url = new URL(window.location.href.split('?')[0]);
+        
+        // Keep other params
+        if (searchInput.value) {
+          url.searchParams.append('q', searchInput.value);
+        }
+        
+        // Add pricing from radios
+        for (let radio of pricingRadios) {
+          if (radio.checked && radio.value) {
+            url.searchParams.append('pricing', radio.value);
+            break;
+          }
+        }
+        
+        // Add sort from radios
+        for (let radio of sortRadios) {
+          if (radio.checked) {
+            url.searchParams.append('sort', radio.value);
+            break;
+          }
+        }
+        
+        // Add category if not "All Categories"
+        if (category) {
+          url.searchParams.append('category', category);
+        }
+        
+        // Navigate
+        window.location.href = url.toString();
+      });
+    });
+    
+    // Like button functionality
+    likeButtons.forEach(button => {
+      button.addEventListener('click', function() {
+        this.classList.toggle('active');
+        const icon = this.querySelector('i');
+        if (this.classList.contains('active')) {
+          icon.classList.remove('far');
+          icon.classList.add('fas');
+        } else {
+          icon.classList.remove('fas');
+          icon.classList.add('far');
+        }
+      });
+    });
     
     // Add event listeners
     searchInput.addEventListener('keypress', function(e) {

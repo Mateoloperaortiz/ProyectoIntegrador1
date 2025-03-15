@@ -1,0 +1,20 @@
+{% comment %}
+Message bubble component
+
+Required context variables:
+- message: The message object with at least is_user, content, and timestamp attributes
+{% endcomment %}
+
+<div class="message-group {% if message.is_user %}user-message{% else %}ai-message{% endif %}">
+    <div class="avatar {% if message.is_user %}user-avatar{% else %}ai-avatar{% endif %}">
+        <i class="bi bi-{% if message.is_user %}person-fill{% else %}robot{% endif %}"></i>
+    </div>
+    <div class="message-content-wrapper">
+        <div class="message-bubble">
+            <div class="message-content">{{ message.content|safe }}</div>
+        </div>
+        <div class="message-time">
+            {% if message.is_user %}You{% else %}AI Assistant{% endif %} • {{ message.timestamp|date:"g:i A" }}
+        </div>
+    </div>
+</div>

@@ -4,7 +4,9 @@ Core context processors for templates.
 This module contains context processors that add common data to all templates.
 """
 from typing import Dict, Any
+import datetime
 from django.http import HttpRequest
+from django.conf import settings
 
 
 def global_settings(request: HttpRequest) -> Dict[str, Any]:
@@ -45,3 +47,31 @@ def user_context(request: HttpRequest) -> Dict[str, Any]:
         })
         
     return context
+
+
+def version_info(request: HttpRequest) -> Dict[str, Any]:
+    """
+    Add version information to all templates.
+    
+    Args:
+        request: The HTTP request object
+        
+    Returns:
+        Dictionary with version information
+    """
+    # Get environment type or default to development
+    environment = getattr(settings, 'ENVIRONMENT', 'development')
+    
+    # Get build date (example implementation - in production this might
+    # be populated by the CI/CD pipeline)
+    build_date = datetime.datetime.now().strftime('%Y-%m-%d')
+    
+    # Get debug status
+    debug_mode = getattr(settings, 'DEBUG', False)
+    
+    return {
+        'app_version': '1.0.0',  # Update as needed for your versioning scheme
+        'build_date': build_date,
+        'environment': environment,
+        'debug_mode': debug_mode,
+    }

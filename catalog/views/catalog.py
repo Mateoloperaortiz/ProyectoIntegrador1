@@ -14,7 +14,7 @@ from catalog.services import filter_ai_tools, get_ai_models
 from core.mixins import PaginationMixin, FilterMixin
 
 
-class CatalogView(PaginationMixin, FilterMixin, ListView):
+class CatalogView(ListView, PaginationMixin, FilterMixin):
     """
     View for displaying the catalog of AI tools with filtering and pagination.
     
@@ -53,8 +53,7 @@ class CatalogView(PaginationMixin, FilterMixin, ListView):
         _, filter_context = filter_ai_tools(request=self.request)
         context.update(filter_context)
         
-        # Add pagination context
-        context = self.get_pagination_context(context)
+        # Pagination context is already added by PaginationMixin's get_context_data
         
         return context
 
@@ -80,7 +79,7 @@ def catalog_view(request: HttpRequest) -> HttpResponse:
     return render(request, 'catalog/catalog.html', context)
 
 
-class ModelsView(PaginationMixin, ListView):
+class ModelsView(ListView, PaginationMixin):
     """
     View for displaying AI models with pagination.
     
@@ -113,8 +112,7 @@ class ModelsView(PaginationMixin, ListView):
         """
         context = super().get_context_data(**kwargs)
         
-        # Add pagination context
-        context = self.get_pagination_context(context)
+        # Pagination context is already added by PaginationMixin's get_context_data
         
         return context
 

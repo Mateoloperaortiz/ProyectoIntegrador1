@@ -1,7 +1,10 @@
 {% extends "base.html" %}
+{% block body_class %}chat-fullscreen-page{% endblock %}
 {% load static %}
 
 {% block title %}Chat with {{ ai_tool.name }} - Inspire AI{% endblock %}
+
+{% block header %}{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'interaction/css/chat.css' %}">
@@ -126,11 +129,20 @@
         min-height: 24px;
         font-family: inherit;
     }
+    
+    html, body {
+        overflow: hidden;
+        margin: 0;
+        padding: 0;
+        height: 100vh;
+        width: 100vw;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="chat-wrapper">
+{% block main %}{% endblock %}
+<div class="chat-wrapper" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 9999;">
     <!-- Main Chat Area -->
     <div class="chat-main">
         <!-- Chat Header -->

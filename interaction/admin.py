@@ -129,10 +129,10 @@ class MessageAdmin(OptimizedQuerysetMixin, ContentPreviewMixin, admin.ModelAdmin
         return format_html('<a href="{}">{}</a>', url, obj.conversation.title)
 
 class FavoritePromptAdmin(OptimizedQuerysetMixin, ContentPreviewMixin, admin.ModelAdmin):
-    list_display = ('title', 'user', 'ai_tools_list', 'prompt_preview', 'created_at')
-    list_filter = ('ai_tools', 'created_at')
+    list_display = ('title', 'user', 'ai_tools_list', 'prompt_preview', 'created_at', 'updated_at')
+    list_filter = ('ai_tools', 'created_at', 'updated_at')
     search_fields = ('title', 'prompt_text', 'user__username', 'user__email')
-    readonly_fields = ('created_at', 'id')
+    readonly_fields = ('created_at', 'updated_at', 'id')
     date_hierarchy = 'created_at'
     raw_id_fields = ('user',)
     filter_horizontal = ('ai_tools',)
@@ -156,10 +156,10 @@ class FavoritePromptAdmin(OptimizedQuerysetMixin, ContentPreviewMixin, admin.Mod
         return ", ".join([tool.name for tool in obj.ai_tools.all()])
 
 class SharedChatAdmin(OptimizedQuerysetMixin, admin.ModelAdmin):
-    list_display = ('conversation_link', 'created_by_display', 'recipient_display', 'is_public', 'created_at')
-    list_filter = ('is_public', 'created_at')
+    list_display = ('conversation_link', 'created_by_display', 'recipient_display', 'is_public', 'created_at', 'updated_at')
+    list_filter = ('is_public', 'created_at', 'updated_at')
     search_fields = ('conversation__title', 'created_by__username', 'recipient__username')
-    readonly_fields = ('created_at', 'access_token', 'id')
+    readonly_fields = ('created_at', 'updated_at', 'access_token', 'id')
     date_hierarchy = 'created_at'
     raw_id_fields = ('conversation', 'created_by', 'recipient')
     

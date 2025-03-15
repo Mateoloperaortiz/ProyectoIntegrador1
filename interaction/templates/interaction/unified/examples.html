@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{# 
+This template provides examples of how to use the unified chat template system.
+It's designed as a reference for developers implementing chat interfaces.
+This template is not intended to be rendered directly.
+#}
+
+{% block title %}Chat Template Examples - Inspire AI{% endblock %}
+
+{% block content %}
+
+<h1>Chat Template Examples</h1>
+
+<h2>Basic Usage</h2>
+<pre>
+{% verbatim %}
+{% include "core/partials/chat/chat_base.html" with 
+    conversation=conversation 
+    messages_list=messages_list 
+    form_action="interaction:direct_chat_message"
+%}
+{% endverbatim %}
+</pre>
+
+<h2>Full Configuration Example</h2>
+<pre>
+{% verbatim %}
+{% include "core/partials/chat/chat_base.html" with 
+    # Required parameters
+    conversation=conversation 
+    messages_list=messages_list 
+    form_action="interaction:direct_chat_message"
+    
+    # Backward compatibility parameters
+    conversation_id=conversation_id  # Used if conversation is None
+    chat_messages=chat_messages      # Alternative to messages_list
+    form=form                        # Django form instance
+    
+    # Visual customization
+    theme="default"                  # Options: default, minimal, modern
+    chat_header_title="Chat Title"   # Custom title
+    container_height="500px"         # Custom height
+    show_status=True                 # Show online indicator
+    show_empty_state=True            # Show empty state when no messages
+    
+    # Debug options
+    show_debug=False                 # Show debug panel
+    collapsible_debug=True           # Make debug panel collapsible
+    debug=False                      # Enable debug logging in console
+    
+    # Behavior configuration
+    enable_markdown=True             # Enable markdown formatting
+    enable_keyboard_shortcuts=True   # Enable keyboard shortcuts
+    enable_auto_scroll=True          # Auto-scroll to bottom
+    enable_auto_focus=True           # Auto-focus input field
+    
+    # AI tool variables
+    ai_tool=ai_tool                  # Current AI tool
+    ai_tools=ai_tools                # List of all AI tools
+%}
+{% endverbatim %}
+</pre>
+
+<h2>Theme Examples</h2>
+
+<h3>Default Theme</h3>
+<pre>
+{% verbatim %}
+{% include "core/partials/chat/chat_base.html" with 
+    conversation=conversation 
+    messages_list=messages_list 
+    form_action="interaction:direct_chat_message"
+    theme="default"
+%}
+{% endverbatim %}
+</pre>
+
+<h3>Minimal Theme</h3>
+<pre>
+{% verbatim %}
+{% include "core/partials/chat/chat_base.html" with 
+    conversation=conversation 
+    messages_list=messages_list 
+    form_action="interaction:direct_chat_message"
+    theme="minimal"
+    show_status=False
+%}
+{% endverbatim %}
+</pre>
+
+<h3>Modern Theme</h3>
+<pre>
+{% verbatim %}
+{% include "core/partials/chat/chat_base.html" with 
+    conversation=conversation 
+    messages_list=messages_list 
+    form_action="interaction:direct_chat_message"
+    theme="modern"
+    chat_header_title="AI Chat Experience"
+%}
+{% endverbatim %}
+</pre>
+
+<h2>Debug Usage</h2>
+<pre>
+{% verbatim %}
+{% include "core/partials/chat/chat_base.html" with 
+    conversation=conversation 
+    messages_list=messages_list 
+    form_action="interaction:direct_chat_message"
+    show_debug=True
+    collapsible_debug=True
+    debug=True
+%}
+{% endverbatim %}
+</pre>
+
+{% endblock %}

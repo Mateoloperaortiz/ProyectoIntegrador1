@@ -1,0 +1,83 @@
+{% comment %}
+Unified chat template that can be included in any page
+
+Required context variables:
+- conversation: The conversation object (or None for new conversations)
+- messages_list: List of messages to display (can be empty)
+- form_action: URL to submit the chat form to
+
+Optional context variables:
+- theme: Visual theme to apply (default, minimal, modern) (default: "default")
+- show_debug: Whether to show debug information (default: False)
+- collapsible_debug: Whether debug panel should be collapsible (default: True)
+- container_height: Height of the chat container (default: "calc(100vh - 64px)")
+- chat_header_title: Title to display in the chat header (default: "Chat with AI Assistant")
+- show_status: Whether to show online status indicator (default: True)
+- show_empty_state: Whether to show empty state when no messages (default: True)
+- enable_markdown: Whether to enable markdown processing (default: True)
+- enable_keyboard_shortcuts: Whether to enable keyboard shortcuts (default: True)
+- enable_auto_scroll: Whether to enable auto-scrolling (default: True)
+- enable_auto_focus: Whether to auto-focus input on load (default: True)
+- debug: Whether to enable debug logging (default: False)
+- form: Form instance for backward compatibility (default: None)
+- ai_tool: AI tool instance for backward compatibility (default: None)
+- ai_tools: List of AI tools for backward compatibility (default: None)
+- chat_messages: Alternative name for messages_list for backward compatibility
+{% endcomment %}
+
+{% load static %}
+
+{# Determine which messages list to use - support both messages_list and chat_messages for backward compatibility #}
+{% with messages_to_display=messages_list|default:chat_messages|default:messages|default:[] %}
+
+<div class="chat-container" 
+    {% if theme %}data-theme="{{ theme }}"{% endif %}
+    data-enable-markdown="{% if enable_markdown == False %}false{% else %}true{% endif %}"
+    data-enable-keyboard-shortcuts="{% if enable_keyboard_shortcuts == False %}false{% else %}true{% endif %}"
+    data-enable-auto-scroll="{% if enable_auto_scroll == False %}false{% else %}true{% endif %}"
+    data-enable-auto-focus="{% if enable_auto_focus == False %}false{% else %}true{% endif %}"
+    data-debug="{% if debug %}true{% else %}false{% endif %}"
+    style="height: {{ container_height|default:'calc(100vh - 64px)' }};">
+    
+    {% include "core/partials/chat/components/header.html" with 
+        title=chat_header_title 
+        show_status=show_status|default:True 
+        ai_tool=ai_tool
+    %}
+    
+    <div class="chat-messages" id="chatMessages">
+        {% if show_debug %}
+            {% include "core/partials/chat/components/debug_panel.html" with 
+                conversation=conversation 
+                messages_list=messages_to_display
+                collapsible=collapsible_debug|default:True 
+            %}
+        {% endif %}
+        
+        {% include "core/partials/chat/components/message_list.html" with 
+            messages_list=messages_to_display
+            show_empty_state=show_empty_state|default:True 
+        %}
+    </div>
+    
+    {% include "core/partials/chat/components/input_area.html" with 
+        form_action=form_action 
+        conversation_id=conversation.id|default:conversation_id 
+        placeholder="Type your message here..."
+        max_length=4000
+        rows=1
+        form=form
+    %}
+</div>
+
+<!-- Load theme CSS -->
+{% if theme %}
+    <link rel="stylesheet" href="{% static 'core/css/chat/themes/'|add:theme|add:'.css' %}">
+{% else %}
+    <link rel="stylesheet" href="{% static 'core/css/chat/themes/default.css' %}">
+{% endif %}
+
+<!-- Load chat JavaScript -->
+<script src="{% static 'core/js/chat/chat.js' %}"></script>
+
+{% endwith %}

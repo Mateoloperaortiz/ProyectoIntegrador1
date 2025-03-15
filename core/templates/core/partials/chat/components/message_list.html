@@ -1,0 +1,25 @@
+{% comment %}
+Message list component
+
+Required context variables:
+- messages_list: List of message objects
+
+Optional context variables:
+- show_empty_state: Whether to show an empty state when there are no messages (default: True)
+{% endcomment %}
+
+<div id="messagesContainer" class="messages-container">
+    {% if messages_list|length == 0 and show_empty_state|default:True %}
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <i class="bi bi-chat-dots"></i>
+            </div>
+            <h3 class="empty-state-title">Start a conversation</h3>
+            <p class="empty-state-text">Ask a question or start a conversation with the AI assistant.</p>
+        </div>
+    {% endif %}
+    
+    {% for message in messages_list %}
+        {% include "core/partials/chat/components/message_bubble.html" with message=message %}
+    {% endfor %}
+</div>
