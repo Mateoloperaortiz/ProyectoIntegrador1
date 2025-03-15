@@ -1,11 +1,15 @@
-import uuid
 from django.db import models
 from django.conf import settings
 from django.db.models import Avg
+from core.models import UUIDModel, TimeStampedModel
 
-class AITool(models.Model):
-    """Model representing an AI tool available in the catalog."""
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)  
+class AITool(UUIDModel, TimeStampedModel):
+    """
+    Model representing an AI tool available in the catalog.
+    
+    This model inherits from UUIDModel for UUID primary key and 
+    TimeStampedModel for created_at and updated_at fields.
+    """
     name = models.CharField(max_length=255)
     provider = models.CharField(max_length=255)
     endpoint = models.URLField()
@@ -32,9 +36,13 @@ class AITool(models.Model):
     def __str__(self):
         return self.name
 
-class Rating(models.Model):
-    """Model for storing user ratings and reviews."""
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+class Rating(UUIDModel, TimeStampedModel):
+    """
+    Model for storing user ratings and reviews.
+    
+    This model inherits from UUIDModel for UUID primary key and 
+    TimeStampedModel for created_at and updated_at fields.
+    """
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,  
         on_delete=models.CASCADE,
@@ -49,7 +57,6 @@ class Rating(models.Model):
         choices=[(i, f"{i} star{'s' if i > 1 else ''}") for i in range(1, 6)]
     )
     comment = models.TextField(blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):
         """Save rating and update AI tool popularity"""

@@ -1,4 +1,3 @@
-import uuid
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
@@ -6,25 +5,20 @@ import json
 from typing import List, Dict, Any, Optional, Union
 from django.db.models.query import QuerySet
 from catalog.models import AITool
+from core.models import UUIDModel, TimeStampedModel
 
-class Conversation(models.Model):
+class Conversation(UUIDModel, TimeStampedModel):
     """
     Model representing a conversation between a user and an AI tool.
     
     This model stores the metadata for a conversation, including references to the user,
     the AI tool being used, and timestamps for creation and updates.
     
-    Attributes:
-        id (UUIDField): Unique identifier for the conversation
-        user (ForeignKey): Reference to the user participating in the conversation
-        ai_tool (ForeignKey): Reference to the AI tool used in the conversation
-        title (CharField): Title of the conversation
-        created_at (DateTimeField): When the conversation was created
-        updated_at (DateTimeField): When the conversation was last updated
+    This model inherits from UUIDModel for UUID primary key and 
+    TimeStampedModel for created_at and updated_at fields.
     """
-    id: models.UUIDField = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(
-        'users.CustomUser',  
+        settings.AUTH_USER_MODEL,  # Changed from 'users.CustomUser' to settings.AUTH_USER_MODEL
         on_delete=models.CASCADE,
         null=True,
         blank=True,
@@ -35,9 +29,7 @@ class Conversation(models.Model):
         on_delete=models.CASCADE,
         related_name='interaction_conversations'
     )
-    title: models.CharField = models.CharField(max_length=255, default="New Conversation")
-    created_at: models.DateTimeField = models.DateTimeField(auto_now_add=True)
-    updated_at: models.DateTimeField = models.DateTimeField(auto_now=True)
+    title = models.CharField(max_length=255, default="New Conversation")
     
     def __str__(self) -> str:
         # Type checking: ensure user has username attribute
@@ -98,78 +90,62 @@ class Message(models.Model):
         is_user (BooleanField): Whether the message was sent by the user (True) or the AI (False)
         timestamp (DateTimeField): When the message was sent
     """
-    conversation: models.ForeignKey = models.ForeignKey(Conversation, on_delete=models.CASCADE)
-    content: models.TextField = models.TextField()
-    is_user: models.BooleanField = models.BooleanField(default=True)  # True if from user, False if from AI
-    timestamp: models.DateTimeField = models.DateTimeField(default=timezone.now)
+    conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE)
+    content = models.TextField()
+    is_user = models.BooleanField(default=True)  # True if from user, False if from AI
+    timestamp = models.DateTimeField(default=timezone.now)
     
     def __str__(self) -> str:
         sender = "User" if self.is_user else "AI"
         return f"{sender} - {self.timestamp.strftime('%Y-%m-%d %H:%M')}"
 
 
-class FavoritePrompt(models.Model):
+class FavoritePrompt(UUIDModel, TimeStampedModel):
     """
     Model for storing user's favorite prompts.
     
     This model allows users to save prompts they frequently use with multiple AI tools.
     
-    Attributes:
-        id (UUIDField): Unique identifier for the favorite prompt
-        user (ForeignKey): Reference to the user who saved the prompt
-        ai_tools (ManyToManyField): References to the AI tools the prompt can be used with
-        prompt_text (TextField): The text of the saved prompt
-        title (CharField): A descriptive title for the prompt
-        created_at (DateTimeField): When the prompt was saved
+    This model inherits from UUIDModel for UUID primary key and 
+    TimeStampedModel for created_at and updated_at fields.
     """
-    id: models.UUIDField = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user: models.ForeignKey = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    ai_tools: models.ManyToManyField = models.ManyToManyField(
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    ai_tools = models.ManyToManyField(
         AITool, 
         related_name='favorite_prompts',
         blank=True,
         help_text="AI tools this prompt can be used with"
     )
-    prompt_text: models.TextField = models.TextField()
-    title: models.CharField = models.CharField(max_length=255)
-    created_at: models.DateTimeField = models.DateTimeField(auto_now_add=True)
+    prompt_text = models.TextField()
+    title = models.CharField(max_length=255)
     
     def __str__(self) -> str:
         username = self.user.username if hasattr(self.user, 'username') else "Unknown User"
         return f"{username} - {self.title}"
 
 
-class SharedChat(models.Model):
+class SharedChat(UUIDModel, TimeStampedModel):
     """
     Model for sharing conversations with other users or publicly.
     
     This model enables users to share their conversations either with specific users
     or publicly via an access token, with optional expiration.
     
-    Attributes:
-        id (UUIDField): Unique identifier for the shared chat
-        conversation (ForeignKey): Reference to the conversation being shared
-        created_by (ForeignKey): Reference to the user who created the shared chat
-        recipient (ForeignKey): Reference to the user the conversation is shared with (if not public)
-        is_public (BooleanField): Whether the conversation is publicly accessible
-        access_token (CharField): Unique token for accessing the shared conversation
-        created_at (DateTimeField): When the conversation was shared
-        expiration_days (PositiveIntegerField): Number of days until the shared chat expires
+    This model inherits from UUIDModel for UUID primary key and 
+    TimeStampedModel for created_at and updated_at fields.
     """
-    id: models.UUIDField = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    conversation: models.ForeignKey = models.ForeignKey(Conversation, on_delete=models.CASCADE)
-    created_by: models.ForeignKey = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='shared_chats')
-    recipient: models.ForeignKey = models.ForeignKey(
+    conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='shared_chats')
+    recipient = models.ForeignKey(
         settings.AUTH_USER_MODEL, 
         on_delete=models.CASCADE, 
         null=True, 
         blank=True, 
         related_name='received_chats'
     )
-    is_public: models.BooleanField = models.BooleanField(default=False)
-    access_token: models.CharField = models.CharField(max_length=64, unique=True)
-    created_at: models.DateTimeField = models.DateTimeField(auto_now_add=True)
-    expiration_days: models.PositiveIntegerField = models.PositiveIntegerField(default=7, help_text="Number of days until the shared chat expires")
+    is_public = models.BooleanField(default=False)
+    access_token = models.CharField(max_length=64, unique=True)
+    expiration_days = models.PositiveIntegerField(default=7, help_text="Number of days until the shared chat expires")
     
     def __str__(self) -> str:
         created_by_name = self.created_by.username if hasattr(self.created_by, 'username') else "Unknown User"
