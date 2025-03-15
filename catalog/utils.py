@@ -2,18 +2,20 @@
 Utility functions for the catalog app.
 """
 import json
-import requests
 import os
 import time
+import logging
+import random
 from django.http import HttpResponse
 from django.conf import settings
-import random
 from typing import Dict, Any, List, Optional, Union
-# Import for type annotation
-from typing import TYPE_CHECKING
 
-# Import secure API key management
+# Import from core utilities
+from core.utils import call_api
 from core.security import get_api_key
+
+# Get a logger for this module
+logger = logging.getLogger(__name__)
 
 class AIService:
     """Service class for handling AI API interactions."""
@@ -37,43 +39,44 @@ class AIService:
         if not api_key:
             return AIService.simulate_ai_response("openai", prompt)
         
-        try:
-            headers = {
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {api_key}"
-            }
-            
-            data = {
-                "model": model,
-                "messages": [{"role": "user", "content": prompt}],
-                "temperature": 0.7
-            }
-            
-            response = requests.post(
-                "https://api.openai.com/v1/chat/completions",
-                headers=headers,
-                json=data,
-                timeout=30
-            )
-            
-            response_data = response.json()
-            
-            if response.status_code == 200:
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}"
+        }
+        
+        data = {
+            "model": model,
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": 0.7
+        }
+        
+        # Use centralized API call function
+        response = call_api(
+            url="https://api.openai.com/v1/chat/completions",
+            method="POST",
+            headers=headers,
+            json_data=data,
+            timeout=30,
+            service_name="OpenAI Chat"
+        )
+        
+        # Process response
+        if response["success"]:
+            try:
+                # Extract the model's response from OpenAI's JSON structure
+                result = response["data"]["choices"][0]["message"]["content"]
                 return {
                     "success": True,
-                    "data": response_data["choices"][0]["message"]["content"]
+                    "data": result
                 }
-            else:
+            except (KeyError, IndexError) as e:
+                logger.error(f"Error parsing OpenAI response: {str(e)}")
                 return {
                     "success": False,
-                    "error": f"API Error: {response_data.get('error', {}).get('message', 'Unknown error')}"
+                    "error": f"Error parsing response: {str(e)}"
                 }
-                
-        except Exception as e:
-            return {
-                "success": False,
-                "error": f"Exception: {str(e)}"
-            }
+        else:
+            return response
     
     @staticmethod
     def call_huggingface_api(prompt: str, model: str = "google/flan-t5-base") -> Dict[str, Any]:
@@ -94,39 +97,42 @@ class AIService:
         if not api_key:
             return AIService.simulate_ai_response("huggingface", prompt)
         
-        try:
-            API_URL = f"https://api-inference.huggingface.co/models/{model}"
-            headers = {
-                "Authorization": f"Bearer {api_key}"
-            }
-            
-            payload = {
-                "inputs": prompt,
-            }
-            
-            response = requests.post(
-                API_URL,
-                headers=headers,
-                json=payload,
-                timeout=30
-            )
-            
-            if response.status_code == 200:
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json"
+        }
+        
+        payload = {
+            "inputs": prompt,
+        }
+        
+        # Use centralized API call function
+        response = call_api(
+            url=f"https://api-inference.huggingface.co/models/{model}",
+            method="POST",
+            headers=headers,
+            json_data=payload,
+            timeout=30,
+            service_name=f"HuggingFace ({model})"
+        )
+        
+        # Process response
+        if response["success"]:
+            try:
+                # Extract the model's response from HuggingFace's JSON structure
+                result = response["data"][0]["generated_text"]
                 return {
                     "success": True,
-                    "data": response.json()[0]["generated_text"]
+                    "data": result
                 }
-            else:
+            except (KeyError, IndexError) as e:
+                logger.error(f"Error parsing HuggingFace response: {str(e)}")
                 return {
                     "success": False,
-                    "error": f"API Error: {response.text}"
+                    "error": f"Error parsing response: {str(e)}"
                 }
-                
-        except Exception as e:
-            return {
-                "success": False,
-                "error": f"Exception: {str(e)}"
-            }
+        else:
+            return response
     
     @staticmethod
     def simulate_ai_response(service_type: str, prompt: str) -> Dict[str, Any]:
@@ -300,11 +306,11 @@ class AIService:
             
             else:
                 # No API key available or unknown service type, use simulation
-                print(f"Using simulation mode for {service_type} (no API key available)")
+                logger.info(f"Using simulation mode for {service_type} (no API key available)")
                 return AIService.simulate_ai_response(service_type, prompt)
                 
         except Exception as e:
-            print(f"Error in send_to_ai_service: {str(e)}")
+            logger.exception(f"Error in send_to_ai_service: {str(e)}")
             return {
                 "success": False,
                 "error": f"Error processing request: {str(e)}"
@@ -322,5 +328,3 @@ def simulate_ai_response(service_type: str, prompt: str) -> Dict[str, Any]:
 
 def send_to_ai_service(prompt: str, service_config: Dict[str, Any]) -> Dict[str, Any]:
     return AIService.send_to_ai_service(prompt, service_config)
-
-# This function has been moved to core.utils to avoid code duplication

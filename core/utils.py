@@ -8,11 +8,20 @@ from typing import Any, Dict, List, Optional, TypeVar, Union, cast, Tuple
 import os
 import json
 import csv
+import time
+import logging
+import requests
 from io import StringIO
 from django.conf import settings
 from django.http import HttpRequest
 from django.utils.text import slugify
 
+# Get a logger for this module
+logger = logging.getLogger(__name__)
+
+#
+# General utilities
+#
 
 def get_client_ip(request: HttpRequest) -> str:
     """
@@ -47,32 +56,6 @@ def safe_json_loads(json_str: str, default: Any = None) -> Any:
         return json.loads(json_str)
     except (json.JSONDecodeError, TypeError):
         return default
-
-
-def create_unique_slug(model_instance: Any, slugable_field_name: str, 
-                      slug_field_name: str = 'slug') -> str:
-    """
-    Create a unique slug for a model instance.
-    
-    Args:
-        model_instance: The model instance to create a slug for
-        slugable_field_name: The name of the field to base the slug on
-        slug_field_name: The name of the slug field
-        
-    Returns:
-        A unique slug string
-    """
-    slug = slugify(getattr(model_instance, slugable_field_name))
-    unique_slug = slug
-    model_class = model_instance.__class__
-    extension = 1
-    
-    # Check if the slug already exists and make it unique if needed
-    while model_class.objects.filter(**{slug_field_name: unique_slug}).exists():
-        unique_slug = f"{slug}-{extension}"
-        extension += 1
-        
-    return unique_slug
 
 
 def format_file_size(size_in_bytes: int) -> str:
@@ -123,6 +106,156 @@ def truncate_text(text: str, max_length: int = 100, suffix: str = '...') -> str:
         return text
     return text[:max_length - len(suffix)] + suffix
 
+
+#
+# Slug generation utilities
+#
+
+def create_unique_slug(model_instance: Any, slugable_field_name: str, 
+                      slug_field_name: str = 'slug') -> str:
+    """
+    Create a unique slug for a model instance.
+    
+    Args:
+        model_instance: The model instance to create a slug for
+        slugable_field_name: The name of the field to base the slug on
+        slug_field_name: The name of the slug field
+        
+    Returns:
+        A unique slug string
+    """
+    slug = slugify(getattr(model_instance, slugable_field_name))
+    unique_slug = slug
+    model_class = model_instance.__class__
+    extension = 1
+    
+    # Check if the slug already exists and make it unique if needed
+    while model_class.objects.filter(**{slug_field_name: unique_slug}).exists():
+        unique_slug = f"{slug}-{extension}"
+        extension += 1
+        
+    return unique_slug
+
+
+#
+# API utilities
+#
+
+def call_api(
+    url: str,
+    method: str = "GET",
+    headers: Optional[Dict[str, str]] = None,
+    params: Optional[Dict[str, Any]] = None,
+    data: Optional[Dict[str, Any]] = None,
+    json_data: Optional[Dict[str, Any]] = None,
+    timeout: int = 10,
+    service_name: str = "External API"
+) -> Dict[str, Any]:
+    """
+    Generic API call function with logging and error handling.
+    
+    Args:
+        url: The API endpoint URL
+        method: HTTP method (GET, POST, etc.)
+        headers: Optional request headers
+        params: Optional URL parameters
+        data: Optional form data
+        json_data: Optional JSON data (for POST/PUT)
+        timeout: Request timeout in seconds
+        service_name: Name of the service for logging
+        
+    Returns:
+        dict: Response with success status and data/error
+    """
+    method = method.upper()
+    headers = headers or {}
+    start_time = time.time()
+    status_code = None
+    error_message = None
+    
+    try:
+        # Prepare request arguments
+        request_kwargs = {
+            'headers': headers,
+            'timeout': timeout,
+        }
+        
+        if params:
+            request_kwargs['params'] = params
+            
+        if data:
+            request_kwargs['data'] = data
+            
+        if json_data:
+            request_kwargs['json'] = json_data
+        
+        # Make the request
+        logger.info(f"Calling {service_name} ({method} {url})")
+        
+        response = requests.request(method, url, **request_kwargs)
+        status_code = response.status_code
+        response_time = time.time() - start_time
+        
+        # Log the API request details
+        if hasattr(settings, 'DEBUG') and settings.DEBUG:
+            logger.debug(
+                f"{service_name} request: {method} {url} - "
+                f"Status: {status_code} - "
+                f"Time: {response_time:.3f}s"
+            )
+        
+        # Handle the response
+        if 200 <= status_code < 300:
+            # Try to parse JSON response
+            try:
+                result_data = response.json()
+                return {
+                    "success": True,
+                    "data": result_data,
+                    "status_code": status_code
+                }
+            except ValueError:
+                # Not JSON, return text
+                return {
+                    "success": True,
+                    "data": response.text,
+                    "status_code": status_code
+                }
+        else:
+            error_message = f"{service_name} Error: Status {status_code}"
+            logger.warning(f"{error_message} - Response: {response.text[:200]}")
+            return {
+                "success": False,
+                "error": error_message,
+                "status_code": status_code,
+                "response": response.text
+            }
+    except requests.exceptions.Timeout:
+        error_message = f"{service_name} request timed out after {timeout}s"
+        logger.error(error_message)
+        return {
+            "success": False,
+            "error": error_message
+        }
+    except requests.exceptions.ConnectionError:
+        error_message = f"Cannot connect to {service_name}"
+        logger.error(error_message)
+        return {
+            "success": False,
+            "error": error_message
+        }
+    except Exception as e:
+        error_message = f"{service_name} request failed: {str(e)}"
+        logger.exception(error_message)
+        return {
+            "success": False,
+            "error": error_message
+        }
+
+
+#
+# Content formatting utilities
+#
 
 def format_conversation_for_download(conversation: Any, format_type: str = 'json') -> Tuple[str, str, str]:
     """

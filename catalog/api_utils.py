@@ -4,10 +4,10 @@ import time
 import logging
 from typing import Dict, Any, Optional, Union
 
-import requests
 from dotenv import load_dotenv
 
-# Import secure API key management and logging utilities
+# Import core utility functions
+from core.utils import call_api
 from core.security import get_api_key
 from core.logging_utils import log_api_request, log_exception
 
@@ -54,72 +54,39 @@ def call_openai_api(prompt: str, max_tokens: int = 100) -> Dict[str, Any]:
         'temperature': 0.7
     }
     
-    start_time = time.time()
-    status_code = None
-    error_message = None
+    # Use the centralized call_api function
+    response = call_api(
+        url='https://api.openai.com/v1/completions',
+        method='POST',
+        headers=headers,
+        json_data=data,
+        timeout=10,
+        service_name='OpenAI'
+    )
     
-    try:
-        response = requests.post(
-            'https://api.openai.com/v1/completions',
-            headers=headers,
-            data=json.dumps(data),
-            timeout=10
-        )
-        
-        status_code = response.status_code
-        response_time = time.time() - start_time
-        
-        # Log the API request with details
-        log_api_request(
-            logger=logger,
-            service_name="OpenAI",
-            endpoint="/v1/completions",
-            method="POST",
-            status_code=status_code,
-            response_time=response_time,
-            request_data={
-                'model': data['model'],
-                'max_tokens': data['max_tokens'],
-                'temperature': data['temperature'],
-                'prompt_length': len(prompt)
-            }
-        )
-        
-        if status_code == 200:
-            logger.debug("OpenAI API request successful")
-            return {
-                'success': True,
-                'data': response.json()
-            }
-        else:
-            error_message = f'API Error: {status_code} - {response.text}'
-            logger.warning(f"OpenAI API request failed: {error_message}")
-            return {
-                'success': False,
-                'error': f'API Error: {status_code}',
-                'message': response.text
-            }
-    except Exception as e:
-        response_time = time.time() - start_time
-        error_message = str(e)
-        
-        # Log the exception with context
-        log_exception(
-            logger=logger,
-            exc=e,
-            message="OpenAI API request failed with exception",
-            extra={
-                'service': 'OpenAI',
-                'endpoint': '/v1/completions',
-                'response_time': f"{response_time:.3f}s",
-                'prompt_length': len(prompt)
-            }
-        )
-        
-        return {
-            'success': False,
-            'error': f'Request failed: {error_message}'
+    # Log additional details specific to OpenAI
+    if response['success']:
+        logger.debug("OpenAI API request successful")
+    else:
+        logger.warning(f"OpenAI API request failed: {response.get('error', 'Unknown error')}")
+    
+    # Add extra context about the request
+    log_api_request(
+        logger=logger,
+        service_name="OpenAI",
+        endpoint="/v1/completions",
+        method="POST",
+        status_code=response.get('status_code', 0),
+        response_time=0.0,  # Not available from call_api but could be added
+        request_data={
+            'model': data['model'],
+            'max_tokens': data['max_tokens'],
+            'temperature': data['temperature'],
+            'prompt_length': len(prompt)
         }
+    )
+    
+    return response
 
 def call_huggingface_api(prompt: str, model: str = "google/flan-t5-small") -> Dict[str, Any]:
     """
@@ -158,70 +125,37 @@ def call_huggingface_api(prompt: str, model: str = "google/flan-t5-small") -> Di
         }
     }
     
-    start_time = time.time()
-    status_code = None
-    error_message = None
     endpoint = f'/models/{model}'
     
-    try:
-        response = requests.post(
-            f'https://api-inference.huggingface.co/models/{model}',
-            headers=headers,
-            data=json.dumps(data),
-            timeout=10
-        )
-        
-        status_code = response.status_code
-        response_time = time.time() - start_time
-        
-        # Log the API request with details
-        log_api_request(
-            logger=logger,
-            service_name="HuggingFace",
-            endpoint=endpoint,
-            method="POST",
-            status_code=status_code,
-            response_time=response_time,
-            request_data={
-                'model': model,
-                'wait_for_model': True,
-                'prompt_length': len(prompt)
-            }
-        )
-        
-        if status_code == 200:
-            logger.debug(f"Hugging Face API request successful for model: {model}")
-            return {
-                'success': True,
-                'data': response.json()
-            }
-        else:
-            error_message = f'API Error: {status_code} - {response.text}'
-            logger.warning(f"Hugging Face API request failed: {error_message}")
-            return {
-                'success': False,
-                'error': f'API Error: {status_code}',
-                'message': response.text
-            }
-    except Exception as e:
-        response_time = time.time() - start_time
-        error_message = str(e)
-        
-        # Log the exception with context
-        log_exception(
-            logger=logger,
-            exc=e,
-            message=f"Hugging Face API request failed with exception for model: {model}",
-            extra={
-                'service': 'HuggingFace',
-                'endpoint': endpoint,
-                'model': model,
-                'response_time': f"{response_time:.3f}s",
-                'prompt_length': len(prompt)
-            }
-        )
-        
-        return {
-            'success': False,
-            'error': f'Request failed: {error_message}'
+    # Use the centralized call_api function
+    response = call_api(
+        url=f'https://api-inference.huggingface.co/models/{model}',
+        method='POST',
+        headers=headers,
+        json_data=data,
+        timeout=10,
+        service_name='HuggingFace'
+    )
+    
+    # Log additional details specific to HuggingFace
+    if response['success']:
+        logger.debug(f"Hugging Face API request successful for model: {model}")
+    else:
+        logger.warning(f"Hugging Face API request failed: {response.get('error', 'Unknown error')}")
+    
+    # Add extra context about the request
+    log_api_request(
+        logger=logger,
+        service_name="HuggingFace",
+        endpoint=endpoint,
+        method="POST",
+        status_code=response.get('status_code', 0),
+        response_time=0.0,  # Not available from call_api but could be added
+        request_data={
+            'model': model,
+            'wait_for_model': True,
+            'prompt_length': len(prompt)
         }
+    )
+    
+    return response
