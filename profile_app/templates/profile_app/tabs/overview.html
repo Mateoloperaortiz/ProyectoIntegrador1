@@ -1,0 +1,236 @@
+{% comment %}Overview tab for the profile dashboard{% endcomment %}
+
+<h1 class="dashboard-title fade-in">Dashboard Overview</h1>
+
+<!-- Stats Grid -->
+<div class="stats-grid">
+  <div class="stat-card fade-in delay-1">
+    <div class="stat-icon">
+      <i class="fas fa-heart"></i>
+    </div>
+    <div class="stat-value">{{ favorites|length }}</div>
+    <div class="stat-label">Favorite Tools</div>
+  </div>
+  
+  <div class="stat-card fade-in delay-2">
+    <div class="stat-icon">
+      <i class="fas fa-comment-dots"></i>
+    </div>
+    <div class="stat-value">{{ total_conversations }}</div>
+    <div class="stat-label">Conversations</div>
+  </div>
+  
+  <div class="stat-card fade-in delay-3">
+    <div class="stat-icon">
+      <i class="fas fa-robot"></i>
+    </div>
+    <div class="stat-value">{{ total_messages|default:'0' }}</div>
+    <div class="stat-label">Messages</div>
+  </div>
+
+  {% if stats.prompts_count > 0 %}
+  <div class="stat-card fade-in delay-3">
+    <div class="stat-icon">
+      <i class="fas fa-bookmark"></i>
+    </div>
+    <div class="stat-value">{{ stats.prompts_count }}</div>
+    <div class="stat-label">Saved Prompts</div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Account Information -->
+<div class="content-card fade-in delay-2">
+  <div class="card-header">
+    <h2 class="card-title h5">
+      <i class="fas fa-user-circle"></i>Account Information
+    </h2>
+    <a href="?tab=profile" class="btn btn-sm btn-outline-primary">
+      <i class="fas fa-edit me-1"></i>Edit Profile
+    </a>
+  </div>
+  <div class="card-body">
+    <div class="row">
+      <div class="col-md-4 mb-3">
+        <div class="fw-semibold text-muted small mb-1">Email Address</div>
+        <div>{{ user.email }}</div>
+      </div>
+      <div class="col-md-4 mb-3">
+        <div class="fw-semibold text-muted small mb-1">Full Name</div>
+        <div>
+          {% if user.first_name or user.last_name %}
+            {{ user.first_name }} {{ user.last_name }}
+          {% else %}
+            <span class="text-muted">Not provided</span>
+          {% endif %}
+        </div>
+      </div>
+      <div class="col-md-4 mb-3">
+        <div class="fw-semibold text-muted small mb-1">Member Since</div>
+        <div>{{ user.date_joined|date:"F j, Y" }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Favorite AI Tools -->
+<div class="content-card fade-in delay-3">
+  <div class="card-header">
+    <h2 class="card-title h5">
+      <i class="fas fa-heart"></i>Favorite AI Tools
+    </h2>
+    <a href="{% url 'catalog:catalog' %}" class="btn btn-sm btn-primary">
+      <i class="fas fa-plus me-1"></i>Add More
+    </a>
+  </div>
+  <div class="card-body">
+    {% if favorites %}
+      <div class="favorites-grid">
+        {% for favorite in favorites|slice:":3" %}
+          <div class="favorite-card">
+            <div class="favorite-header">
+              {% if favorite.image %}
+                <img src="{{ favorite.image.url }}" alt="{{ favorite.name }}" class="favorite-image">
+              {% else %}
+                <div class="favorite-avatar">
+                  {{ favorite.name.0|upper }}
+                </div>
+              {% endif %}
+              
+              <div class="favorite-info">
+                <h3 class="favorite-name">{{ favorite.name }}</h3>
+                <div class="favorite-provider">
+                  <i class="fas fa-building"></i>
+                  {{ favorite.provider }}
+                </div>
+              </div>
+            </div>
+            
+            <div class="favorite-body">
+              <div class="favorite-meta">
+                <span class="favorite-category">{{ favorite.category }}</span>
+              </div>
+              
+              <div class="favorite-rating">
+                <div class="rating-stars">
+                  <i class="fas fa-star"></i>
+                  <i class="fas fa-star"></i>
+                  <i class="fas fa-star"></i>
+                  <i class="fas fa-star"></i>
+                  <i class="far fa-star"></i>
+                </div>
+                <div class="rating-value">{{ favorite.popularity }}/10</div>
+              </div>
+            </div>
+            
+            <div class="favorite-footer">
+              <div class="favorite-actions">
+                <a href="{% url 'catalog:presentationAI' favorite.id %}" class="btn btn-sm btn-outline-primary">
+                  <i class="fas fa-eye"></i> View
+                </a>
+                <a href="{% url 'interaction:chat' ai_id=favorite.id %}" class="btn btn-sm btn-outline-success">
+                  <i class="fas fa-comment-alt"></i> Chat
+                </a>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+      
+      {% if favorites|length > 3 %}
+        <div class="text-center mt-4">
+          <a href="?tab=favorites" class="btn btn-outline-primary">
+            View all {{ favorites|length }} favorites
+          </a>
+        </div>
+      {% endif %}
+    {% else %}
+      <div class="empty-state">
+        <div class="empty-icon">
+          <i class="far fa-heart"></i>
+        </div>
+        <h3 class="empty-title">No favorites yet</h3>
+        <p class="empty-description">Explore the catalog and mark AI tools as favorites to see them here</p>
+        <a href="{% url 'catalog:catalog' %}" class="btn btn-primary">
+          <i class="fas fa-search me-2"></i>Browse AI Tools
+        </a>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Recent Conversations -->
+<div class="content-card fade-in delay-4">
+  <div class="card-header">
+    <h2 class="card-title h5">
+      <i class="fas fa-comment-dots"></i>Recent Conversations
+    </h2>
+    <a href="{% url 'interaction:chat_selection' %}" class="btn btn-sm btn-primary">
+      <i class="fas fa-plus me-1"></i>New Chat
+    </a>
+  </div>
+  <div class="card-body">
+    {% if recent_conversations %}
+      {% for conversation in recent_conversations|slice:":4" %}
+        <div class="conversation-item">
+          <div class="conversation-icon">
+            {% if conversation.ai_tool.image %}
+              <img src="{{ conversation.ai_tool.image.url }}" alt="{{ conversation.ai_tool.name }}">
+            {% else %}
+              <div class="d-flex align-items-center justify-content-center h-100 w-100 bg-primary text-white">
+                <span>{{ conversation.ai_tool.name.0|upper }}</span>
+              </div>
+            {% endif %}
+          </div>
+          
+          <div class="conversation-content">
+            <h3 class="conversation-title">{{ conversation.title|default:"Conversation" }}</h3>
+            <div class="conversation-meta">
+              <div class="meta-item">
+                <i class="fas fa-robot"></i>
+                {% if conversation.ai_tool %}
+                  {{ conversation.ai_tool.name }}
+                {% else %}
+                  AI Assistant
+                {% endif %}
+              </div>
+              <div class="meta-item">
+                <i class="far fa-clock"></i>
+                {{ conversation.updated_at|timesince }} ago
+              </div>
+              <div class="meta-item">
+                <i class="fas fa-comment"></i>
+                {{ conversation.message_set.count }} messages
+              </div>
+            </div>
+          </div>
+          
+          <div class="conversation-actions">
+            <a href="{% url 'interaction:continue_conversation' conversation_id=conversation.id %}" class="btn btn-primary">
+              <i class="fas fa-arrow-right me-1"></i>Continue
+            </a>
+          </div>
+        </div>
+      {% endfor %}
+      
+      {% if recent_conversations|length > 4 %}
+        <div class="text-center mt-4">
+          <a href="?tab=history" class="btn btn-outline-primary">
+            View all {{ recent_conversations|length }} conversations
+          </a>
+        </div>
+      {% endif %}
+    {% else %}
+      <div class="empty-state">
+        <div class="empty-icon">
+          <i class="far fa-comment-alt"></i>
+        </div>
+        <h3 class="empty-title">No conversations yet</h3>
+        <p class="empty-description">Start chatting with AI tools to see your conversation history here</p>
+        <a href="{% url 'interaction:chat_selection' %}" class="btn btn-primary">
+          <i class="fas fa-robot me-2"></i>Start a Chat
+        </a>
+      </div>
+    {% endif %}
+  </div>
+</div>

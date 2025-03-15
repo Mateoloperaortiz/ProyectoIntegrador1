@@ -1,0 +1,76 @@
+{% comment %}History tab for viewing conversation history{% endcomment %}
+
+<div class="row">
+  <div class="col-12">
+    <div class="profile-card shadow-sm animate-on-scroll">
+      <div class="profile-card-header">
+        <h2 class="profile-card-title h5">
+          <i class="fas fa-history"></i>Conversation History
+        </h2>
+        <a href="{% url 'interaction:chat_selection' %}" class="btn btn-sm btn-primary">
+          <i class="fas fa-plus me-1"></i>New Chat
+        </a>
+      </div>
+      <div class="profile-card-body">
+        {% if recent_conversations %}
+          {% for conversation in recent_conversations %}
+            <div class="activity-item">
+              <div class="activity-icon">
+                {% if conversation.ai_tool.image %}
+                  <img src="{{ conversation.ai_tool.image.url }}" alt="{{ conversation.ai_tool.name }}" class="rounded-circle" style="width: 42px; height: 42px; object-fit: cover;">
+                {% else %}
+                  <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width: 42px; height: 42px;">
+                    <span>
+                    {% if conversation.ai_tool %}
+                      {{ conversation.ai_tool.name.0|upper }}
+                    {% else %}
+                      A
+                    {% endif %}
+                    </span>
+                  </div>
+                {% endif %}
+              </div>
+              
+              <div class="activity-content">
+                <div class="activity-title">{{ conversation.title|default:"Conversation" }}</div>
+                <div class="activity-meta">
+                  <div>
+                    <i class="fas fa-robot"></i>
+                    {% if conversation.ai_tool %}
+                      {{ conversation.ai_tool.name }}
+                    {% else %}
+                      AI Assistant
+                    {% endif %}
+                  </div>
+                  <div>
+                    <i class="far fa-clock"></i>{{ conversation.updated_at|timesince }} ago
+                  </div>
+                  <div>
+                    <i class="fas fa-comment"></i>{{ conversation.message_set.count }} messages
+                  </div>
+                </div>
+              </div>
+              
+              <div class="ms-auto d-flex align-items-center">
+                <a href="{% url 'interaction:continue_conversation' conversation_id=conversation.id %}" class="btn btn-sm btn-primary">
+                  <i class="fas fa-arrow-right"></i>
+                </a>
+              </div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <div class="empty-state">
+            <div class="empty-state-icon">
+              <i class="far fa-comment-alt fa-2x"></i>
+            </div>
+            <h4 class="fw-bold mb-2">No conversations yet</h4>
+            <p class="text-muted mb-4">Start chatting with AI tools to see your conversation history here</p>
+            <a href="{% url 'interaction:chat_selection' %}" class="btn btn-primary">
+              <i class="fas fa-robot me-1"></i>Start a Chat
+            </a>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
