@@ -1,0 +1,194 @@
+{% extends 'base/base.html' %}
+{% load static %}
+{% load django_bootstrap5 %}
+
+{% block title %}AI Tools Statistics - InspireAI{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="display-5 fw-bold">AI Tools Statistics</h1>
+            <p class="lead">Explore trends and insights about the AI tools in our catalog</p>
+        </div>
+    </div>
+    
+    <!-- Stats Overview -->
+    <div class="row mb-5">
+        <div class="col-md-4 mb-4 mb-md-0">
+            <div class="card text-center h-100 shadow-sm">
+                <div class="card-body">
+                    <h1 class="display-4 text-primary">{{ total_tools }}</h1>
+                    <h5 class="card-title">Total AI Tools</h5>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4 mb-md-0">
+            <div class="card text-center h-100 shadow-sm">
+                <div class="card-body">
+                    <h1 class="display-4 text-primary">{{ total_ratings }}</h1>
+                    <h5 class="card-title">Total Ratings</h5>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center h-100 shadow-sm">
+                <div class="card-body">
+                    <h1 class="display-4 text-primary">{{ avg_tool_rating|floatformat:1 }}</h1>
+                    <h5 class="card-title">Average Rating</h5>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Top Rated Tools -->
+    <div class="card shadow-sm mb-5">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">Top Rated AI Tools</h4>
+        </div>
+        <div class="card-body">
+            <div class="chart-container">
+                <canvas id="top-tools-chart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Category Distribution -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">AI Tools by Category</h4>
+        </div>
+        <div class="card-body">
+            <div class="chart-container">
+                <canvas id="category-chart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Top Tools Chart
+        const topToolsCtx = document.getElementById('top-tools-chart').getContext('2d');
+        const topToolsChart = new Chart(topToolsCtx, {
+            type: 'bar',
+            data: {
+                labels: [
+                    {% for tool in top_tools %}
+                        '{{ tool.name }}',
+                    {% endfor %}
+                ],
+                datasets: [{
+                    label: 'Average Rating',
+                    data: [
+                        {% for tool in top_tools %}
+                            {{ tool.avg_rating|floatformat:1 }},
+                        {% endfor %}
+                    ],
+                    backgroundColor: 'rgba(13, 110, 253, 0.7)',
+                    borderColor: 'rgba(13, 110, 253, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        max: 5,
+                        title: {
+                            display: true,
+                            text: 'Average Rating (1-5 stars)'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            afterLabel: function(context) {
+                                const index = context.dataIndex;
+                                const count = {{ top_tools|safe }}[index].num_ratings;
+                                return `Based on ${count} ratings`;
+                            }
+                        }
+                    }
+                },
+                maintainAspectRatio: false
+            }
+        });
+        
+        // Category Chart
+        const categoryCtx = document.getElementById('category-chart').getContext('2d');
+        const categoryChart = new Chart(categoryCtx, {
+            type: 'pie',
+            data: {
+                labels: [
+                    {% for category in category_counts %}
+                        '{{ category.name }}',
+                    {% endfor %}
+                ],
+                datasets: [{
+                    data: [
+                        {% for category in category_counts %}
+                            {{ category.count }},
+                        {% endfor %}
+                    ],
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.7)',
+                        'rgba(54, 162, 235, 0.7)',
+                        'rgba(255, 206, 86, 0.7)',
+                        'rgba(75, 192, 192, 0.7)',
+                        'rgba(153, 102, 255, 0.7)',
+                        'rgba(255, 159, 64, 0.7)',
+                        'rgba(199, 199, 199, 0.7)',
+                        'rgba(83, 102, 255, 0.7)',
+                        'rgba(40, 159, 64, 0.7)',
+                        'rgba(210, 199, 199, 0.7)',
+                        'rgba(78, 52, 199, 0.7)'
+                    ],
+                    borderColor: [
+                        'rgba(255, 99, 132, 1)',
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(255, 206, 86, 1)',
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(153, 102, 255, 1)',
+                        'rgba(255, 159, 64, 1)',
+                        'rgba(199, 199, 199, 1)',
+                        'rgba(83, 102, 255, 1)',
+                        'rgba(40, 159, 64, 1)',
+                        'rgba(210, 199, 199, 1)',
+                        'rgba(78, 52, 199, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                const total = context.dataset.data.reduce((acc, val) => acc + val, 0);
+                                const percentage = Math.round((value / total) * 100);
+                                return `${label}: ${value} tools (${percentage}%)`;
+                            }
+                        }
+                    }
+                },
+                maintainAspectRatio: false
+            }
+        });
+    });
+</script>
+{% endblock %}

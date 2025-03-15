@@ -1,0 +1,106 @@
+{% extends 'base/base.html' %}
+{% load django_bootstrap5 %}
+{% load static %}
+
+{% block title %}Your Profile - InspireAI{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <!-- Profile Information -->
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="card-title mb-0">Profile Information</h4>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        {% if user.profile_picture %}
+                            <img src="{{ user.profile_picture.url }}" alt="{{ user.username }}" class="rounded-circle img-thumbnail" style="width: 150px; height: 150px; object-fit: cover;">
+                        {% else %}
+                            <img src="{% static 'images/default-avatar.png' %}" alt="{{ user.username }}" class="rounded-circle img-thumbnail" style="width: 150px; height: 150px; object-fit: cover;">
+                        {% endif %}
+                        <h5 class="mt-3">{{ user.first_name }} {{ user.last_name }}</h5>
+                        <p class="text-muted">@{{ user.username }}</p>
+                    </div>
+                    
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        {% bootstrap_form form %}
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">Update Profile</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Favorites -->
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="card-title mb-0">Your Favorite AI Tools</h4>
+                </div>
+                <div class="card-body">
+                    {% if favorites %}
+                        <div class="row row-cols-1 row-cols-md-2 g-4">
+                            {% for favorite in favorites %}
+                                <div class="col">
+                                    <div class="card h-100 ai-card">
+                                        <div class="ai-card-img-container">
+                                            {% if favorite.tool.image %}
+                                                <img src="{{ favorite.tool.image.url }}" class="ai-card-img" alt="{{ favorite.tool.name }}">
+                                            {% else %}
+                                                <img src="{% static 'images/placeholder.png' %}" class="ai-card-img" alt="{{ favorite.tool.name }}">
+                                            {% endif %}
+                                        </div>
+                                        <div class="card-body">
+                                            <span class="badge bg-primary rounded-pill category-badge mb-2">{{ favorite.tool.get_category_display }}</span>
+                                            <h5 class="card-title">{{ favorite.tool.name }}</h5>
+                                            <p class="card-text text-muted">{{ favorite.tool.description|truncatechars:60 }}</p>
+                                        </div>
+                                        <div class="card-footer d-flex justify-content-between align-items-center">
+                                            <small class="text-muted">Added {{ favorite.added_at|date }}</small>
+                                            <a href="{% url 'catalog:tool_detail' favorite.tool.slug %}" class="btn btn-sm btn-outline-primary">View</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <p class="mb-0">You haven't favorited any AI tools yet. Browse the <a href="{% url 'catalog:catalog' %}">catalog</a> to find tools you like!</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Recent Conversations -->
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h4 class="card-title mb-0">Recent Conversations</h4>
+                    <a href="{% url 'interaction:conversation_list' %}" class="btn btn-sm btn-light">View All</a>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        {% for conversation in user.conversation_set.all|slice:":5" %}
+                            <a href="{% url 'interaction:conversation_detail' pk=conversation.id %}" class="list-group-item list-group-item-action">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h5 class="mb-1">{{ conversation.title }}</h5>
+                                    <small>{{ conversation.updated_at|date }}</small>
+                                </div>
+                                <p class="mb-1">With {{ conversation.tool.name }}</p>
+                            </a>
+                        {% empty %}
+                            <div class="alert alert-info">
+                                <p class="mb-0">You haven't had any conversations yet. Start by selecting a <a href="{% url 'catalog:catalog' %}?category=CHAT">conversational AI</a>!</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
