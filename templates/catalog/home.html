@@ -12,12 +12,21 @@
                 <h1 class="display-4 fw-bold mb-4" style="letter-spacing: -0.5px;">Discover and Connect with AI Tools</h1>
                 <p class="lead mb-4 opacity-75">InspireAI brings together the world's best artificial intelligence tools in one place, making it easy to find, compare, and use the right AI for your needs.</p>
                 <div class="d-flex flex-wrap gap-3">
-                    <a href="{% url 'catalog:catalog' %}" class="btn btn-light btn-lg shadow-sm">
-                        <i class="fas fa-th-large me-2"></i> Explore AI Tools
-                    </a>
-                    <a href="{% url 'users:register' %}" class="btn btn-accent btn-lg shadow-sm">
-                        <i class="fas fa-user-plus me-2"></i> Join Now
-                    </a>
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'catalog:catalog' %}" class="btn btn-light btn-lg shadow-sm">
+                            <i class="fas fa-th-large me-2"></i> Explore AI Tools
+                        </a>
+                        <a href="{% url 'interaction:conversation_list' %}" class="btn btn-accent btn-lg shadow-sm">
+                            <i class="fas fa-comments me-2"></i> My Conversations
+                        </a>
+                    {% else %}
+                        <a href="{% url 'catalog:catalog' %}" class="btn btn-light btn-lg shadow-sm">
+                            <i class="fas fa-th-large me-2"></i> Explore AI Tools
+                        </a>
+                        <a href="{% url 'users:register' %}" class="btn btn-accent btn-lg shadow-sm">
+                            <i class="fas fa-user-plus me-2"></i> Join Now
+                        </a>
+                    {% endif %}
                 </div>
                 <div class="mt-5 d-flex flex-wrap gap-4">
                     <div class="d-flex align-items-center">
@@ -307,11 +316,20 @@
             <div class="card-body p-5">
                 <div class="row align-items-center">
                     <div class="col-lg-8 mb-4 mb-lg-0">
-                        <h2 class="fw-bold mb-3" style="letter-spacing: -0.5px;">Ready to explore the world of AI?</h2>
-                        <p class="mb-0 opacity-75">Join our community to discover, rate, and interact with the best AI tools available today.</p>
+                        {% if user.is_authenticated %}
+                            <h2 class="fw-bold mb-3" style="letter-spacing: -0.5px;">Continue exploring AI tools</h2>
+                            <p class="mb-0 opacity-75">Discover, rate, and interact with the best AI tools available in our catalog.</p>
+                        {% else %}
+                            <h2 class="fw-bold mb-3" style="letter-spacing: -0.5px;">Ready to explore the world of AI?</h2>
+                            <p class="mb-0 opacity-75">Join our community to discover, rate, and interact with the best AI tools available today.</p>
+                        {% endif %}
                     </div>
                     <div class="col-lg-4 text-lg-end">
-                        <a href="{% url 'users:register' %}" class="btn btn-light btn-lg shadow-sm">Get Started Now</a>
+                        {% if user.is_authenticated %}
+                            <a href="{% url 'catalog:catalog' %}" class="btn btn-light btn-lg shadow-sm">Explore Tools</a>
+                        {% else %}
+                            <a href="{% url 'users:register' %}" class="btn btn-light btn-lg shadow-sm">Get Started Now</a>
+                        {% endif %}
                     </div>
                 </div>
             </div>
