@@ -9,9 +9,9 @@
 | id            |       | id            |       | id            |
 | email         |       | name          |       | user          |----+
 | password      |       | slug          |       | tool          |--+ |
-| bio           |       | description   |       | title         | | |
-| profile_pic   |       | provider      |       | created_at    | | |
-| date_joined   |----+  | website_url   |  +----| updated_at    | | |
+| date_joined   |       | description   |       | title         | | |
+|               |       | provider      |       | created_at    | | |
+|               |----+  | website_url   |  +----| updated_at    | | |
 +---------------+    |  | category      |  |    +---------------+ | |
                      |  | image         |  |                      | |
                      |  | created_at    |  |    +---------------+ | |
@@ -49,7 +49,7 @@
 
 ### User Model (users app)
 - `CustomUser` - extends Django's AbstractUser
-  - Fields: email (unique), bio, profile_picture, date_joined
+  - Fields: email (unique), date_joined
   - Authentication uses email instead of username
   - Related to: Conversation, Favorite, Rating (via ForeignKey)
 

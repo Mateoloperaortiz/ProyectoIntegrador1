@@ -1,5 +1,5 @@
 from django import forms
-from django.contrib.auth.forms import UserCreationForm, AuthenticationForm, UserChangeForm
+from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.utils.translation import gettext_lazy as _
 from .models import CustomUser
 
@@ -67,10 +67,8 @@ class ProfileUpdateForm(forms.ModelForm):
     """
     class Meta:
         model = CustomUser
-        fields = ['username', 'first_name', 'last_name', 'bio', 'profile_picture']
+        fields = ['username', 'first_name']  
         widgets = {
             'username': forms.TextInput(attrs={'class': 'form-control'}),
             'first_name': forms.TextInput(attrs={'class': 'form-control'}),
-            'last_name': forms.TextInput(attrs={'class': 'form-control'}),
-            'bio': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
         }
