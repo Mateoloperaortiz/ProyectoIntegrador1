@@ -8,6 +8,8 @@ from django.utils.translation import gettext_lazy as _
 
 from .forms import CustomUserCreationForm, CustomAuthenticationForm, ProfileUpdateForm
 from .models import CustomUser
+from django.views.generic import DetailView
+
 from interaction.models import Favorite
 
 class RegisterView(CreateView):
@@ -33,22 +35,16 @@ class CustomLoginView(LoginView):
     redirect_authenticated_user = True
 
 
-class ProfileView(LoginRequiredMixin, UpdateView):
+class ProfileView(LoginRequiredMixin, DetailView):
     """
-    View for displaying and updating user profile.
+    View for displaying user profile without editing.
     """
     model = CustomUser
-    form_class = ProfileUpdateForm
     template_name = 'users/profile.html'
-    success_url = reverse_lazy('users:profile')
-    
+
     def get_object(self):
         return self.request.user
-    
-    def form_valid(self, form):
-        messages.success(self.request, _('Your profile has been updated!'))
-        return super().form_valid(form)
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['favorites'] = Favorite.objects.filter(user=self.request.user)

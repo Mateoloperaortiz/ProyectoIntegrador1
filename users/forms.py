@@ -60,15 +60,15 @@ class CustomAuthenticationForm(AuthenticationForm):
         widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Password'})
     )
 
-
 class ProfileUpdateForm(forms.ModelForm):
     """
-    Form for updating user profile information.
+    Form for displaying user profile information without editing.
     """
     class Meta:
         model = CustomUser
-        fields = ['username', 'first_name']  
+        fields = ['username', 'first_name']
         widgets = {
-            'username': forms.TextInput(attrs={'class': 'form-control'}),
-            'first_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'username': forms.TextInput(attrs={'class': 'form-control', 'readonly': 'readonly'}),
+            'first_name': forms.TextInput(attrs={'class': 'form-control', 'readonly': 'readonly'}),
         }
+
