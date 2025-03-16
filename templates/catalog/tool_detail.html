@@ -72,62 +72,72 @@
                     <p class="card-text">{{ tool.description }}</p>
                 </div>
             </div>
-            
-            <!-- Ratings and Reviews -->
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                    <h4 class="mb-0">Ratings & Reviews</h4>
-                    <span class="badge bg-primary rounded-pill">{{ tool.rating_set.count }}</span>
-                </div>
+
+             <!-- Rating Section -->
+            <div class="card shadow-sm border-0 mt-4">
                 <div class="card-body">
-                    {% if user.is_authenticated %}
-                        <!-- Rating Form -->
-                        <div class="mb-4 p-3 bg-light rounded">
-                            <h5>Leave a Rating</h5>
-                            {% if user_rating %}
-                                <p class="text-muted small">You've already rated this tool. Your rating will be updated.</p>
-                            {% endif %}
-                            
-                            <form method="post" action="{% url 'catalog:rate_tool' slug=tool.slug %}">
+                    <div class="section-divider"></div>
+                    <div class="ratings-section">
+                        <h2 class="section-title">
+                            <i class="fas fa-star text-warning"></i> Ratings & Reviews
+                        </h2>
+            
+                        <!-- Average Rating -->
+                        <div class="rating-summary">
+                            <h3>
+                                Average rating: {{ tool.get_average_rating|floatformat:1 }} 
+                                <span class="text-warning">⭐</span>
+                            </h3>
+                            <small class="text-muted">
+                                {{ tool.ratings.count }} rating{% if tool.ratings.count != 1 %}s{% endif %}
+                            </small>
+                        </div>
+                        <br>
+            
+                        {% if user.is_authenticated %}
+                            <h4>Rate this Tool</h4>
+                            <form method="post">
                                 {% csrf_token %}
-                                {% bootstrap_form rating_form %}
-                                <button type="submit" class="btn btn-primary">Submit Rating</button>
+                                {{ form.as_p }}
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-star me-2"></i>Submit Rating
+                                </button>
                             </form>
-                        </div>
-                    {% else %}
-                        <div class="alert alert-info mb-4">
-                            <p class="mb-0">Please <a href="{% url 'users:login' %}?next={{ request.path }}">login</a> to leave a rating.</p>
-                        </div>
-                    {% endif %}
-                    
-                    <!-- Review List -->
-                    {% if ratings %}
-                        <h5>User Reviews</h5>
-                        <div class="list-group">
-                            {% for rating in ratings %}
-                                {% if rating.review %}
-                                    <div class="list-group-item list-group-item-action flex-column align-items-start">
-                                        <div class="d-flex justify-content-between">
-                                            <h6 class="mb-1">{{ rating.user.username }}</h6>
-                                            <div class="rating-stars">
-                                                {% for i in "12345" %}
-                                                    <i class="{% if forloop.counter <= rating.stars %}fas{% else %}far{% endif %} fa-star"></i>
-                                                {% endfor %}
-                                            </div>
-                                        </div>
-                                        <p class="mb-1 mt-2">{{ rating.review }}</p>
-                                        <small class="text-muted">{{ rating.created_at|date }}</small>
-                                    </div>
-                                {% endif %}
-                            {% empty %}
-                                <p class="text-muted">No reviews yet. Be the first to review this tool!</p>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        <p class="text-muted">No ratings yet. Be the first to rate this tool!</p>
-                    {% endif %}
+                        {% else %}
+                            <a href="{% url 'users:login' %}" class="btn btn-outline-primary mt-2">
+                                <i class="fas fa-sign-in-alt"></i> Sign in to rate
+                            </a>
+                        {% endif %}
+                        <br>
+                        <br>
+            
+                        <!-- Opinions -->
+                        <h3>Opinions</h3>
+                        {% for rating in ratings %}
+                            <div class="opinion">
+                                <p><strong>{{ rating.user.username }}</strong> - 
+                                    <span class="stars">
+                                        {% for i in "12345"|make_list %}
+                                            {% if forloop.counter <= rating.stars %}
+                                                ⭐
+                                            {% else %}
+                                                ☆
+                                            {% endif %}
+                                        {% endfor %}
+                                    </span>
+                                </p>
+                                <p>{{ rating.comment }}</p>
+                            </div>
+                            <hr> 
+                        {% empty %}
+                            <p>There are no ratings or comments yet.</p>
+                        {% endfor %}
+                    </div>
                 </div>
             </div>
+
+
+
         </div>
         
         <!-- Sidebar -->

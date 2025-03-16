@@ -8,6 +8,7 @@ class CustomUser(AbstractUser):
     
     Extends the default Django user model to add additional fields.
     """
+    
     email = models.EmailField(_('email address'), unique=True)
     bio = models.TextField(blank=True, max_length=500)
     profile_picture = models.ImageField(upload_to='user_profiles/', blank=True, null=True)

@@ -4,6 +4,8 @@ from django.urls import reverse
 from django.utils.text import slugify
 from catalog.constants import CATEGORY_CHOICES, API_TYPE_CHOICES, RATING_CHOICES
 import uuid
+from django.db.models import Avg
+
 
 class AITool(models.Model):
     """
@@ -19,8 +21,8 @@ class AITool(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     is_featured = models.BooleanField(default=False)
-    popularity = models.IntegerField(default=0)  # Number of views/interactions
-    
+    popularity = models.FloatField(default=0)     
+
     # API integration fields
     api_type = models.CharField(max_length=20, choices=API_TYPE_CHOICES, default='NONE')
     api_endpoint = models.CharField(max_length=255, blank=True, null=True)
@@ -41,26 +43,34 @@ class AITool(models.Model):
         return reverse('catalog:tool_detail', kwargs={'slug': self.slug})
     
     def get_average_rating(self):
-        ratings = self.rating_set.all()
-        if ratings:
-            return sum(r.stars for r in ratings) / len(ratings)
-        return 0
+        """Calculate and update the average rating for this tool."""
+        avg = self.ratings.aggregate(Avg('stars'))['stars__avg']
+        # Update popularity with the average rating
+        self.popularity = round(avg or 0, 2)
+        self.save(update_fields=['popularity'])
+        return self.popularity
+
 
 
 class Rating(models.Model):
-    """
-    Model representing user ratings for AI tools.
-    """
+    """Model for storing user ratings and reviews."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    tool = models.ForeignKey(AITool, on_delete=models.CASCADE)
-    stars = models.IntegerField(choices=RATING_CHOICES)
-    review = models.TextField(blank=True, null=True)
+    tool = models.ForeignKey(AITool, on_delete=models.CASCADE, related_name='ratings')
+    stars = models.PositiveSmallIntegerField(
+        choices=[(i, f"{i} star{'s' if i > 1 else ''}") for i in range(1, 6)]
+    )
+    comment = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
-        unique_together = ('user', 'tool')  # One rating per user per tool
-        ordering = ['-created_at']
-    
+        unique_together = ('user', 'tool')
+
     def __str__(self):
-        return f"{self.user.username}: {self.stars} stars for {self.tool.name}"
+        return (
+            f"Rating {self.id} - "
+            f"User {self.user.username} - "
+            f"Tool {self.tool.name} - "
+            f"{self.stars}⭐ - "
+            f"Created: {self.created_at.strftime('%Y-%m-%d %H:%M')}"
+        )

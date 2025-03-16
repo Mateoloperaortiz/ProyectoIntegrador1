@@ -5,6 +5,7 @@
 InspireAI is a comprehensive web application built with Django that serves as a centralized hub for discovering, accessing, and interacting with various artificial intelligence tools. It provides users with a catalog of AI tools, allows them to interact with integrated AI services, and offers features such as user accounts, ratings, favorites, and conversations.
 
 ## Table of Contents
+
 - [Features](#features)
 - [Requirements](#requirements)
 - [Installation](#installation)
@@ -36,47 +37,55 @@ InspireAI is a comprehensive web application built with Django that serves as a 
 ## Installation
 
 1. Clone the repository:
+
 ```bash
 git clone https://github.com/yourusername/inspireai.git
 cd inspireai
 ```
 
-2. Create and activate a virtual environment:
+2.Create and activate a virtual environment:
+
 ```bash
 python -m venv venv
 source venv/bin/activate  # On Windows, use: venv\Scripts\activate
 ```
 
-3. Install dependencies:
+3.Install dependencies:
+
 ```bash
 pip install -r requirements.txt
 ```
 
-4. Apply migrations:
+4.Apply migrations:
+
 ```bash
 python manage.py migrate
 ```
 
-5. Create a superuser:
+5.Create a superuser:
+
 ```bash
 python manage.py createsuperuser
 ```
 
-6. Run the development server:
+6.Run the development server:
+
 ```bash
 python manage.py runserver
 ```
 
-7. Access the application at http://127.0.0.1:8000/
+7.Access the application at <http://127.0.0.1:8000/>
 
 ## Usage
 
 ### Admin Interface
-- Access the admin interface at http://127.0.0.1:8000/admin/
+
+- Access the admin interface at <http://127.0.0.1:8000/admin/>
 - Use the superuser credentials created during installation
 - Add, modify, or delete AI tools, users, categories, and other data
 
 ### User Interface
+
 - **Home Page**: Discover featured AI tools and platform highlights
 - **Catalog**: Browse all available AI tools with filtering options
 - **Tool Detail**: View detailed information and interact with specific AI tools

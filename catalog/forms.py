@@ -1,27 +1,21 @@
 from django import forms
 from django.utils.translation import gettext_lazy as _
-from .models import Rating, AITool
+from .models import Rating
 from .constants import RATING_CHOICES, CATEGORY_CHOICES
 
 class RatingForm(forms.ModelForm):
-    """
-    Form for submitting AI tool ratings.
-    """
-    stars = forms.ChoiceField(
-        choices=RATING_CHOICES,
-        widget=forms.RadioSelect(attrs={'class': 'rating-input'}),
-        label=_('Your Rating')
-    )
-    
-    review = forms.CharField(
-        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Share your experience with this AI tool...'}),
-        required=False,
-        label=_('Your Review (Optional)')
-    )
-    
     class Meta:
         model = Rating
-        fields = ['stars', 'review']
+        fields = ['stars', 'comment']
+        widgets = {
+            'stars': forms.Select(
+                choices=[(i, f"{i} star{'s' if i > 1 else ''}") for i in range(1, 6)],  
+                attrs={'class': 'form-control'}
+            ),
+            'comment': forms.Textarea(
+                attrs={'rows': 3, 'class': 'form-control', 'placeholder': 'Write your opinion here...'}
+            ),
+        }
 
 
 class SearchForm(forms.Form):
