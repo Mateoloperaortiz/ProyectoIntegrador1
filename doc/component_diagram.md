@@ -2,7 +2,7 @@
 
 ## System Architecture Diagram
 
-```
+```text
 +---------------------------+
 |                           |
 |      Django Framework     |
@@ -49,6 +49,7 @@
 **Templates:** register.html, login.html, profile.html
 
 **Functional Requirements:**
+
 - FR1: User Registration
 - FR2: User Authentication
 - FR3: Profile Management
@@ -63,6 +64,7 @@
 **Templates:** home.html, catalog.html, tool_detail.html, search_results.html, statistics.html
 
 **Functional Requirements:**
+
 - FR5: AI Tool Catalog
 - FR6: Tool Categories
 - FR7: Tool Details
@@ -79,6 +81,7 @@
 **Templates:** conversation_list.html, conversation_detail.html
 
 **Functional Requirements:**
+
 - FR11: Tool Interaction
 - FR12: Conversation Management
 - FR13: Favorites Management
@@ -103,12 +106,14 @@
 ## Detailed Functional Requirements Implementation
 
 ### User Management
+
 - FR1: User Registration - Implemented by RegisterView, CustomUserCreationForm
 - FR2: User Authentication - Implemented by CustomLoginView, CustomAuthenticationForm
 - FR3: Profile Management - Implemented by ProfileView, ProfileUpdateForm
 - FR4: User Identification - CustomUser model with profile picture, username, and email
 
 ### Catalog
+
 - FR5: AI Tool Catalog - CatalogView lists all tools with sorting and filtering
 - FR6: Tool Categories - CATEGORY_CHOICES constant defines available categories
 - FR7: Tool Details - ToolDetailView shows comprehensive tool information
@@ -117,6 +122,7 @@
 - FR10: Tool Statistics - StatisticsView provides analytics on tools and categories
 
 ### Interaction
+
 - FR11: Tool Interaction - send_message function enables interaction with AI tools
 - FR12: Conversation Management - ConversationListView and ConversationDetailView manage conversations
 - FR13: Favorites Management - toggle_favorite function manages user favorites

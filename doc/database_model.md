@@ -2,7 +2,7 @@
 
 ## Entity-Relationship Diagram
 
-```
+```text
 +---------------+       +---------------+       +---------------+
 |  CustomUser   |       |    AITool     |       | Conversation  |
 +---------------+       +---------------+       +---------------+
@@ -48,12 +48,14 @@
 ## Models Description
 
 ### User Model (users app)
+
 - `CustomUser` - extends Django's AbstractUser
   - Fields: email (unique), date_joined
   - Authentication uses email instead of username
   - Related to: Conversation, Favorite, Rating (via ForeignKey)
 
 ### Catalog Models (catalog app)
+
 - `AITool`
   - Fields: name, slug (unique), description, provider, website_url, category, image, created_at, updated_at, is_featured, popularity
   - API fields: api_type, api_endpoint, api_model
@@ -65,6 +67,7 @@
   - Constraints: unique_together (user, tool) - one rating per tool per user
 
 ### Interaction Models (interaction app)
+
 - `Conversation`
   - Fields: id (UUID), user (FK to CustomUser), tool (FK to AITool), title, created_at, updated_at
   - Methods: Auto-generates title from first message if not provided
@@ -96,10 +99,13 @@ AUTH_USER_MODEL = 'users.CustomUser'
 ## Constants Used in the Database
 
 ### Categories (from catalog/constants.py)
+
 - Text, Image, Video, Audio, Code, Chat, Search, Data Analysis, Translation, Summarization, Other
 
 ### API Types (from catalog/constants.py)
+
 - OpenAI, HuggingFace, Anthropic, Google, Custom, None
 
 ### Rating System
+
 - 1-5 stars numeric rating scale
