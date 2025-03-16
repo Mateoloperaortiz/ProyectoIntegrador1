@@ -266,14 +266,17 @@ class Command(BaseCommand):
                 if 'slug' not in tool_data:
                     tool_data['slug'] = slugify(tool_data['name'])
                     
-                # Create the AI tool
-                AITool.objects.create(**tool_data)
-                created_count += 1
-                self.stdout.write(f"Created AI tool: {tool_data['name']}")
+                try:
+                    # Create the AI tool
+                    AITool.objects.create(**tool_data)
+                    created_count += 1
+                    self.stdout.write(f"Created AI tool: {tool_data['name']}")
+                except Exception as e:
+                    self.stdout.write(self.style.ERROR(f"Error creating {tool_data['name']}: {e}"))
         
         # If we need more tools to reach the requested count, create random ones
-        categories = [choice[0] for choice in CATEGORY_CHOICES]
-        api_types = [choice[0] for choice in API_TYPE_CHOICES]
+        categories = [c[0] for c in CATEGORY_CHOICES]
+        api_types = [c[0] for c in API_TYPE_CHOICES]
         
         while created_count < count:
             # Generate a random tool name
@@ -287,9 +290,14 @@ class Command(BaseCommand):
             random_category = random.choice(categories)
             random_api_type = random.choice(api_types)
             
+            # Get category display name safely
+            category_dict = dict(CATEGORY_CHOICES)
+            category_display = category_dict.get(random_category, "Unknown Category")
+            
             random_tool = {
                 'name': random_name,
-                'description': f"This is a sample AI tool for {dict(CATEGORY_CHOICES).get(random_category)}.",
+                'slug': slugify(random_name),  # Ensure slug is set
+                'description': f"This is a sample AI tool for {category_display}.",
                 'provider': f"Provider {created_count + 1}",
                 'website_url': f"https://example.com/tool{created_count + 1}",
                 'category': random_category,
@@ -299,9 +307,12 @@ class Command(BaseCommand):
                 'api_endpoint': f"https://api.example.com/v1/{random_name.lower().replace(' ', '-')}" if random_api_type != 'NONE' else None,
             }
             
-            # Create the AI tool
-            AITool.objects.create(**random_tool)
-            created_count += 1
-            self.stdout.write(f"Created random AI tool: {random_tool['name']}")
+            try:
+                # Create the AI tool
+                AITool.objects.create(**random_tool)
+                created_count += 1
+                self.stdout.write(f"Created random AI tool: {random_tool['name']}")
+            except Exception as e:
+                self.stdout.write(self.style.ERROR(f"Error creating random tool {random_tool['name']}: {e}"))
             
         self.stdout.write(self.style.SUCCESS(f'Successfully created {created_count} AI tools'))

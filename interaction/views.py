@@ -55,14 +55,45 @@ class ConversationListView(LoginRequiredMixin, ListView):
     model = Conversation
     template_name = 'interaction/conversation_list.html'
     context_object_name = 'conversations'
-    paginate_by = 10
+    paginate_by = 12
     
     def get_queryset(self):
-        return Conversation.objects.filter(user=self.request.user)
+        queryset = Conversation.objects.filter(user=self.request.user)
+        
+        # Filter by tool if requested
+        tool_id = self.request.GET.get('tool')
+        if tool_id:
+            queryset = queryset.filter(tool_id=tool_id)
+        
+        # Filter by date range if requested
+        date_range = self.request.GET.get('date_range')
+        if date_range:
+            today = timezone.now().date()
+            if date_range == 'today':
+                queryset = queryset.filter(updated_at__date=today)
+            elif date_range == 'week':
+                week_ago = today - timezone.timedelta(days=7)
+                queryset = queryset.filter(updated_at__date__gte=week_ago)
+            elif date_range == 'month':
+                month_ago = today - timezone.timedelta(days=30)
+                queryset = queryset.filter(updated_at__date__gte=month_ago)
+        
+        return queryset
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['today'] = timezone.now()
+        
+        # Get all AI tools the user has conversations with for the filter dropdown
+        user_conversation_tools = AITool.objects.filter(
+            conversation__user=self.request.user
+        ).distinct().order_by('name')
+        context['user_tools'] = user_conversation_tools
+        
+        # Add filter parameters to context
+        context['current_tool'] = self.request.GET.get('tool', '')
+        context['current_date_range'] = self.request.GET.get('date_range', '')
+        
         return context
 
 
@@ -143,6 +174,9 @@ def send_message(request, conversation_id):
                         'timestamp': ai_message.timestamp.strftime('%b %d, %Y, %I:%M %p')
                     }
                 })
+            
+            # No need for a success message for each chat message
+            # Prevent empty messages from appearing
     
     return redirect('interaction:conversation_detail', pk=conversation.id)
 
@@ -200,7 +234,38 @@ def update_conversation_title(request, conversation_id):
     if request.method == 'POST':
         form = ConversationTitleForm(request.POST, instance=conversation)
         if form.is_valid():
+            # Get the old title for comparison
+            old_title = conversation.title
             form.save()
-            messages.success(request, _('Conversation title updated!'))
+            
+            # Only display a success message if the title actually changed
+            if old_title != form.cleaned_data['title']:
+                messages.success(request, _('Conversation title updated!'))
     
     return redirect('interaction:conversation_detail', pk=conversation.id)
+
+
+@login_required
+def delete_conversation(request, conversation_id):
+    """
+    Delete a conversation and all its messages.
+    """
+    conversation = get_object_or_404(Conversation, id=conversation_id, user=request.user)
+    
+    if request.method == 'POST':
+        # Store the conversation title for the success message
+        title = conversation.title
+        
+        # Delete the conversation (cascade will delete all related messages)
+        conversation.delete()
+        
+        # Show success message
+        messages.success(request, _(f'Conversation "{title}" has been deleted.'))
+        
+        # Redirect to conversation list
+        return redirect('interaction:conversation_list')
+    
+    # If not POST, show confirmation page
+    return render(request, 'interaction/delete_confirmation.html', {
+        'conversation': conversation
+    })

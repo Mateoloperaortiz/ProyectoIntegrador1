@@ -33,11 +33,6 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'catalog:home' %}">
-                            <i class="fas fa-home me-1"></i> Home
-                        </a>
-                    </li>
-                    <li class="nav-item">
                         <a class="nav-link" href="{% url 'catalog:catalog' %}">
                             <i class="fas fa-th-large me-1"></i> AI Catalog
                         </a>
@@ -45,6 +40,11 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'catalog:statistics' %}">
                             <i class="fas fa-chart-bar me-1"></i> Statistics
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'interaction:conversation_list' %}">
+                            <i class="fas fa-comments me-1"></i> Chat
                         </a>
                     </li>
                 </ul>
@@ -105,11 +105,13 @@
     <!-- Main Content -->
     <main>
         <!-- Messages -->
-        {% if messages %}
-            <div class="container mt-3">
-                {% bootstrap_messages %}
-            </div>
-        {% endif %}
+        {% block messages %}
+            {% if messages %}
+                <div class="container mt-3">
+                    {% bootstrap_messages %}
+                </div>
+            {% endif %}
+        {% endblock %}
         
         <!-- Content -->
         {% block content %}{% endblock %}

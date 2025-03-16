@@ -2,125 +2,394 @@
 {% load static %}
 {% load django_bootstrap5 %}
 
-{% block title %}Conversation with {{ conversation.tool.name }} - InspireAI{% endblock %}
+{% block messages %}
+{# Override the messages block entirely to prevent alert display in the chat interface #}
+{% endblock %}
+
+{% block title %}Chat with {{ conversation.tool.name }} - InspireAI{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Modern chat styles */
+    .chat-container {
+        border-radius: 12px;
+        height: calc(100vh - 320px);
+        min-height: 500px;
+        display: flex;
+        flex-direction: column;
+        background-color: #f8f9fb;
+    }
+    
+    .message-list {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px;
+    }
+    
+    .message-bubble {
+        max-width: 85%;
+        margin-bottom: 20px;
+        position: relative;
+        clear: both;
+    }
+    
+    .message-user {
+        float: right;
+    }
+    
+    .message-ai {
+        float: left;
+    }
+    
+    .message-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        overflow: hidden;
+        position: absolute;
+        bottom: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        color: white;
+    }
+    
+    .message-user .message-avatar {
+        right: -45px;
+        background-color: var(--primary);
+    }
+    
+    .message-ai .message-avatar {
+        left: -45px;
+        background-color: white;
+        border: 1px solid var(--gray-light);
+        color: var(--primary);
+    }
+    
+    .message-content {
+        padding: 12px 16px;
+        border-radius: 18px;
+        font-size: 15px;
+        position: relative;
+    }
+    
+    .message-user .message-content {
+        background: var(--gradient-primary);
+        color: white;
+        border-bottom-right-radius: 4px;
+        margin-right: 45px;
+    }
+    
+    .message-ai .message-content {
+        background: white;
+        border: 1px solid var(--gray-light);
+        border-bottom-left-radius: 4px;
+        margin-left: 45px;
+    }
+    
+    .message-time {
+        font-size: 11px;
+        margin-top: 5px;
+        opacity: 0.8;
+    }
+    
+    .message-user .message-time {
+        text-align: right;
+        margin-right: 45px;
+        color: rgba(255, 255, 255, 0.8);
+    }
+    
+    .message-ai .message-time {
+        margin-left: 45px;
+        color: var(--gray);
+    }
+    
+    .message-form-container {
+        padding: 15px 20px;
+        background: white;
+        border-top: 1px solid var(--gray-light);
+        border-radius: 0 0 12px 12px;
+    }
+    
+    .conversation-header {
+        display: flex;
+        align-items: center;
+        padding: 15px 20px;
+        background: white;
+        border-bottom: 1px solid var(--gray-light);
+        border-radius: 12px 12px 0 0;
+    }
+    
+    /* Tool information card */
+    .tool-info-card {
+        position: sticky;
+        top: 20px;
+    }
+    
+    .conversation-actions {
+        margin-top: 20px;
+        display: flex;
+        gap: 10px;
+    }
+    
+    .action-button {
+        flex: 1;
+        text-align: center;
+        padding: 12px;
+        border-radius: 12px;
+        border: 1px solid var(--gray-light);
+        background: white;
+        font-weight: 500;
+        font-size: 14px;
+        transition: all 0.2s ease;
+    }
+    
+    .action-button:hover {
+        background-color: var(--gray-light);
+        transform: translateY(-2px);
+    }
+    
+    .action-button i {
+        font-size: 18px;
+        display: block;
+        margin-bottom: 5px;
+    }
+    
+    /* Message input styling */
+    .message-input-container {
+        position: relative;
+    }
+    
+    #id_content {
+        border-radius: 24px;
+        padding-right: 50px;
+    }
+    
+    .send-button {
+        position: absolute;
+        right: 5px;
+        top: 5px;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    /* Mobile optimizations */
+    @media (max-width: 991px) {
+        .message-bubble {
+            max-width: 75%;
+        }
+        
+        .sidebar-toggle {
+            display: flex;
+            align-items: center;
+            margin-right: 10px;
+            cursor: pointer;
+        }
+        
+        .chat-container {
+            height: calc(100vh - 280px);
+        }
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="container py-5">
-    <div class="row mb-4">
-        <div class="col-md-8">
-            <h1 class="display-5 fw-bold">{{ conversation.title }}</h1>
-            <p class="lead">Conversation with {{ conversation.tool.name }}</p>
-        </div>
-        <div class="col-md-4 text-md-end">
-            <a href="{% url 'interaction:conversation_list' %}" class="btn btn-outline-secondary">
-                <i class="fas fa-arrow-left me-1"></i> Back to Conversations
-            </a>
-        </div>
-    </div>
-    
+<div class="container-fluid py-4">
     <div class="row">
-        <!-- Conversation Info -->
-        <div class="col-lg-4 mb-4 order-lg-2">
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">Conversation Info</h4>
-                </div>
-                <div class="card-body">
-                    <!-- Conversation title edit form -->
-                    <form method="post" action="{% url 'interaction:update_title' conversation_id=conversation.id %}" class="mb-4">
-                        {% csrf_token %}
-                        <div class="form-group">
-                            <label for="id_title">Conversation Title</label>
-                            <div class="input-group">
-                                <input type="text" name="title" value="{{ conversation.title }}" class="form-control" id="id_title">
-                                <button type="submit" class="btn btn-outline-primary">Update</button>
-                            </div>
-                        </div>
-                    </form>
-                    
-                    <div class="mb-3">
-                        <small class="text-muted d-block">Created on:</small>
-                        <p>{{ conversation.created_at|date:"F j, Y, g:i a" }}</p>
+        <!-- Chat Area -->
+        <div class="col-lg-8 mb-4">
+            <div class="mb-3 d-flex justify-content-between align-items-center">
+                <a href="{% url 'interaction:conversation_list' %}" class="btn btn-sm btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i> Back to Conversations
+                </a>
+                
+                <form method="post" action="{% url 'interaction:update_title' conversation_id=conversation.id %}" class="d-inline-flex" style="max-width: 400px;">
+                    {% csrf_token %}
+                    <div class="input-group input-group-sm">
+                        <input type="text" name="title" value="{{ conversation.title }}" class="form-control" id="id_title" placeholder="Conversation Title">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i>
+                        </button>
                     </div>
-                    
-                    <div class="mb-3">
-                        <small class="text-muted d-block">Last activity:</small>
-                        <p>{{ conversation.updated_at|date:"F j, Y, g:i a" }}</p>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <small class="text-muted d-block">Total messages:</small>
-                        <p>{{ messages|length }}</p>
-                    </div>
-                </div>
+                </form>
             </div>
             
-            <div class="card shadow-sm">
-                <div class="card-header bg-light">
-                    <h5 class="mb-0">About {{ conversation.tool.name }}</h5>
-                </div>
-                <div class="card-body">
-                    <div class="d-flex mb-3">
-                        {% if conversation.tool.image %}
-                            <img src="{{ conversation.tool.image.url }}" alt="{{ conversation.tool.name }}" class="rounded me-3" style="width: 64px; height: 64px; object-fit: cover;">
-                        {% else %}
-                            <img src="{% static 'images/placeholder.png' %}" alt="{{ conversation.tool.name }}" class="rounded me-3" style="width: 64px; height: 64px; object-fit: cover;">
-                        {% endif %}
+            <div class="card shadow-sm border-0">
+                <!-- Chat Header -->
+                <div class="conversation-header">
+                    <div class="d-flex align-items-center">
+                        <div class="d-md-none sidebar-toggle me-2" id="sidebar-toggle">
+                            <i class="fas fa-bars"></i>
+                        </div>
+                        
+                        <div class="rounded-circle bg-light d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                            {% if conversation.tool.image %}
+                                <img src="{{ conversation.tool.image.url }}" alt="{{ conversation.tool.name }}" style="width: 40px; height: 40px; object-fit: cover;" class="rounded-circle">
+                            {% else %}
+                                <i class="fas fa-robot text-primary"></i>
+                            {% endif %}
+                        </div>
+                        
                         <div>
-                            <h6>{{ conversation.tool.name }}</h6>
+                            <h5 class="mb-0">{{ conversation.tool.name }}</h5>
                             <span class="badge bg-primary rounded-pill">{{ conversation.tool.get_category_display }}</span>
-                            <small class="d-block text-muted mt-1">By {{ conversation.tool.provider }}</small>
                         </div>
                     </div>
                     
-                    <p class="small">{{ conversation.tool.description|truncatechars:150 }}</p>
-                    
-                    <a href="{% url 'catalog:tool_detail' conversation.tool.slug %}" class="btn btn-sm btn-outline-primary w-100">View Full Details</a>
+                    <div class="ms-auto">
+                        <small class="text-muted">
+                            <i class="fas fa-comment-dots"></i> {{ messages|length }} messages
+                        </small>
+                    </div>
                 </div>
-            </div>
-        </div>
-        
-        <!-- Chat Area -->
-        <div class="col-lg-8 order-lg-1">
-            <div class="card shadow-sm">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">Chat with {{ conversation.tool.name }}</h4>
-                </div>
-                <div class="card-body">
-                    <!-- Messages -->
-                    <div class="chat-container mb-4" style="max-height: 600px; overflow-y: auto;">
+                
+                <!-- Chat Messages -->
+                <div class="chat-container">
+                    <div class="message-list" id="message-list">
                         {% if messages %}
-                            <div class="chat-messages">
-                                {% for message in messages %}
-                                    <div class="chat-message mb-3 {% if message.is_from_user %}chat-message-user{% else %}chat-message-ai{% endif %}">
-                                        <div class="card {% if message.is_from_user %}bg-primary text-white ms-auto{% else %}bg-light{% endif %}" style="max-width: 80%;">
-                                            <div class="card-body py-2 px-3">
-                                                <p class="mb-1">{{ message.content|linebreaksbr }}</p>
-                                                <small class="{% if message.is_from_user %}text-light{% else %}text-muted{% endif %} d-block text-end">
-                                                    {{ message.timestamp|date:"g:i a" }}
-                                                </small>
-                                            </div>
-                                        </div>
+                            {% for message in messages %}
+                                <div class="message-bubble {% if message.is_from_user %}message-user{% else %}message-ai{% endif %}">
+                                    <div class="message-avatar">
+                                        {% if message.is_from_user %}
+                                            <i class="fas fa-user"></i>
+                                        {% else %}
+                                            <i class="fas fa-robot"></i>
+                                        {% endif %}
                                     </div>
-                                {% endfor %}
-                            </div>
+                                    <div class="message-content">
+                                        {{ message.content|linebreaksbr }}
+                                    </div>
+                                    <div class="message-time">
+                                        {{ message.timestamp|date:"g:i a" }}
+                                    </div>
+                                </div>
+                            {% endfor %}
                         {% else %}
-                            <div class="alert alert-info">
-                                <p class="mb-0">Start your conversation with {{ conversation.tool.name }} below!</p>
+                            <div class="text-center py-5 text-muted">
+                                <div class="mb-3">
+                                    <i class="fas fa-comment-dots" style="font-size: 48px;"></i>
+                                </div>
+                                <h5>Start chatting with {{ conversation.tool.name }}</h5>
+                                <p>Type a message below to begin your conversation</p>
                             </div>
                         {% endif %}
                     </div>
                     
                     <!-- Message Form -->
-                    <form method="post" action="{% url 'interaction:send_message' conversation_id=conversation.id %}" id="message-form">
-                        {% csrf_token %}
-                        {% bootstrap_form message_form %}
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-paper-plane me-1"></i> Send
+                    <div class="message-form-container">
+                        <form method="post" action="{% url 'interaction:send_message' conversation_id=conversation.id %}" id="message-form">
+                            {% csrf_token %}
+                            <div class="message-input-container">
+                                <textarea name="content" class="form-control" id="id_content" rows="2" placeholder="Type your message here..." required></textarea>
+                                <button type="submit" class="btn btn-primary send-button">
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Conversation Info -->
+        <div class="col-lg-4" id="info-sidebar">
+            <div class="tool-info-card">
+                <!-- Tool Info -->
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-4">
+                            {% if conversation.tool.image %}
+                                <img src="{{ conversation.tool.image.url }}" alt="{{ conversation.tool.name }}" class="rounded-circle me-3" style="width: 64px; height: 64px; object-fit: cover;">
+                            {% else %}
+                                <div class="rounded-circle bg-light d-flex align-items-center justify-content-center me-3" style="width: 64px; height: 64px;">
+                                    <i class="fas fa-robot text-primary fa-2x"></i>
+                                </div>
+                            {% endif %}
+                            <div>
+                                <h4 class="mb-1">{{ conversation.tool.name }}</h4>
+                                <span class="badge bg-primary rounded-pill">{{ conversation.tool.get_category_display }}</span>
+                                <small class="d-block text-muted mt-1">By {{ conversation.tool.provider }}</small>
+                            </div>
+                        </div>
+                        
+                        <p>{{ conversation.tool.description|truncatechars:200 }}</p>
+                        
+                        <hr>
+                        
+                        <div class="d-flex justify-content-between mb-2">
+                            <strong>Created</strong>
+                            <span>{{ conversation.created_at|date:"M d, Y" }}</span>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mb-2">
+                            <strong>Last activity</strong>
+                            <span>{{ conversation.updated_at|date:"M d, Y" }}</span>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mb-2">
+                            <strong>Messages</strong>
+                            <span>{{ messages|length }}</span>
+                        </div>
+                        
+                        <div class="conversation-actions">
+                            <a href="{% url 'catalog:tool_detail' conversation.tool.slug %}" class="action-button text-decoration-none">
+                                <i class="fas fa-info-circle text-primary"></i>
+                                Tool Details
+                            </a>
+                            
+                            <a href="#" class="action-button text-decoration-none">
+                                <i class="fas fa-download text-success"></i>
+                                Download Chat
+                            </a>
+                            
+                            <button type="button" class="action-button text-decoration-none text-danger" data-bs-toggle="modal" data-bs-target="#deleteConversationModal" style="border: 1px solid var(--gray-light); background: none; width: 100%; text-align: center; cursor: pointer;">
+                                <i class="fas fa-trash-alt text-danger"></i>
+                                Delete Chat
                             </button>
                         </div>
-                    </form>
+                        
+                        <!-- Delete Confirmation Modal -->
+                        <div class="modal fade" id="deleteConversationModal" tabindex="-1" aria-labelledby="deleteConversationModalLabel" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="deleteConversationModalLabel">Confirm Delete</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <p>Are you sure you want to delete this conversation with {{ conversation.tool.name }}?</p>
+                                        <p class="text-danger fw-bold">This action cannot be undone and all messages will be lost.</p>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                        <form method="post" action="{% url 'interaction:delete_conversation' conversation_id=conversation.id %}">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-danger">Delete</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Suggested prompts (optional) -->
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">Suggested Prompts</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-primary prompt-suggestion">Tell me about your features</button>
+                            <button class="btn btn-outline-primary prompt-suggestion">How can you help me?</button>
+                            <button class="btn btn-outline-primary prompt-suggestion">Show me an example</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -129,20 +398,38 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/js/all.min.js" integrity="sha512-Tn2m0TIpgVyTzzvmxLNuqbSJH3JP8jm+Cy3hvHrW7ndTDcJ1w5mBiksqDBb8GpE2ksktFvDB/ykZ0mDpsZj20w==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Scroll to bottom of chat container
-        const chatContainer = document.querySelector('.chat-container');
-        if (chatContainer) {
-            chatContainer.scrollTop = chatContainer.scrollHeight;
+        // Scroll to bottom of message list
+        const messageList = document.getElementById('message-list');
+        if (messageList) {
+            messageList.scrollTop = messageList.scrollHeight;
         }
         
         // Focus on message input
-        const messageInput = document.querySelector('#id_content');
+        const messageInput = document.getElementById('id_content');
         if (messageInput) {
             messageInput.focus();
         }
+        
+        // Toggle sidebar on mobile
+        const sidebarToggle = document.getElementById('sidebar-toggle');
+        const infoSidebar = document.getElementById('info-sidebar');
+        
+        if (sidebarToggle && infoSidebar) {
+            sidebarToggle.addEventListener('click', function() {
+                infoSidebar.classList.toggle('d-none');
+            });
+        }
+        
+        // Handle suggested prompts
+        const promptSuggestions = document.querySelectorAll('.prompt-suggestion');
+        promptSuggestions.forEach(button => {
+            button.addEventListener('click', function() {
+                messageInput.value = this.textContent;
+                messageInput.focus();
+            });
+        });
     });
 </script>
 {% endblock %}
