@@ -68,13 +68,19 @@ python manage.py migrate
 python manage.py createsuperuser
 ```
 
-6.Run the development server:
+7. Import AIs
+
+```bash
+python manage.py populate_ai_tools
+```
+
+8.Run the development server:
 
 ```bash
 python manage.py runserver
 ```
 
-7.Access the application at <http://127.0.0.1:8000/>
+9.Access the application at <http://127.0.0.1:8000/>
 
 ## Usage
 
@@ -106,31 +112,6 @@ Key directories:
 - **static/**: CSS, JavaScript, and images
 - **media/**: User-uploaded content
 - **inspireai/**: Main project configuration
-
-## Functional Requirements Status
-
-| FR# | Description | Status | Notes |
-|-----|-------------|--------|-------|
-| FR1 | Display catalog of AI tools | ✅ Complete | Implemented with category filtering and pagination |
-| FR2 | Search functionality | ✅ Complete | Search works across name, description, and category |
-| FR3 | Tool detail view | ✅ Complete | Shows all tool information with related tools |
-| FR4 | Category selection | ✅ Complete | Filter by multiple categories with visual indicators |
-| FR5 | API integration | ⚠️ Partial | Basic simulation implemented, real API integration pending |
-| FR6 | Chat with AI | ✅ Complete | Conversation interface with simulated responses |
-| FR7 | Rating system | ✅ Complete | Star ratings with text reviews implemented |
-| FR8 | Edit prompts | ❌ Not Implemented | Planned for future release |
-| FR9 | Language selection | ❌ Not Implemented | Planned for future release |
-| FR10 | Filter search results | ✅ Complete | Filter by category, popularity and functionality |
-| FR11 | Display featured tools | ✅ Complete | Featured tools highlighted on home page |
-| FR12 | Statistics graph | ⚠️ Partial | Basic statistics page structure created, visualization pending |
-| FR13 | Edit prompts (duplicate of FR8) | ❌ Not Implemented | Planned for future release |
-| FR14 | Download content | ❌ Not Implemented | Planned for future release |
-| FR15 | Save conversations | ✅ Complete | Conversations saved to database automatically |
-| FR16 | Share content | ❌ Not Implemented | Planned for future release |
-| FR17 | Recommend similar tools | ⚠️ Partial | Basic related tools shown, advanced recommendations pending |
-| FR18 | Satisfaction survey | ❌ Not Implemented | Planned for future release |
-| FR19 | User registration | ✅ Complete | Email-based user accounts with profile management |
-| FR20 | User login | ✅ Complete | Email and password authentication implemented |
 
 ## Technologies Used
 
