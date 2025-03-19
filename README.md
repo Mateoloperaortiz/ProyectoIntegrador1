@@ -11,7 +11,6 @@ InspireAI is a comprehensive web application built with Django that serves as a 
 - [Installation](#installation)
 - [Usage](#usage)
 - [Project Structure](#project-structure)
-- [Functional Requirements Status](#functional-requirements-status)
 - [Technologies Used](#technologies-used)
 - [Contributing](#contributing)
 - [License](#license)
