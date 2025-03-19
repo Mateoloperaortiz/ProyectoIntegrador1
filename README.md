@@ -67,19 +67,19 @@ python manage.py migrate
 python manage.py createsuperuser
 ```
 
-7. Import AIs
+6.Import AIs
 
 ```bash
 python manage.py populate_ai_tools
 ```
 
-8.Run the development server:
+7.Run the development server:
 
 ```bash
 python manage.py runserver
 ```
 
-9.Access the application at <http://127.0.0.1:8000/>
+8.Access the application at <http://127.0.0.1:8000/>
 
 ## Usage
 
