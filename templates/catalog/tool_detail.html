@@ -33,6 +33,7 @@
                 </div>
                 
                 <!-- Action buttons -->
+                <!-- Action buttons -->
                 <div class="d-flex flex-wrap gap-2">
                     <a href="{{ tool.website_url }}" class="btn btn-light" target="_blank">
                         <i class="fas fa-external-link-alt me-1"></i> Visit Website
@@ -47,13 +48,15 @@
                     {% if user.is_authenticated %}
                         <form method="post" action="{% url 'interaction:toggle_favorite' tool_id=tool.id %}" class="d-inline">
                             {% csrf_token %}
-                            <button type="submit" class="btn {% if is_favorite %}btn-warning{% else %}btn-light{% endif %}">
-                                <i class="{% if is_favorite %}fas{% else %}far{% endif %} fa-star me-1"></i> 
-                                {% if is_favorite %}Favorited{% else %}Add to Favorites{% endif %}
+                            <button type="submit" class="btn {% if is_favorite %}btn-danger{% else %}btn-light{% endif %}">
+                                <i class="{% if is_favorite %}fas{% else %}far{% endif %} fa-heart me-1"></i> 
+                                {% if is_favorite %}Favorito{% else %}Agregar a Favoritos{% endif %}
                             </button>
                         </form>
                     {% endif %}
                 </div>
+
+                
             </div>
         </div>
     </div>

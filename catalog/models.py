@@ -7,12 +7,13 @@ import uuid
 from django.db.models import Avg
 
 
+
 class AITool(models.Model):
     """
     Model representing an AI tool in the catalog.
     """
     name = models.CharField(max_length=100)
-    slug = models.SlugField(max_length=100, unique=True, blank=True)
+    slug = models.SlugField(max_length=100, unique=True, blank=True) 
     description = models.TextField()
     provider = models.CharField(max_length=100)
     website_url = models.URLField()
@@ -74,3 +75,15 @@ class Rating(models.Model):
             f"{self.stars}⭐ - "
             f"Created: {self.created_at.strftime('%Y-%m-%d %H:%M')}"
         )
+class Favorite(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='favorites')
+    tool = models.ForeignKey(AITool, on_delete=models.CASCADE, related_name='favorited_by')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'tool')
+
+    def __str__(self):
+        return f"{self.user.username} ❤️ {self.tool.name}"  
+        
+ 
