@@ -33,17 +33,20 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'catalog:catalog' %}">
+                        <a class="nav-link {% if request.path == '/catalog/' %}active{% endif %}" href="{% url 'catalog:catalog' %}">
                             <i class="fas fa-th-large me-1"></i> AI Catalog
                         </a>
                     </li>
+
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'catalog:statistics' %}">
+                        <a class="nav-link {% if request.path == '/statistics/' %}active{% endif %}" href="{% url 'catalog:statistics' %}">
                             <i class="fas fa-chart-bar me-1"></i> Statistics
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'interaction:conversation_list' %}">
+                    
+                    
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.path == '/interaction/conversations/' %}active{% endif %}" href="{% url 'interaction:conversation_list' %}">
                             <i class="fas fa-comments me-1"></i> Chat
                         </a>
                     </li>
@@ -91,8 +94,13 @@
                         </li>
                     {% else %}
                         <li class="nav-item">
-                            <a class="nav-link btn btn-light text-primary px-3 mx-1 shadow-sm" href="{% url 'users:login' %}">Login</a>
+                            <a class="nav-link btn px-3 mx-1 shadow-sm border" 
+                            style="background-color: white; color: #333;" 
+                            href="{% url 'users:login' %}">
+                            Login
+                            </a>
                         </li>
+                    
                         <li class="nav-item">
                             <a class="nav-link btn btn-accent px-3 mx-1 shadow-sm" href="{% url 'users:register' %}">Register</a>
                         </li>
@@ -184,3 +192,5 @@
     {% block extra_js %}{% endblock %}
 </body>
 </html>
+
+
