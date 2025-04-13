@@ -12,6 +12,10 @@ from .models import CustomUser
 from django.views.generic import DetailView
 
 from interaction.models import Favorite
+from catalog.models import AITool 
+from catalog.views import get_recommended_tools
+
+
 
 class RegisterView(CreateView):
     """
@@ -53,6 +57,11 @@ class ProfileView(LoginRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['favorites'] = Favorite.objects.filter(user=self.request.user)
+        
+          # Obtener las herramientas recomendadas para el usuario
+        recommended_tools = get_recommended_tools(self.request.user)
+        context['recommended_tools'] = recommended_tools
+        
         return context
 class CustomPasswordChangeView(LoginRequiredMixin, PasswordChangeView):
     """

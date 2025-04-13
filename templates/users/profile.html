@@ -1,3 +1,6 @@
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+
 {% extends 'base/base.html' %}
 {% load django_bootstrap5 %}
 {% load static %}
@@ -7,7 +10,7 @@
 {% block content %}
 <div class="container py-5">
     <div class="row">
-          <!-- Profile Information -->
+        <!-- Profile Information -->
         <div class="col-lg-4 mb-4">
             <div class="card shadow">
                 <div class="card-header bg-primary text-white">
@@ -25,78 +28,157 @@
                     <div class="d-grid">
                         <a href="{% url 'users:change_password' %}" class="btn btn-outline-primary">Change Password</a>
                     </div>
-
                 </div>
             </div>
         </div>
-
-
-        
-        <!-- Favorites -->
+        <!-- Favorites Section -->
         <div class="col-lg-8">
+            <!-- Favorites Section -->
             <div class="card shadow mb-4">
-                <div class="card-header bg-primary text-white">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                     <h4 class="card-title mb-0">Your Favorite AI Tools</h4>
+                    <!-- Button to toggle the collapse -->
+                    <button class="btn btn-sm btn-outline-light toggle-arrow ms-auto" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#favoritesSection"
+                            aria-expanded="true" aria-controls="favoritesSection">
+                        <i class="bi bi-chevron-down"></i>
+                    </button>  
                 </div>
-                <div class="card-body">
-                    {% if favorites %}
-                        <div class="row row-cols-1 row-cols-md-2 g-4">
-                            {% for favorite in favorites %}
-                                <div class="col">
-                                    <div class="card h-100 ai-card">
-                                        <div class="ai-card-img-container">
-                                            {% if favorite.tool.image %}
-                                                <img src="{{ favorite.tool.image.url }}" class="ai-card-img" alt="{{ favorite.tool.name }}">
-                                            {% else %}
-                                                <img src="{% static 'images/placeholder.png' %}" class="ai-card-img" alt="{{ favorite.tool.name }}">
-                                            {% endif %}
-                                        </div>
-                                        <div class="card-body">
-                                            <span class="badge bg-primary rounded-pill category-badge mb-2">{{ favorite.tool.get_category_display }}</span>
-                                            <h5 class="card-title">{{ favorite.tool.name }}</h5>
-                                            <p class="card-text text-muted">{{ favorite.tool.description|truncatechars:60 }}</p>
-                                        </div>
-                                        <div class="card-footer d-flex justify-content-between align-items-center">
-                                            <small class="text-muted">Added {{ favorite.added_at|date }}</small>
-                                            <a href="{% url 'catalog:tool_detail' favorite.tool.slug %}" class="btn btn-sm btn-outline-primary">View</a>
+                <div id="favoritesSection" class="collapse show">
+                    <div class="card-body">
+                        {% if favorites %}
+                            <div class="row row-cols-1 row-cols-md-2 g-4">
+                                {% for favorite in favorites %}
+                                    <div class="col">
+                                        <div class="card h-100 ai-card">
+                                            <div class="ai-card-img-container">
+                                                {% if favorite.tool.image %}
+                                                    <img src="{{ favorite.tool.image.url }}" class="ai-card-img" alt="{{ favorite.tool.name }}">
+                                                {% else %}
+                                                    <img src="{% static 'images/placeholder.png' %}" class="ai-card-img" alt="{{ favorite.tool.name }}">
+                                                {% endif %}
+                                            </div>
+                                            <div class="card-body">
+                                                <span class="badge bg-primary rounded-pill category-badge mb-2">{{ favorite.tool.get_category_display }}</span>
+                                                <h5 class="card-title">{{ favorite.tool.name }}</h5>
+                                                <p class="card-text text-muted">{{ favorite.tool.description|truncatechars:60 }}</p>
+                                            </div>
+                                            <div class="card-footer d-flex justify-content-between align-items-center">
+                                                <small class="text-muted">Added {{ favorite.added_at|date }}</small>
+                                                <a href="{% url 'catalog:tool_detail' favorite.tool.slug %}" class="btn btn-sm btn-outline-primary">View</a>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        <div class="alert alert-info">
-                            <p class="mb-0">You haven't favorited any AI tools yet. Browse the <a href="{% url 'catalog:catalog' %}">catalog</a> to find tools you like!</p>
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-            
-            <!-- Recent Conversations -->
-            <div class="card shadow">
-                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                    <h4 class="card-title mb-0">Recent Conversations</h4>
-                    <a href="{% url 'interaction:conversation_list' %}" class="btn btn-sm btn-light">View All</a>
-                </div>
-                <div class="card-body">
-                    <div class="list-group">
-                        {% for conversation in user.conversation_set.all|slice:":5" %}
-                            <a href="{% url 'interaction:conversation_detail' pk=conversation.id %}" class="list-group-item list-group-item-action">
-                                <div class="d-flex w-100 justify-content-between">
-                                    <h5 class="mb-1">{{ conversation.title }}</h5>
-                                    <small>{{ conversation.updated_at|date }}</small>
-                                </div>
-                                <p class="mb-1">With {{ conversation.tool.name }}</p>
-                            </a>
-                        {% empty %}
-                            <div class="alert alert-info">
-                                <p class="mb-0">You haven't had any conversations yet. Start by selecting a <a href="{% url 'catalog:catalog' %}?category=CHAT">conversational AI</a>!</p>
+                                {% endfor %}
                             </div>
-                        {% endfor %}
+                        {% else %}
+                            <div class="alert alert-info">
+                                <p class="mb-0">You haven't favorited any AI tools yet. Browse the <a href="{% url 'catalog:catalog' %}">catalog</a> to find tools you like!</p>
+                            </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
+
+            <!-- Recommended AI Tools Section -->
+            <div class="card shadow mb-4">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h4 class="card-title mb-0">Recommended AI Tools for You</h4>
+                    <!-- Button to toggle the collapse -->
+                    <button class="btn btn-sm btn-outline-light toggle-arrow ms-auto" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#recommendedToolsSection"
+                            aria-expanded="true" aria-controls="recommendedToolsSection">
+                        <i class="bi bi-chevron-down"></i>
+                    </button>
+                </div>
+                <div id="recommendedToolsSection" class="collapse show">
+                    <div class="card-body">
+                        {% if recommended_tools %}
+                            <div class="row row-cols-1 row-cols-md-2 g-4">
+                                {% for tool in recommended_tools %}
+                                    <div class="col">
+                                        <div class="card h-100 ai-card">
+                                            <div class="ai-card-img-container">
+                                                {% if tool.image %}
+                                                    <img src="{{ tool.image.url }}" class="ai-card-img" alt="{{ tool.name }}">
+                                                {% else %}
+                                                    <img src="{% static 'images/placeholder.png' %}" class="ai-card-img" alt="{{ tool.name }}">
+                                                {% endif %}
+                                            </div>
+                                            <div class="card-body">
+                                                <span class="badge bg-primary rounded-pill category-badge mb-2">{{ tool.get_category_display }}</span>
+                                                <h5 class="card-title">{{ tool.name }}</h5>
+                                                <p class="card-text text-muted">{{ tool.description|truncatechars:60 }}</p>
+                                            </div>
+                                            <div class="card-footer d-flex justify-content-between align-items-center">
+                                                <a href="{% url 'catalog:tool_detail' tool.slug %}" class="btn btn-sm btn-outline-primary">View</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="alert alert-info">
+                                <p class="mb-0">No recommended tools for you at the moment. Check back later!</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Conversations Section -->
+            <div class="card shadow mb-4">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h4 class="card-title mb-0">Recent Conversations</h4>
+                    <button class="btn btn-sm btn-outline-light toggle-arrow" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#recentConversationsSection"
+                            aria-expanded="true" aria-controls="recentConversationsSection">
+                        <i class="bi bi-chevron-down"></i>
+                    </button>
+
+                </div>
+                <div id="recentConversationsSection" class="collapse show">
+                    <div class="card-body">
+                        {% if conversations %}
+                            {% for chat in conversations %}
+                                <div class="mb-3">
+                                    <h5>{{ chat.title }}</h5>
+                                    <p class="text-muted">{{ chat.last_updated|date:"F j, Y, g:i a" }}</p>
+                                    <a href="{% url 'chat:chat_detail' chat.id %}" class="btn btn-sm btn-outline-primary">View Conversation</a>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="alert alert-info mb-0">
+                                No recent conversations. Start chatting with your favorite tools!
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
         </div>
+
     </div>
 </div>
+
+
+
+<script>
+    document.querySelectorAll('.toggle-arrow').forEach(button => {
+        const icon = button.querySelector('i');
+        const collapseTarget = document.querySelector(button.getAttribute('data-bs-target'));
+
+        collapseTarget.addEventListener('show.bs.collapse', () => {
+            icon.classList.remove('bi-chevron-down');
+            icon.classList.add('bi-chevron-up');
+        });
+
+        collapseTarget.addEventListener('hide.bs.collapse', () => {
+            icon.classList.remove('bi-chevron-up');
+            icon.classList.add('bi-chevron-down');
+        });
+    });
+</script>
+
 {% endblock %}
+
