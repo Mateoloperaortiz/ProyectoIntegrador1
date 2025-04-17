@@ -1,70 +1,61 @@
 {% extends 'base/base.html' %}
 {% load static %}
-{% load django_bootstrap5 %}
-
-{% block title %}AI Tools Statistics - InspireAI{% endblock %}
-
-{% block extra_css %}
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.css">
-{% endblock %}
 
 {% block content %}
 <div class="container py-5">
-    <div class="row mb-4">
-        <div class="col">
-            <h1 class="display-5 fw-bold">AI Tools Statistics</h1>
-            <p class="lead">Explore trends and insights about the AI tools in our catalog</p>
-        </div>
-    </div>
-    
+    <h1 class="mb-4" style="font-size: 2.5rem;">AI Tools Statistics</h1>
+
     <!-- Stats Overview -->
     <div class="row mb-5">
         <div class="col-md-4 mb-4 mb-md-0">
             <div class="card text-center h-100 shadow-sm">
                 <div class="card-body">
-                    <h1 class="display-4 text-primary">{{ total_tools }}</h1>
-                    <h5 class="card-title">Total AI Tools</h5>
+                    <h1 class="display-4 text-primary" style="font-size: 2.5rem;">{{ total_tools }}</h1>
+                    <h5 class="card-title" style="font-size: 1.25rem;">Total AI Tools</h5>
                 </div>
             </div>
         </div>
         <div class="col-md-4 mb-4 mb-md-0">
             <div class="card text-center h-100 shadow-sm">
                 <div class="card-body">
-                    <h1 class="display-4 text-primary">{{ total_ratings }}</h1>
-                    <h5 class="card-title">Total Ratings</h5>
+                    <h1 class="display-4 text-primary" style="font-size: 2.5rem;">{{ total_ratings }}</h1>
+                    <h5 class="card-title" style="font-size: 1.25rem;">Total Ratings</h1>
                 </div>
             </div>
         </div>
         <div class="col-md-4">
             <div class="card text-center h-100 shadow-sm">
                 <div class="card-body">
-                    <h1 class="display-4 text-primary">{{ avg_tool_rating|floatformat:1 }}</h1>
-                    <h5 class="card-title">Average Rating</h5>
+                    <h1 class="display-4 text-primary" style="font-size: 2.5rem;">{{ avg_tool_rating|floatformat:1 }}</h1>
+                    <h5 class="card-title" style="font-size: 1.25rem;">Average Rating</h5>
                 </div>
             </div>
         </div>
     </div>
-    
-    <!-- Top Rated Tools -->
-    <div class="card shadow-sm mb-5">
-        <div class="card-header bg-primary text-white">
-            <h4 class="mb-0">Top Rated AI Tools</h4>
-        </div>
-        <div class="card-body">
-            <div class="chart-container">
-                <canvas id="top-tools-chart"></canvas>
+
+    <!-- Charts and Tables -->
+    <div class="row d-flex flex-column">
+        <!-- Top Tools Chart -->
+        <div class="col-12 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-light">
+                    <h3 class="card-title h5 mb-0" style="font-size: 1.75rem;">Top Rated Tools</h3>
+                </div>
+                <div class="card-body" style="position: relative; min-height: 60vh;">
+                    <canvas id="topToolsChart" style="width: 100%; height: auto;"></canvas>
+                </div>
             </div>
         </div>
-    </div>
-    
-    <!-- Category Distribution -->
-    <div class="card shadow-sm">
-        <div class="card-header bg-primary text-white">
-            <h4 class="mb-0">AI Tools by Category</h4>
-        </div>
-        <div class="card-body">
-            <div class="chart-container">
-                <canvas id="category-chart"></canvas>
+
+        <!-- Category Distribution Chart -->
+        <div class="col-12 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-light">
+                    <h3 class="card-title h5 mb-0" style="font-size: 1.75rem;">Ratings by Category</h3>
+                </div>
+                <div class="card-body" style="position: relative; min-height: 60vh;">
+                    <canvas id="categoryChart" style="width: 100%; height: auto;"></canvas>
+                </div>
             </div>
         </div>
     </div>
@@ -72,123 +63,153 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Top Tools Chart
-        const topToolsCtx = document.getElementById('top-tools-chart').getContext('2d');
-        const topToolsChart = new Chart(topToolsCtx, {
-            type: 'bar',
-            data: {
-                labels: [
-                    {% for tool in top_tools %}
-                        '{{ tool.name }}',
-                    {% endfor %}
-                ],
-                datasets: [{
-                    label: 'Average Rating',
-                    data: [
-                        {% for tool in top_tools %}
-                            {{ tool.avg_rating|floatformat:1 }},
-                        {% endfor %}
-                    ],
-                    backgroundColor: 'rgba(13, 110, 253, 0.7)',
-                    borderColor: 'rgba(13, 110, 253, 1)',
-                    borderWidth: 1
-                }]
+document.addEventListener('DOMContentLoaded', function () {
+    Chart.register(ChartDataLabels);
+
+    // Top Tools Chart
+    const topToolsCtx = document.getElementById('topToolsChart').getContext('2d');
+    new Chart(topToolsCtx, {
+        type: 'bar',
+        data: {
+            labels: [{% for tool in top_tools %}'{{ tool.name|escapejs }}',{% endfor %}],
+            datasets: [{
+                label: 'Average Rating',
+                data: [{% for tool in top_tools %}{{ tool.avg_rating|floatformat:"1" }},{% endfor %}],
+                backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            layout: {
+                padding: {
+                    top: 30 // 👈 Aumenta espacio arriba para evitar corte
+                }
             },
-            options: {
-                indexAxis: 'y',
-                scales: {
-                    x: {
-                        beginAtZero: true,
-                        max: 5,
-                        title: {
-                            display: true,
-                            text: 'Average Rating (1-5 stars)'
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    max: 5.5, // 👈 Da espacio extra después de 5
+                    title: {
+                        display: true,
+                        text: 'Rating',
+                        font: {
+                            size: 16
                         }
-                    }
-                },
-                plugins: {
-                    legend: {
-                        display: false
                     },
-                    tooltip: {
-                        callbacks: {
-                            afterLabel: function(context) {
-                                const index = context.dataIndex;
-                                const count = {{ top_tools|safe }}[index].num_ratings;
-                                return `Based on ${count} ratings`;
-                            }
+                    ticks: {
+                        font: {
+                            size: 14
                         }
                     }
                 },
-                maintainAspectRatio: false
-            }
-        });
-        
-        // Category Chart
-        const categoryCtx = document.getElementById('category-chart').getContext('2d');
-        const categoryChart = new Chart(categoryCtx, {
-            type: 'pie',
-            data: {
-                labels: [
-                    {% for category in category_counts %}
-                        '{{ category.name }}',
-                    {% endfor %}
-                ],
-                datasets: [{
-                    data: [
-                        {% for category in category_counts %}
-                            {{ category.count }},
-                        {% endfor %}
-                    ],
-                    backgroundColor: [
-                        'rgba(255, 99, 132, 0.7)',
-                        'rgba(54, 162, 235, 0.7)',
-                        'rgba(255, 206, 86, 0.7)',
-                        'rgba(75, 192, 192, 0.7)',
-                        'rgba(153, 102, 255, 0.7)',
-                        'rgba(255, 159, 64, 0.7)',
-                        'rgba(199, 199, 199, 0.7)',
-                        'rgba(83, 102, 255, 0.7)',
-                        'rgba(40, 159, 64, 0.7)',
-                        'rgba(210, 199, 199, 0.7)',
-                        'rgba(78, 52, 199, 0.7)'
-                    ],
-                    borderColor: [
-                        'rgba(255, 99, 132, 1)',
-                        'rgba(54, 162, 235, 1)',
-                        'rgba(255, 206, 86, 1)',
-                        'rgba(75, 192, 192, 1)',
-                        'rgba(153, 102, 255, 1)',
-                        'rgba(255, 159, 64, 1)',
-                        'rgba(199, 199, 199, 1)',
-                        'rgba(83, 102, 255, 1)',
-                        'rgba(40, 159, 64, 1)',
-                        'rgba(210, 199, 199, 1)',
-                        'rgba(78, 52, 199, 1)'
-                    ],
-                    borderWidth: 1
-                }]
+                y: {
+                    ticks: {
+                        font: {
+                            size: 14
+                        }
+                    }
+                }
             },
-            options: {
-                plugins: {
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                const label = context.label || '';
-                                const value = context.raw || 0;
-                                const total = context.dataset.data.reduce((acc, val) => acc + val, 0);
-                                const percentage = Math.round((value / total) * 100);
-                                return `${label}: ${value} tools (${percentage}%)`;
-                            }
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    enabled: false
+                },
+                datalabels: {
+                    color: '#000',
+                    anchor: 'end',
+                    align: 'right',
+                    offset: 8,
+                    font: {
+                        weight: 'bold',
+                        size: 12  // Cambiado a un tamaño más pequeño
+                    },
+                    formatter: function(value, context) {
+                        const ratings = [{% for tool in top_tools %}{{ tool.num_ratings }},{% endfor %}];
+                        return `${value} ⭐ (${ratings[context.dataIndex]} ratings)`;
+                    }
+                }
+            }
+        }
+    });
+
+    // Category Distribution Chart
+    const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+    new Chart(categoryCtx, {
+        type: 'pie',
+        data: {
+            labels: [{% for cat in category_counts %}'{{ cat.name|escapejs }}',{% endfor %}],
+            datasets: [{
+                data: [{% for cat in category_counts %}{{ cat.total_ratings }},{% endfor %}],
+                backgroundColor: [
+                    '#ff6384', '#36a2eb', '#ffce56', '#4bc0c0', '#9966ff', '#ff9f40'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            layout: {
+                padding: {
+                    top: 30,
+                    bottom: 30
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: {
+                        boxWidth: 15,
+                        padding: 20,
+                        font: {
+                            size: 14
                         }
                     }
                 },
-                maintainAspectRatio: false
-            }
-        });
+                tooltip: {
+                    enabled: false
+                },
+                datalabels: {
+                    color: 'white',
+                    anchor: 'center',
+                    align: 'center',
+                    font: {
+                        weight: 'bold',
+                        size: 12  // Cambiado a un tamaño más pequeño
+                    },
+                    formatter: function(value, context) {
+                        // Obtener el total de ratings
+                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+
+                        // Calcular el porcentaje
+                        const percentage = ((value / total) * 100).toFixed(2);
+
+                        // Obtener el número de valoraciones
+                        const categoryTotalRatings = [{% for cat in category_counts %}{{ cat.total_ratings }},{% endfor %}][context.dataIndex];
+
+                        // Mostrar el número de valoraciones y el porcentaje
+                        return `${categoryTotalRatings} ratings (${percentage}%)`;
+                    },
+                    display: function(context) {
+                        const value = context.dataset.data[context.dataIndex];
+                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                        return (value / total) * 100 > 5; // Solo mostrar si el porcentaje es mayor a 5%
+                    }
+                }
+            },
+            radius: '75%'
+        }
     });
+});
 </script>
 {% endblock %}
+

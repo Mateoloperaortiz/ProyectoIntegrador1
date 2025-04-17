@@ -73,68 +73,76 @@
                 </div>
             </div>
 
-             <!-- Rating Section -->
-            <div class="card shadow-sm border-0 mt-4">
-                <div class="card-body">
-                    <div class="section-divider"></div>
-                    <div class="ratings-section">
-                        <h2 class="section-title">
-                            <i class="fas fa-star text-warning"></i> Ratings & Reviews
-                        </h2>
-            
-                        <!-- Average Rating -->
-                        <div class="rating-summary">
-                            <h3>
-                                Average rating: {{ tool.get_average_rating|floatformat:1 }} 
-                                <span class="text-warning">⭐</span>
-                            </h3>
-                            <small class="text-muted">
-                                {{ tool.ratings.count }} rating{% if tool.ratings.count != 1 %}s{% endif %}
-                            </small>
-                        </div>
-                        <br>
-            
-                        {% if user.is_authenticated %}
-                            <h4>Rate this Tool</h4>
-                            <form method="post">
-                                {% csrf_token %}
-                                {{ form.as_p }}
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-star me-2"></i>Submit Rating
-                                </button>
-                            </form>
-                        {% else %}
-                            <a href="{% url 'users:login' %}" class="btn btn-outline-primary mt-2">
-                                <i class="fas fa-sign-in-alt"></i> Sign in to rate
-                            </a>
-                        {% endif %}
-                        <br>
-                        <br>
-            
-                        <!-- Opinions -->
-                        <h3>Opinions</h3>
-                        {% for rating in ratings %}
-                            <div class="opinion">
-                                <p><strong>{{ rating.user.username }}</strong> - 
-                                    <span class="stars">
-                                        {% for i in "12345"|make_list %}
-                                            {% if forloop.counter <= rating.stars %}
-                                                ⭐
-                                            {% else %}
-                                                ☆
-                                            {% endif %}
-                                        {% endfor %}
-                                    </span>
-                                </p>
-                                <p>{{ rating.comment }}</p>
+        <!-- Rating Section -->
+        <div class="card shadow-sm border-0 mt-4">
+            <div class="card-body">
+                <div class="section-divider"></div>
+                <div class="ratings-section">
+                    <h2 class="section-title">
+                        <i class="fas fa-star text-warning"></i> Ratings & Reviews
+                        <small class="text-muted ms-2">
+                            ({{ tool.ratings.count }} rating{% if tool.ratings.count != 1 %}s{% endif %})
+                        </small>
+                    </h2>
+                    <br>
+        
+                    {% if user.is_authenticated %}
+                        <h4>Rate this Tool</h4>
+                        <form method="post">
+                            {% csrf_token %}
+                            <div class="rating-form">
+                                <div class="star-rating">
+                                    {% for i in "54321"|make_list %}
+                                        <input type="radio" id="star{{ i }}" name="stars" value="{{ i }}"
+                                            {% if form.stars.value == i|stringformat:"s" %}checked{% endif %}>
+                                        <label for="star{{ i }}">&#9733;</label>
+                                    {% endfor %}
+                                </div>
+                                {{ form.stars.errors }}
                             </div>
-                            <hr> 
-                        {% empty %}
-                            <p>There are no ratings or comments yet.</p>
-                        {% endfor %}
-                    </div>
+                            <div class="form-group mt-3">
+                                {{ form.comment }}
+                                {{ form.comment.errors }}
+                            </div>
+                            <button type="submit" class="btn btn-primary mt-3">
+                                <i class="fas fa-star me-2"></i>Submit Rating
+                            </button>
+                        </form>
+                    {% else %}
+                        <a href="{% url 'users:login' %}" class="btn btn-outline-primary mt-2">
+                            <i class="fas fa-sign-in-alt"></i> Sign in to rate
+                        </a>
+                    {% endif %}
+                    <br><br>
+        
+                    <!-- Opinions -->
+                    <h3>Opinions</h3>
+                    {% for rating in ratings %}
+                        <div class="opinion">
+                            <p><strong>{{ rating.user.username }}</strong> - 
+                                <span class="stars">
+                                    {% for i in "12345"|make_list %}
+                                        {% if forloop.counter <= rating.stars %}
+                                            ⭐
+                                        {% else %}
+                                            ☆
+                                        {% endif %}
+                                    {% endfor %}
+                                </span>
+                            </p>
+                            <p>{{ rating.comment }}</p>
+                        </div>
+                        <hr> 
+                    {% empty %}
+                        <p>There are no ratings or comments yet.</p>
+                    {% endfor %}
                 </div>
             </div>
+        </div>
+
+
+
+
         </div>
         
         <!-- Sidebar -->

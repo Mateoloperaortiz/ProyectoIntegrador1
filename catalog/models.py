@@ -52,15 +52,15 @@ class AITool(models.Model):
         return self.popularity
 
 
-
 class Rating(models.Model):
     """Model for storing user ratings and reviews."""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     tool = models.ForeignKey(AITool, on_delete=models.CASCADE, related_name='ratings')
-    stars = models.PositiveSmallIntegerField(
-        choices=[(i, f"{i} star{'s' if i > 1 else ''}") for i in range(1, 6)]
-    )
+
+    STARS_CHOICES = [(i, f"{i} star{'s' if i > 1 else ''}") for i in range(1, 6)]
+
+    stars = models.PositiveSmallIntegerField(choices=STARS_CHOICES)
     comment = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -75,6 +75,7 @@ class Rating(models.Model):
             f"{self.stars}⭐ - "
             f"Created: {self.created_at.strftime('%Y-%m-%d %H:%M')}"
         )
+    
 class Favorite(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='favorites')
     tool = models.ForeignKey(AITool, on_delete=models.CASCADE, related_name='favorited_by')

@@ -132,33 +132,46 @@ def ratingAI(request: HttpRequest, id: uuid.UUID) -> HttpResponse:
     if request.method == "POST" and request.user.is_authenticated:
         form = RatingForm(request.POST)
         if form.is_valid():
-            Rating.objects.update_or_create(
-                user=request.user,
-                tool=tool,
-                defaults={
-                    'stars': form.cleaned_data['stars'],
-                    'comment': form.cleaned_data['comment']
-                }
-            )
-            avg_rating = tool.ratings.aggregate(Avg('stars'))['stars__avg']
-            tool.popularity = round(avg_rating or 0, 1)
-            tool.save(update_fields=['popularity'])
+            try:
+                rating, created = Rating.objects.update_or_create(
+                    user=request.user,
+                    tool=tool,
+                    defaults={
+                        'stars': form.cleaned_data['stars'],
+                        'comment': form.cleaned_data['comment']
+                    }
+                )
+                # Recalcular el promedio
+                avg_rating = tool.ratings.aggregate(Avg('stars'))['stars__avg']
+                tool.popularity = round(avg_rating or 0, 1)
+                tool.save(update_fields=['popularity'])
 
-            messages.success(request, _('Your rating has been submitted!'))
-            return redirect('catalog:tool_detail', slug=tool.slug)
+                messages.success(request, _('Your rating has been saved successfully!'))
+                return redirect('catalog:tool_detail', slug=tool.slug)
+            except Exception as e:
+                messages.error(request, _('An error occurred while saving your rating.'))
+                print(f"Error saving rating: {str(e)}")  # Para debugging
         else:
-            messages.error(request, _('Error saving rating.'))
+            messages.error(request, _('Please check your rating form.'))
+            print(f"Form errors: {form.errors}")  # Para debugging
     else:
-        form = RatingForm()
+        # Obtener la calificación existente del usuario si existe
+        if request.user.is_authenticated:
+            existing_rating = Rating.objects.filter(user=request.user, tool=tool).first()
+            form = RatingForm(instance=existing_rating) if existing_rating else RatingForm()
+        else:
+            form = RatingForm()
 
-    return render(request, 'catalog/tool_detail.html', {
+    context = {
         'tool': tool,
         'is_favorite': is_favorite,
         'recommended_tools': recommended_tools,
-        'ratings': tool.ratings.select_related('user'),
+        'ratings': tool.ratings.select_related('user').order_by('-created_at'),
         'average_rating': tool.popularity,
         'form': form
-    })
+    }
+
+    return render(request, 'catalog/tool_detail.html', context)
 
 
 class SearchView(ListView):
@@ -220,11 +233,22 @@ class StatisticsView(TemplateView):
 
         category_counts = []
         for code, name in CATEGORY_CHOICES:
-            count = AITool.objects.filter(category=code).count()
+            tools_in_category = AITool.objects.filter(category=code)
+            count = tools_in_category.count()
             if count > 0:
+                # Get total ratings for tools in this category
+                total_ratings = Rating.objects.filter(
+                    tool__category=code
+                ).aggregate(
+                    total_count=Count('id'),
+                    avg_rating=Avg('stars')
+                )
+                
                 category_counts.append({
                     'name': name,
-                    'count': count
+                    'count': count,
+                    'total_ratings': total_ratings['total_count'] or 0,
+                    'avg_rating': round(total_ratings['avg_rating'] or 0, 1)
                 })
 
         context['category_counts'] = category_counts
