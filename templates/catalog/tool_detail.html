@@ -17,7 +17,7 @@
                 <!-- Rating overview -->
                 <div class="d-flex align-items-center mb-3">
                     <div class="rating-stars me-2">
-                        {% with avg_rating=tool.get_average_rating %}
+                        {% with avg_rating=tool.popularity %}
                             {% for i in "12345" %}
                                 {% if forloop.counter <= avg_rating %}
                                     <i class="fas fa-star"></i>
@@ -29,7 +29,7 @@
                             {% endfor %}
                         {% endwith %}
                     </div>
-                    <span class="text-white">{{ tool.get_average_rating|floatformat:1 }} ({{ tool.rating_set.count }} ratings)</span>
+                    <span class="text-white">{{ tool.popularity|floatformat:1 }} ({{ tool.rating_set.count }} ratings)</span>
                 </div>
                 
                 <!-- Action buttons -->
@@ -81,7 +81,7 @@
                     <h2 class="section-title">
                         <i class="fas fa-star text-warning"></i> Ratings & Reviews
                         <small class="text-muted ms-2">
-                            ({{ tool.ratings.count }} rating{% if tool.ratings.count != 1 %}s{% endif %})
+                            ({{ ratings.count }} rating{% if ratings.count != 1 %}s{% endif %})
                         </small>
                     </h2>
                     <br>
