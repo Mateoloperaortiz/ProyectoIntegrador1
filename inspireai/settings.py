@@ -12,9 +12,21 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path
 import os
+import dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+if os.path.exists(os.path.join(BASE_DIR, '.envrc')):
+    with open(os.path.join(BASE_DIR, '.envrc'), 'r') as f:
+        for line in f:
+            if line.startswith('export '):
+                key, value = line.replace('export ', '', 1).strip().split('=', 1)
+                os.environ[key] = value.strip('"').strip("'")
+
+print(f"OpenAI API key set: {os.environ.get('OPENAI_API_KEY') is not None}")
+print(f"Hugging Face API key set: {os.environ.get('HUGGINGFACE_API_KEY') is not None}")
+
 
 
 # Quick-start development settings - unsuitable for production
