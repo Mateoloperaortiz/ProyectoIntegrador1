@@ -110,9 +110,11 @@ class ConversationDetailView(LoginRequiredMixin, DetailView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['messages'] = Message.objects.filter(conversation=self.object)
+        # Get the conversation object safely
+        conversation = self.get_object()
+        context['messages'] = Message.objects.filter(conversation=conversation)
         context['message_form'] = MessageForm()
-        context['title_form'] = ConversationTitleForm(instance=self.object)
+        context['title_form'] = ConversationTitleForm(instance=conversation)
         return context
 
 
@@ -183,8 +185,122 @@ def send_message(request, conversation_id):
 
 def simulate_ai_response(tool, user_message):
     """
-    Simulate an AI response when the API is not available.
-    This is a fallback function when the real API integration is not working.
+    Generate an AI response using the appropriate API based on the tool's configuration.
+    Falls back to simulated responses if API calls fail.
+    """
+    import os
+    import requests
+    from openai import OpenAI
+    
+    try:
+        if tool.api_type == 'OPENAI':
+            return generate_openai_response(tool, user_message)
+        elif tool.api_type == 'HUGGINGFACE':
+            return generate_huggingface_response(tool, user_message)
+        elif tool.api_type == 'ANTHROPIC':
+            return fallback_response(tool, user_message, "Anthropic API integration is coming soon.")
+        elif tool.api_type == 'GOOGLE':
+            return fallback_response(tool, user_message, "Google AI API integration is coming soon.")
+        else:
+            return fallback_response(tool, user_message)
+    except Exception as e:
+        print(f"Error generating AI response: {str(e)}")
+        return fallback_response(tool, user_message, f"API Error: {str(e)}")
+
+
+def generate_openai_response(tool, user_message):
+    """
+    Generate a response using OpenAI API.
+    """
+    import os
+    from openai import OpenAI
+    
+    api_key = os.environ.get('OPENAI_API_KEY')
+    if not api_key:
+        return fallback_response(tool, user_message, "OpenAI API key not found in environment.")
+    
+    client = OpenAI(api_key=api_key)
+    
+    # Determine which model to use based on tool category
+    model = tool.api_model if tool.api_model else "gpt-3.5-turbo"
+    
+    if tool.category == 'IMAGE':
+        try:
+            response = client.images.generate(
+                model="dall-e-3" if model == "dall-e-3" else "dall-e-2",
+                prompt=user_message,
+                size="1024x1024",
+                quality="standard",
+                n=1,
+            )
+            return f"I've created an image based on your description. Here's the URL: {response.data[0].url}"
+        except Exception as e:
+            return fallback_response(tool, user_message, f"Image generation error: {str(e)}")
+    else:
+        try:
+            response = client.chat.completions.create(
+                model=model,
+                messages=[
+                    {"role": "system", "content": f"You are {tool.name}, an AI assistant by {tool.provider}. Respond as if you are this specific AI tool."},
+                    {"role": "user", "content": user_message}
+                ],
+                max_tokens=500
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            return fallback_response(tool, user_message, f"Text generation error: {str(e)}")
+
+
+def generate_huggingface_response(tool, user_message):
+    """
+    Generate a response using Hugging Face API.
+    """
+    import os
+    import requests
+    import json
+    
+    api_key = os.environ.get('HUGGINGFACE_API_KEY')
+    if not api_key:
+        return fallback_response(tool, user_message, "Hugging Face API key not found in environment.")
+    
+    api_endpoint = tool.api_endpoint if tool.api_endpoint else "https://api-inference.huggingface.co/models/gpt2"
+    
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json"
+    }
+    
+    payload = {
+        "inputs": user_message,
+        "parameters": {
+            "max_length": 100,
+            "temperature": 0.7,
+            "return_full_text": False
+        }
+    }
+    
+    try:
+        response = requests.post(api_endpoint, headers=headers, json=payload)
+        response.raise_for_status()  # Raise exception for HTTP errors
+        
+        result = response.json()
+        
+        if isinstance(result, list) and len(result) > 0:
+            if tool.category == 'IMAGE':
+                return "I've created an image based on your description. (Image data would be displayed here)"
+            elif 'generated_text' in result[0]:
+                return result[0]['generated_text']
+            else:
+                return json.dumps(result)
+        else:
+            return fallback_response(tool, user_message, "Unexpected response format from Hugging Face API.")
+    except Exception as e:
+        return fallback_response(tool, user_message, f"Hugging Face API error: {str(e)}")
+
+
+def fallback_response(tool, user_message, error_message=None):
+    """
+    Generate a fallback response when API calls fail.
     """
     # Simple responses based on AI tool category
     responses = {
@@ -220,6 +336,9 @@ def simulate_ai_response(tool, user_message):
     if len(words) > 3:
         keywords = words[:3]
         response += f" I noticed you mentioned {', '.join(keywords)}."
+    
+    if error_message:
+        response += f"\n\n(Note: {error_message})"
     
     return response
 

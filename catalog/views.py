@@ -109,11 +109,20 @@ class ToolDetailView(DetailView):
 
     def get(self, request, *args, **kwargs):
         self.object = self.get_object()
-        return ratingAI(request, id=self.object.id)
+        tool_id = getattr(self.object, 'id', None)
+        if tool_id is not None:
+            return ratingAI(request, id=tool_id)
+        return super().get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
-        return ratingAI(request, id=self.object.id)
+        tool_id = getattr(self.object, 'id', None)
+        if tool_id is not None:
+            return ratingAI(request, id=tool_id)
+        slug = getattr(self.object, 'slug', None)
+        if slug is not None:
+            return redirect('catalog:tool_detail', slug=slug)
+        return redirect('catalog:catalog')
 
 
 def ratingAI(request: HttpRequest, id: uuid.UUID) -> HttpResponse:
@@ -141,8 +150,7 @@ def ratingAI(request: HttpRequest, id: uuid.UUID) -> HttpResponse:
                         'comment': form.cleaned_data['comment']
                     }
                 )
-                # Recalcular el promedio
-                avg_rating = tool.ratings.aggregate(Avg('stars'))['stars__avg']
+                avg_rating = Rating.objects.filter(tool=tool).aggregate(Avg('stars'))['stars__avg']
                 tool.popularity = round(avg_rating or 0, 1)
                 tool.save(update_fields=['popularity'])
 
@@ -162,11 +170,13 @@ def ratingAI(request: HttpRequest, id: uuid.UUID) -> HttpResponse:
         else:
             form = RatingForm()
 
+    ratings = Rating.objects.filter(tool=tool).select_related('user').order_by('-created_at')
+    
     context = {
         'tool': tool,
         'is_favorite': is_favorite,
         'recommended_tools': recommended_tools,
-        'ratings': tool.ratings.select_related('user').order_by('-created_at'),
+        'ratings': ratings,
         'average_rating': tool.popularity,
         'form': form
     }
