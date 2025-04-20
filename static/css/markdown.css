@@ -34,18 +34,18 @@
 
 /* Code block styling */
 .markdown-content pre {
-    background-color: #f8f9fa;
+    background-color: #1e1e1e;
     border-radius: 8px;
     padding: 1.25rem;
     margin-bottom: 1.25rem;
     overflow-x: auto;
     position: relative; /* Ensure relative positioning for absolute children */
     border: 1px solid rgba(0, 0, 0, 0.1);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .markdown-content code {
-    font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
     font-size: 0.9em;
     line-height: 1.6;
     padding: 0.2em 0.4em;
@@ -79,14 +79,14 @@
 .code-language-badge {
     position: absolute !important;
     top: 0 !important;
-    right: 30px !important; /* Move the badge to make room for the copy button */
-    background-color: rgba(0, 0, 0, 0.3) !important; /* Darker for better visibility */
+    right: 30px !important;
+    background-color: rgba(255, 255, 255, 0.1) !important;
     color: #ffffff !important;
     padding: 2px 6px !important;
     font-size: 0.75em !important;
     border-radius: 0 0 0 6px !important;
-    z-index: 100 !important; /* Ensure it's above the code */
-    display: inline-block !important; /* Ensure it's visible */
+    z-index: 100 !important;
+    display: inline-block !important;
     opacity: 1 !important;
     pointer-events: auto !important;
 }
@@ -96,26 +96,27 @@
     position: absolute !important;
     top: 0 !important;
     right: 0 !important;
-    background-color: rgba(0, 0, 0, 0.3) !important; /* Darker for better visibility */
+    background-color: rgba(255, 255, 255, 0.1) !important;
     border: none !important;
     border-radius: 0 6px 0 6px !important;
     color: #ffffff !important;
     padding: 4px 8px !important;
     font-size: 0.75em !important;
     cursor: pointer !important;
-    z-index: 100 !important; /* Ensure it's above the code */
-    display: inline-block !important; /* Ensure it's visible */
+    z-index: 100 !important;
+    display: inline-block !important;
     opacity: 1 !important;
     pointer-events: auto !important;
 }
 
 .copy-code-button:hover {
-    background-color: rgba(0, 0, 0, 0.2);
+    background-color: rgba(255, 255, 255, 0.2);
 }
 
 /* Dark mode for code blocks */
 .message-ai .markdown-content pre {
-    background-color: #f8f9fb;
+    background-color: #1e1e1e;
+    color: #f8f9fb;
 }
 
 .message-user .markdown-content pre {
