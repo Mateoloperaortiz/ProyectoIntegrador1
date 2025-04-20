@@ -5,96 +5,202 @@
 
 {% block content %}
 <!-- Hero Section -->
-<section class="hero-section">
-    <div class="container">
-        <div class="row align-items-center">
-            <div class="col-lg-6 mb-5 mb-lg-0">
-                <h1 class="display-4 fw-bold mb-4" style="letter-spacing: -0.5px;">Discover and Connect with AI Tools</h1>
-                <p class="lead mb-4 opacity-75">InspireAI brings together the world's best artificial intelligence tools in one place, making it easy to find, compare, and use the right AI for your needs.</p>
-                <div class="d-flex flex-wrap gap-3">
+<section class="hero-section position-relative overflow-hidden py-5" style="background: linear-gradient(135deg, #4e54c8 0%, #8f94fb 100%);">
+    <!-- Animated background elements -->
+    <div class="position-absolute w-100 h-100" style="top: 0; left: 0; overflow: hidden; z-index: 1;">
+        <div class="position-absolute rounded-circle bg-white opacity-10" style="width: 300px; height: 300px; top: -150px; left: 10%;"></div>
+        <div class="position-absolute rounded-circle bg-white opacity-10" style="width: 200px; height: 200px; bottom: -100px; right: 5%;"></div>
+        <div class="position-absolute rounded-circle bg-white opacity-10" style="width: 150px; height: 150px; top: 40%; right: 15%;"></div>
+        <div class="position-absolute rounded-circle bg-white opacity-10" style="width: 250px; height: 250px; top: 60%; left: 20%;"></div>
+        <div class="position-absolute rounded-circle bg-white opacity-10" style="width: 180px; height: 180px; top: 20%; right: 25%;"></div>
+    </div>
+    
+    <div class="container position-relative" style="z-index: 2;">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 text-center text-white mb-5">
+                <h1 class="display-2 fw-bold mb-4" style="letter-spacing: -1px;">
+                    Discover the Power of <span class="text-warning">AI</span> Tools
+                </h1>
+                
+                <p class="lead mb-5 opacity-90 mx-auto" style="font-size: 1.25rem; max-width: 700px;">
+                    Explore, connect, and interact with the world's best artificial intelligence tools in one unified platform.
+                </p>
+                
+                <div class="d-flex flex-wrap justify-content-center gap-3 mb-5">
                     {% if user.is_authenticated %}
-                        <a href="{% url 'catalog:catalog' %}" class="btn btn-light btn-lg shadow-sm">
+                        <a href="{% url 'catalog:catalog' %}" class="btn btn-light btn-lg shadow-sm rounded-pill px-4">
                             <i class="fas fa-th-large me-2"></i> Explore AI Tools
                         </a>
-                        <a href="{% url 'interaction:conversation_list' %}" class="btn btn-accent btn-lg shadow-sm">
+                        <a href="{% url 'interaction:conversation_list' %}" class="btn btn-warning btn-lg shadow-sm rounded-pill px-4">
                             <i class="fas fa-comments me-2"></i> My Conversations
                         </a>
                     {% else %}
-                        <a href="{% url 'catalog:catalog' %}" class="btn btn-light btn-lg shadow-sm">
+                        <a href="{% url 'catalog:catalog' %}" class="btn btn-light btn-lg shadow-sm rounded-pill px-4">
                             <i class="fas fa-th-large me-2"></i> Explore AI Tools
                         </a>
-                        <a href="{% url 'users:register' %}" class="btn btn-accent btn-lg shadow-sm">
+                        <a href="{% url 'users:register' %}" class="btn btn-warning btn-lg shadow-sm rounded-pill px-4">
                             <i class="fas fa-user-plus me-2"></i> Join Now
                         </a>
                     {% endif %}
                 </div>
-                <div class="mt-5 d-flex flex-wrap gap-4">
+            </div>
+        </div>
+        
+        <!-- Stats cards -->
+        <div class="row g-4 justify-content-center mb-4">
+            <div class="col-md-4">
+                <div class="card border-0 bg-white bg-opacity-10 text-white p-3 h-100 shadow-lg transform-hover">
                     <div class="d-flex align-items-center">
-                        <div class="bg-white rounded-circle p-2 me-2 shadow-sm d-flex align-items-center justify-content-center" style="width: 44px; height: 44px;">
-                            <i class="fas fa-cubes text-primary"></i>
+                        <div class="rounded-circle bg-warning p-2 me-3 d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                            <i class="fas fa-cubes text-dark fs-4"></i>
                         </div>
                         <div>
-                            <h4 class="h6 mb-0 fw-bold">{{ total_tools }}</h4>
-                            <p class="mb-0 small opacity-75">AI Tools</p>
-                        </div>
-                    </div>
-                    <div class="d-flex align-items-center">
-                        <div class="bg-white rounded-circle p-2 me-2 shadow-sm d-flex align-items-center justify-content-center" style="width: 44px; height: 44px;">
-                            <i class="fas fa-tags text-primary"></i>
-                        </div>
-                        <div>
-                            <h4 class="h6 mb-0 fw-bold">{{ categories|length }}</h4>
-                            <p class="mb-0 small opacity-75">Categories</p>
-                        </div>
-                    </div>
-                    <div class="d-flex align-items-center">
-                        <div class="bg-white rounded-circle p-2 me-2 shadow-sm d-flex align-items-center justify-content-center" style="width: 44px; height: 44px;">
-                            <i class="fas fa-sync-alt text-primary"></i>
-                        </div>
-                        <div>
-                            <h4 class="h6 mb-0 fw-bold">{{ popular_tools.0.popularity|default:"0" }}</h4>
-                            <p class="mb-0 small opacity-75">Interactions</p>
+                            <h2 class="h1 mb-0 fw-bold">{{ total_tools }}</h2>
+                            <p class="mb-0 text-white-50">AI Tools</p>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="col-lg-6 text-center">
-                <div class="position-relative">
-                    <img src="{% static 'images/hero-illustration.png' %}" alt="AI Illustration" class="img-fluid rounded-custom shadow-lg" style="max-height: 450px;">
-                    <!-- Floating elements for visual interest -->
-                    <div class="position-absolute shadow rounded-custom bg-white p-3" style="top: 20%; left: -30px; z-index: 2;">
-                        <div class="d-flex align-items-center">
-                            <div class="bg-primary rounded-circle p-2 me-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
-                                <i class="fas fa-brain text-white"></i>
-                            </div>
-                            <div>
-                                <h5 class="fs-6 mb-0">AI Innovation</h5>
-                                <div class="d-flex align-items-center">
-                                    <i class="fas fa-star text-warning me-1"></i>
-                                    <i class="fas fa-star text-warning me-1"></i>
-                                    <i class="fas fa-star text-warning me-1"></i>
-                                    <i class="fas fa-star text-warning me-1"></i>
-                                    <i class="fas fa-star text-warning"></i>
-                                </div>
-                            </div>
+            <div class="col-md-4">
+                <div class="card border-0 bg-white bg-opacity-10 text-white p-3 h-100 shadow-lg transform-hover">
+                    <div class="d-flex align-items-center">
+                        <div class="rounded-circle bg-warning p-2 me-3 d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                            <i class="fas fa-tags text-dark fs-4"></i>
+                        </div>
+                        <div>
+                            <h2 class="h1 mb-0 fw-bold">{{ categories|length }}</h2>
+                            <p class="mb-0 text-white-50">Categories</p>
                         </div>
                     </div>
-                    <div class="position-absolute shadow rounded-custom bg-white p-3" style="bottom: 20%; right: -20px; z-index: 2;">
-                        <div class="d-flex align-items-center">
-                            <div class="bg-accent rounded-circle p-2 me-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
-                                <i class="fas fa-robot text-white"></i>
-                            </div>
-                            <div>
-                                <h5 class="fs-6 mb-0">AI Integration</h5>
-                                <p class="mb-0 small text-muted">Simply connect</p>
-                            </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 bg-white bg-opacity-10 text-white p-3 h-100 shadow-lg transform-hover">
+                    <div class="d-flex align-items-center">
+                        <div class="rounded-circle bg-warning p-2 me-3 d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                            <i class="fas fa-sync-alt text-dark fs-4"></i>
+                        </div>
+                        <div>
+                            <h2 class="h1 mb-0 fw-bold">{{ popular_tools.0.popularity|default:"0" }}</h2>
+                            <p class="mb-0 text-white-50">Interactions</p>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+        
+        <!-- Floating cards -->
+        <div class="row justify-content-center position-relative" style="min-height: 300px;">
+            <!-- Floating card 1 -->
+            <div class="floating-card position-absolute shadow-lg rounded-4 bg-white p-4 animate-float" style="top: 0; left: 10%; max-width: 280px; z-index: 3; transform: rotate(-3deg);">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="bg-primary rounded-circle p-3 me-3 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                        <i class="fas fa-brain text-white fs-3"></i>
+                    </div>
+                    <div>
+                        <h5 class="fs-5 mb-0 fw-bold">AI Innovation</h5>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-star text-warning"></i>
+                            <i class="fas fa-star text-warning"></i>
+                            <i class="fas fa-star text-warning"></i>
+                            <i class="fas fa-star text-warning"></i>
+                            <i class="fas fa-star text-warning"></i>
+                        </div>
+                    </div>
+                </div>
+                <p class="mb-0 text-muted">Cutting-edge AI technologies that push the boundaries of what's possible.</p>
+            </div>
+            
+            <!-- Floating card 2 -->
+            <div class="floating-card position-absolute shadow-lg rounded-4 bg-white p-4 animate-float-delay" style="bottom: 0; right: 10%; max-width: 280px; z-index: 3; transform: rotate(2deg);">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="bg-warning rounded-circle p-3 me-3 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                        <i class="fas fa-robot text-dark fs-3"></i>
+                    </div>
+                    <div>
+                        <h5 class="fs-5 mb-0 fw-bold">AI Integration</h5>
+                        <p class="mb-0 small text-primary">Simply connect</p>
+                    </div>
+                </div>
+                <p class="mb-0 text-muted">Seamlessly integrate AI tools into your workflow with our unified platform.</p>
+            </div>
+            
+            <!-- Floating card 3 -->
+            <div class="floating-card position-absolute shadow-lg rounded-4 bg-white p-4 animate-float-delay-2" style="top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-1deg); max-width: 280px; z-index: 3;">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="bg-success rounded-circle p-3 me-3 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                        <i class="fas fa-lightbulb text-white fs-3"></i>
+                    </div>
+                    <div>
+                        <h5 class="fs-5 mb-0 fw-bold">AI Creativity</h5>
+                        <p class="mb-0 small text-success">Endless possibilities</p>
+                    </div>
+                </div>
+                <p class="mb-0 text-muted">Unlock creative potential with AI tools designed to inspire and enhance your work.</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Wave separator -->
+    <div class="position-absolute bottom-0 left-0 w-100" style="z-index: 2;">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 100" preserveAspectRatio="none" style="width: 100%; height: 50px;">
+            <path fill="#ffffff" fill-opacity="1" d="M0,32L60,42.7C120,53,240,75,360,74.7C480,75,600,53,720,42.7C840,32,960,32,1080,37.3C1200,43,1320,53,1380,58.7L1440,64L1440,100L1380,100C1320,100,1200,100,1080,100C960,100,840,100,720,100C600,100,480,100,360,100C240,100,120,100,60,100L0,100Z"></path>
+        </svg>
     </div>
 </section>
+
+<!-- Add animation styles -->
+<style>
+    .animate-float {
+        animation: float 6s ease-in-out infinite;
+    }
+    
+    .animate-float-delay {
+        animation: float 6s ease-in-out 2s infinite;
+    }
+    
+    .animate-float-delay-2 {
+        animation: float 6s ease-in-out 4s infinite;
+    }
+    
+    @keyframes float {
+        0% {
+            transform: translateY(0px) rotate(-3deg);
+        }
+        50% {
+            transform: translateY(-15px) rotate(0deg);
+        }
+        100% {
+            transform: translateY(0px) rotate(-3deg);
+        }
+    }
+    
+    .letter-spacing-2 {
+        letter-spacing: 2px;
+    }
+    
+    .bg-opacity-10 {
+        --bs-bg-opacity: 0.1;
+    }
+    
+    .transform-hover {
+        transition: transform 0.3s ease;
+    }
+    
+    .transform-hover:hover {
+        transform: translateY(-5px);
+    }
+    
+    .floating-card {
+        transition: all 0.3s ease;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    }
+    
+    .floating-card:hover {
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+        transform: translateY(-5px) rotate(0deg) !important;
+    }
+</style>
 
 <!-- Features Section -->
 <section class="py-5">

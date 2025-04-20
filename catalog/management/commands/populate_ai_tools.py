@@ -1,12 +1,18 @@
 import random
+import requests
+import os
+import tempfile
+from io import BytesIO
 from django.core.management.base import BaseCommand
 from django.utils.text import slugify
+from django.core.files import File
 from catalog.models import AITool
 from catalog.constants import CATEGORY_CHOICES, API_TYPE_CHOICES
+from PIL import Image
 
 
 class Command(BaseCommand):
-    help = 'Populates the database with sample AI tools'
+    help = 'Populates the database with sample AI tools from OpenAI, Hugging Face, and Google'
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -20,6 +26,70 @@ class Command(BaseCommand):
             action='store_true',
             help='Clear existing AI tools before creating new ones'
         )
+        
+    def fetch_and_save_image(self, url, tool_name, is_logo=False):
+        """
+        Fetch image from URL, process it, and return a File object.
+        Falls back to a default image if fetching fails.
+        """
+        try:
+            response = requests.get(url, timeout=10, headers={
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            })
+            if response.status_code == 200:
+                img_temp = tempfile.NamedTemporaryFile(delete=True)
+                img_temp.write(response.content)
+                img_temp.flush()
+                
+                try:
+                    img = Image.open(BytesIO(response.content))
+                    
+                    if is_logo:
+                        if max(img.size) > 400:
+                            img.thumbnail((400, 400))
+                    else:
+                        if max(img.size) > 800:
+                            img.thumbnail((800, 800))
+                    
+                    if img.mode in ('RGBA', 'LA') or (img.mode == 'P' and 'transparency' in img.info):
+                        background = Image.new('RGB', img.size, (255, 255, 255))
+                        background.paste(img, mask=img.split()[3] if img.mode == 'RGBA' else None)
+                        img = background
+                    
+                    img.save(img_temp, format='JPEG')
+                    img_temp.seek(0)
+                    
+                    return File(img_temp, name=f"{slugify(tool_name)}.jpg")
+                except Exception as e:
+                    self.stdout.write(self.style.WARNING(f"Error processing image for {tool_name}: {e}"))
+                    return self.get_default_image(is_logo)
+            else:
+                self.stdout.write(self.style.WARNING(f"Failed to fetch image for {tool_name}: HTTP {response.status_code}"))
+                return self.get_default_image(is_logo)
+        except Exception as e:
+            self.stdout.write(self.style.WARNING(f"Error fetching image for {tool_name}: {e}"))
+            return self.get_default_image(is_logo)
+            
+    def get_default_image(self, is_logo=False):
+        """
+        Return a default image file when fetching fails
+        """
+        try:
+            default_path = os.path.join('static', 'images', 'default-logo.png' if is_logo else 'default-tool.png')
+            
+            if not os.path.exists(default_path):
+                default_path = os.path.join('static', 'images', 'icon.png')
+                
+            with open(default_path, 'rb') as f:
+                img_temp = tempfile.NamedTemporaryFile(delete=True)
+                img_temp.write(f.read())
+                img_temp.flush()
+                img_temp.seek(0)
+                
+                return File(img_temp, name=os.path.basename(default_path))
+        except Exception as e:
+            self.stdout.write(self.style.ERROR(f"Error loading default image: {e}"))
+            return None
 
     def handle(self, *args, **options):
         if options['clear']:
@@ -28,9 +98,9 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS('Successfully cleared all AI tools'))
 
         count = options['count']
-        self.stdout.write(f'Creating {count} AI tools...')
+        self.stdout.write(f'Creating AI tools from OpenAI, Hugging Face, and Google...')
 
-        # List of sample AI tools with realistic data
+        # List of sample AI tools with realistic data - only OpenAI, Hugging Face, and Google
         ai_tools_data = [
             {
                 'name': 'ChatGPT',
@@ -42,6 +112,8 @@ class Command(BaseCommand):
                 'api_type': 'OPENAI',
                 'api_model': 'gpt-4',
                 'api_endpoint': 'https://api.openai.com/v1/chat/completions',
+                'logo_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/ChatGPT_logo.svg/1200px-ChatGPT_logo.svg.png',
+                'image_url': 'https://cdn.vox-cdn.com/thumbor/K_8RrfZgm8wAKQIjTX_5arDMJ98=/0x0:2040x1360/1400x1400/filters:focal(1020x680:1021x681)/cdn.vox-cdn.com/uploads/chorus_asset/file/24247717/STK_AI_Verge_005.jpg',
             },
             {
                 'name': 'DALL-E 3',
@@ -53,72 +125,21 @@ class Command(BaseCommand):
                 'api_type': 'OPENAI',
                 'api_model': 'dall-e-3',
                 'api_endpoint': 'https://api.openai.com/v1/images/generations',
+                'logo_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/OpenAI_Logo.svg/1200px-OpenAI_Logo.svg.png',
+                'image_url': 'https://cdn.openai.com/dall-e-3/prompt-examples/v2/astronaut_riding_a_horse.webp',
             },
             {
-                'name': 'Midjourney',
-                'description': 'Midjourney is an AI program that generates images from textual descriptions, similar to OpenAI\'s DALL-E and Stable Diffusion. The tool is currently in open beta and is known for its artistic style and high-quality outputs.',
-                'provider': 'Midjourney, Inc.',
-                'website_url': 'https://www.midjourney.com/',
-                'category': 'IMAGE',
-                'is_featured': True,
-                'api_type': 'CUSTOM',
-                'api_model': None,
-                'api_endpoint': None,
-            },
-            {
-                'name': 'Claude',
-                'description': 'Claude is an AI assistant created by Anthropic to be helpful, harmless, and honest. It excels at thoughtful dialogue and creative content generation with a focus on safety and ethical considerations.',
-                'provider': 'Anthropic',
-                'website_url': 'https://www.anthropic.com/claude',
+                'name': 'GPT-4',
+                'description': 'GPT-4 is OpenAI\'s most advanced system, producing safer and more useful responses. GPT-4 can solve difficult problems with greater accuracy, thanks to its broader general knowledge and problem solving abilities.',
+                'provider': 'OpenAI',
+                'website_url': 'https://openai.com/gpt-4',
                 'category': 'CHAT',
                 'is_featured': True,
-                'api_type': 'ANTHROPIC',
-                'api_model': 'claude-3-opus',
-                'api_endpoint': 'https://api.anthropic.com/v1/messages',
-            },
-            {
-                'name': 'GitHub Copilot',
-                'description': 'GitHub Copilot is an AI pair programmer that offers autocomplete-style suggestions as you code. It helps developers write code faster and with less work by suggesting whole lines or blocks of code as you type.',
-                'provider': 'GitHub & OpenAI',
-                'website_url': 'https://github.com/features/copilot',
-                'category': 'CODE',
-                'is_featured': True,
-                'api_type': 'CUSTOM',
-                'api_model': None,
-                'api_endpoint': None,
-            },
-            {
-                'name': 'Gemini',
-                'description': 'Gemini is Google\'s largest and most capable AI model, designed to be multimodal from the ground up. It can understand virtually any input, from text and code to audio and images, and generate high-quality outputs.',
-                'provider': 'Google',
-                'website_url': 'https://gemini.google.com/',
-                'category': 'CHAT',
-                'is_featured': True,
-                'api_type': 'GOOGLE',
-                'api_model': 'gemini-pro',
-                'api_endpoint': 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent',
-            },
-            {
-                'name': 'Stable Diffusion',
-                'description': 'Stable Diffusion is a deep learning, text-to-image model released in 2022. It is primarily used to generate detailed images conditioned on text descriptions, though it can also be applied to other tasks such as inpainting and outpainting.',
-                'provider': 'Stability AI',
-                'website_url': 'https://stability.ai/',
-                'category': 'IMAGE',
-                'is_featured': True,
-                'api_type': 'HUGGINGFACE',
-                'api_model': 'stabilityai/stable-diffusion-xl-base-1.0',
-                'api_endpoint': 'https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0',
-            },
-            {
-                'name': 'Perplexity AI',
-                'description': 'Perplexity AI is an AI-powered search engine and answer engine that provides direct responses to questions by searching the web and citing sources. It combines the capabilities of large language models with real-time web search.',
-                'provider': 'Perplexity Labs',
-                'website_url': 'https://www.perplexity.ai/',
-                'category': 'SEARCH',
-                'is_featured': False,
-                'api_type': 'CUSTOM',
-                'api_model': None,
-                'api_endpoint': None,
+                'api_type': 'OPENAI',
+                'api_model': 'gpt-4',
+                'api_endpoint': 'https://api.openai.com/v1/chat/completions',
+                'logo_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/OpenAI_Logo.svg/1200px-OpenAI_Logo.svg.png',
+                'image_url': 'https://cdn.openai.com/research-covers/gpt-4/GPT-4-still.jpg',
             },
             {
                 'name': 'Whisper',
@@ -126,32 +147,12 @@ class Command(BaseCommand):
                 'provider': 'OpenAI',
                 'website_url': 'https://openai.com/research/whisper',
                 'category': 'AUDIO',
-                'is_featured': False,
+                'is_featured': True,
                 'api_type': 'OPENAI',
                 'api_model': 'whisper-1',
                 'api_endpoint': 'https://api.openai.com/v1/audio/transcriptions',
-            },
-            {
-                'name': 'Runway Gen-2',
-                'description': 'Runway Gen-2 is a text-to-video AI model that can generate novel video content from text descriptions, existing images, or even other videos. It\'s designed for creative professionals in film, advertising, and digital media.',
-                'provider': 'Runway AI',
-                'website_url': 'https://runwayml.com/',
-                'category': 'VIDEO',
-                'is_featured': False,
-                'api_type': 'CUSTOM',
-                'api_model': None,
-                'api_endpoint': None,
-            },
-            {
-                'name': 'DeepL',
-                'description': 'DeepL is a neural machine translation service that translates between different languages. It\'s known for producing more natural-sounding translations compared to other services, especially for European languages.',
-                'provider': 'DeepL GmbH',
-                'website_url': 'https://www.deepl.com/',
-                'category': 'TRANS',
-                'is_featured': False,
-                'api_type': 'CUSTOM',
-                'api_model': None,
-                'api_endpoint': 'https://api.deepl.com/v2/translate',
+                'logo_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/OpenAI_Logo.svg/1200px-OpenAI_Logo.svg.png',
+                'image_url': 'https://cdn.openai.com/research-covers/whisper/3.jpg',
             },
             {
                 'name': 'Hugging Face Transformers',
@@ -159,98 +160,77 @@ class Command(BaseCommand):
                 'provider': 'Hugging Face',
                 'website_url': 'https://huggingface.co/transformers/',
                 'category': 'OTHER',
-                'is_featured': False,
+                'is_featured': True,
                 'api_type': 'HUGGINGFACE',
                 'api_model': None,
                 'api_endpoint': 'https://api-inference.huggingface.co/models/',
+                'logo_url': 'https://huggingface.co/front/assets/huggingface_logo.svg',
+                'image_url': 'https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/transformers/transformers-logo.png',
             },
             {
-                'name': 'Suno AI',
-                'description': 'Suno AI is a music generation platform that can create original songs from text prompts. It can generate vocals, instruments, and full compositions in various styles and genres.',
-                'provider': 'Suno',
-                'website_url': 'https://suno.ai/',
-                'category': 'AUDIO',
+                'name': 'Stable Diffusion XL',
+                'description': 'Stable Diffusion XL is a deep learning, text-to-image model released by Stability AI. It is primarily used to generate detailed images conditioned on text descriptions, with significantly improved quality over previous versions.',
+                'provider': 'Stability AI via Hugging Face',
+                'website_url': 'https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0',
+                'category': 'IMAGE',
+                'is_featured': True,
+                'api_type': 'HUGGINGFACE',
+                'api_model': 'stabilityai/stable-diffusion-xl-base-1.0',
+                'api_endpoint': 'https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0',
+                'logo_url': 'https://huggingface.co/front/assets/huggingface_logo.svg',
+                'image_url': 'https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/example_1.png',
+            },
+            {
+                'name': 'BERT',
+                'description': 'BERT (Bidirectional Encoder Representations from Transformers) is a transformer-based machine learning technique for natural language processing pre-training developed by Google and hosted on Hugging Face.',
+                'provider': 'Google via Hugging Face',
+                'website_url': 'https://huggingface.co/bert-base-uncased',
+                'category': 'TEXT',
                 'is_featured': False,
-                'api_type': 'CUSTOM',
-                'api_model': None,
-                'api_endpoint': None,
+                'api_type': 'HUGGINGFACE',
+                'api_model': 'bert-base-uncased',
+                'api_endpoint': 'https://api-inference.huggingface.co/models/bert-base-uncased',
+                'logo_url': 'https://huggingface.co/front/assets/huggingface_logo.svg',
+                'image_url': 'https://miro.medium.com/v2/resize:fit:1400/1*wBhpIfrVCgPFcJj-lZKqMQ.png',
             },
             {
-                'name': 'Otter.ai',
-                'description': 'Otter.ai is an AI-powered transcription and note-taking app that records audio, transcribes it in real-time, and makes it searchable. It\'s designed for meetings, interviews, lectures, and other spoken content.',
-                'provider': 'Otter.ai',
-                'website_url': 'https://otter.ai/',
-                'category': 'AUDIO',
-                'is_featured': False,
-                'api_type': 'CUSTOM',
-                'api_model': None,
-                'api_endpoint': None,
+                'name': 'Gemini Pro',
+                'description': 'Gemini Pro is Google\'s largest and most capable AI model, designed to be multimodal from the ground up. It can understand virtually any input, from text and code to audio and images, and generate high-quality outputs.',
+                'provider': 'Google',
+                'website_url': 'https://gemini.google.com/',
+                'category': 'CHAT',
+                'is_featured': True,
+                'api_type': 'GOOGLE',
+                'api_model': 'gemini-pro',
+                'api_endpoint': 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent',
+                'logo_url': 'https://storage.googleapis.com/gweb-uniblog-publish-prod/images/gemini_1.max-1000x1000.png',
+                'image_url': 'https://storage.googleapis.com/gweb-uniblog-publish-prod/images/Gemini_Inline_1.max-1300x1300.jpg',
             },
             {
-                'name': 'Codeium',
-                'description': 'Codeium is an AI-powered coding assistant that provides code completions, explanations, and refactoring suggestions. It supports over 70 programming languages and integrates with popular IDEs and text editors.',
-                'provider': 'Codeium',
-                'website_url': 'https://codeium.com/',
+                'name': 'Gemini Vision',
+                'description': 'Gemini Vision is Google\'s multimodal AI model that can analyze and understand images along with text. It can process visual information and provide detailed descriptions, analysis, and answers to questions about images.',
+                'provider': 'Google',
+                'website_url': 'https://gemini.google.com/',
+                'category': 'IMAGE',
+                'is_featured': True,
+                'api_type': 'GOOGLE',
+                'api_model': 'gemini-pro-vision',
+                'api_endpoint': 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent',
+                'logo_url': 'https://storage.googleapis.com/gweb-uniblog-publish-prod/images/gemini_1.max-1000x1000.png',
+                'image_url': 'https://storage.googleapis.com/gweb-uniblog-publish-prod/images/Gemini_Inline_2.max-1300x1300.jpg',
+            },
+            {
+                'name': 'Gemini Code',
+                'description': 'Gemini Code is specialized for code generation, understanding, and explanation. It can help developers write code, debug issues, and understand complex codebases across multiple programming languages.',
+                'provider': 'Google',
+                'website_url': 'https://gemini.google.com/',
                 'category': 'CODE',
-                'is_featured': False,
-                'api_type': 'CUSTOM',
-                'api_model': None,
-                'api_endpoint': None,
-            },
-            {
-                'name': 'Elicit',
-                'description': 'Elicit is an AI research assistant that helps researchers find and understand scientific papers. It can search for papers, extract key information, summarize findings, and answer questions about research.',
-                'provider': 'Ought',
-                'website_url': 'https://elicit.org/',
-                'category': 'SEARCH',
-                'is_featured': False,
-                'api_type': 'CUSTOM',
-                'api_model': None,
-                'api_endpoint': None,
-            },
-            {
-                'name': 'Synthesia',
-                'description': 'Synthesia is an AI video generation platform that creates videos with virtual presenters. Users can select from a variety of AI avatars and have them speak any script in over 120 languages.',
-                'provider': 'Synthesia',
-                'website_url': 'https://www.synthesia.io/',
-                'category': 'VIDEO',
-                'is_featured': False,
-                'api_type': 'CUSTOM',
-                'api_model': None,
-                'api_endpoint': None,
-            },
-            {
-                'name': 'Notion AI',
-                'description': 'Notion AI is an AI writing assistant integrated into the Notion workspace. It can draft content, summarize text, improve writing, translate languages, and answer questions based on your workspace content.',
-                'provider': 'Notion Labs',
-                'website_url': 'https://www.notion.so/product/ai',
-                'category': 'TEXT',
-                'is_featured': False,
-                'api_type': 'CUSTOM',
-                'api_model': None,
-                'api_endpoint': None,
-            },
-            {
-                'name': 'Jasper',
-                'description': 'Jasper is an AI content platform designed for marketing teams. It can generate blog posts, social media content, emails, and other marketing copy based on brief descriptions or templates.',
-                'provider': 'Jasper',
-                'website_url': 'https://www.jasper.ai/',
-                'category': 'TEXT',
-                'is_featured': False,
-                'api_type': 'CUSTOM',
-                'api_model': None,
-                'api_endpoint': None,
-            },
-            {
-                'name': 'Descript',
-                'description': 'Descript is an all-in-one audio and video editing platform with AI-powered features like automatic transcription, text-based editing, and voice cloning. It allows users to edit audio and video as easily as editing a text document.',
-                'provider': 'Descript',
-                'website_url': 'https://www.descript.com/',
-                'category': 'AUDIO',
-                'is_featured': False,
-                'api_type': 'CUSTOM',
-                'api_model': None,
-                'api_endpoint': None,
+                'is_featured': True,
+                'api_type': 'GOOGLE',
+                'api_model': 'gemini-pro',
+                'api_endpoint': 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent',
+                'logo_url': 'https://storage.googleapis.com/gweb-uniblog-publish-prod/images/gemini_1.max-1000x1000.png',
+                'image_url': 'https://storage.googleapis.com/gweb-uniblog-publish-prod/images/Gemini_Inline_3.max-1300x1300.jpg',
             },
         ]
 
@@ -265,12 +245,30 @@ class Command(BaseCommand):
                 # Create slug from name if not provided
                 if 'slug' not in tool_data:
                     tool_data['slug'] = slugify(tool_data['name'])
-                    
+                
+                logo_url = tool_data.pop('logo_url', None)
+                image_url = tool_data.pop('image_url', None)
+                
                 try:
-                    # Create the AI tool
-                    AITool.objects.create(**tool_data)
+                    # Create the AI tool without images first
+                    tool = AITool.objects.create(**tool_data)
+                    
+                    if logo_url:
+                        self.stdout.write(f"Fetching logo for {tool_data['name']}...")
+                        logo_file = self.fetch_and_save_image(logo_url, f"{tool_data['name']}_logo", is_logo=True)
+                        if logo_file:
+                            tool.logo = logo_file
+                            tool.save(update_fields=['logo'])
+                    
+                    if image_url:
+                        self.stdout.write(f"Fetching image for {tool_data['name']}...")
+                        image_file = self.fetch_and_save_image(image_url, f"{tool_data['name']}_image", is_logo=False)
+                        if image_file:
+                            tool.image = image_file
+                            tool.save(update_fields=['image'])
+                    
                     created_count += 1
-                    self.stdout.write(f"Created AI tool: {tool_data['name']}")
+                    self.stdout.write(self.style.SUCCESS(f"Created AI tool: {tool_data['name']}"))
                 except Exception as e:
                     self.stdout.write(self.style.ERROR(f"Error creating {tool_data['name']}: {e}"))
         

@@ -19,6 +19,7 @@ class AITool(models.Model):
     website_url = models.URLField()
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
     image = models.ImageField(upload_to='tool_images/', blank=True, null=True)
+    logo = models.ImageField(upload_to='tool_logos/', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     is_featured = models.BooleanField(default=False)
@@ -85,6 +86,6 @@ class Favorite(models.Model):
         unique_together = ('user', 'tool')
 
     def __str__(self):
-        return f"{self.user.username} ❤️ {self.tool.name}"  
+        return f"{self.user.username} ❤️ {self.tool.name}"    
         
  
