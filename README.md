@@ -1,103 +1,111 @@
-# InspireAI: AI Tools Discovery Platform
+<div align="center">
+  <img src="static/images/icon.png" alt="InspireAI Logo" width="120" height="120">
+  <h1>✨ InspireAI: AI Tools Discovery Platform ✨</h1>
+  <p><strong>Discover, Connect, and Interact with AI Tools in One Place</strong></p>
 
-![InspireAI Logo](static/images/logo.png)
+  <p>
+    <a href="#features">Features</a> •
+    <a href="#demo">Demo</a> •
+    <a href="#installation">Installation</a> •
+    <a href="#usage">Usage</a> •
+    <a href="#tech-stack">Tech Stack</a> •
+    <a href="#team">Team</a>
+  </p>
+</div>
 
-InspireAI is a comprehensive web application built with Django that serves as a centralized hub for discovering, accessing, and interacting with various artificial intelligence tools. It provides users with a catalog of AI tools, allows them to interact with integrated AI services, and offers features such as user accounts, ratings, favorites, and conversations.
+## 🎓 University Project
+This project was developed as part of **Proyecto Integrador 1** at **EAFIT University** during the 2025-1 academic semester.
 
-## Table of Contents
+## 🚀 About InspireAI
 
-- [Features](#features)
-- [Requirements](#requirements)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Project Structure](#project-structure)
-- [Technologies Used](#technologies-used)
-- [Contributing](#contributing)
-- [License](#license)
+InspireAI is a dynamic web platform that serves as your gateway to the world of artificial intelligence tools. Our mission is to simplify how you discover, access, and interact with various AI services through a unified, user-friendly interface.
 
-## Features
+Whether you're an AI enthusiast, a student, or a professional looking to leverage AI capabilities, InspireAI provides a centralized hub where you can explore tools across different categories, save your favorites, rate your experiences, and directly interact with integrated AI services.
 
-- **AI Tools Catalog**: Browse and search through a comprehensive collection of AI tools organized by categories
-- **User Accounts**: Register, login, and manage your profile with personalized recommendations
-- **AI Interaction**: Chat directly with AI tools that have API integration within the application
-- **Rating System**: Rate and review AI tools to share your experiences with other users
-- **Favorites**: Save your favorite AI tools for quick access
-- **Search & Filtering**: Find tools by name, category, functionality, or popularity
-- **Responsive Design**: Modern UI that works seamlessly across devices of all sizes
+## ✨ Features
 
-## Requirements
+- **🔍 AI Tools Catalog**: Browse and search through a curated collection of AI tools organized by categories
+- **👤 User Accounts**: Register, login, and manage your profile with personalized recommendations
+- **💬 AI Interaction**: Chat directly with AI tools (OpenAI, Hugging Face, Google) through integrated APIs
+- **⭐ Rating System**: Rate and review AI tools to share your experiences with other users
+- **❤️ Favorites**: Save your favorite AI tools for quick access
+- **🔎 Search & Filtering**: Find tools by name, category, functionality, or popularity
+- **📱 Responsive Design**: Modern UI that works seamlessly across devices of all sizes
 
-- Python 3.9+
-- Django 5.1.7
-- Pillow (for image processing)
-- Django-Bootstrap5 (for Bootstrap integration)
-- SQLite (default database, can be configured to use other databases)
+## 🎮 Demo
 
-## Installation
+### Home Page
+Discover featured AI tools and get started with exploring the platform.
+
+### AI Tool Catalog
+Browse all available AI tools with filtering options by category, provider, and more.
+
+### Chat Interface
+Interact directly with AI tools through our integrated chat interface.
+
+## 🛠️ Installation
 
 1. Clone the repository:
-
 ```bash
-git clone https://github.com/yourusername/inspireai.git
-cd inspireai
+git clone https://github.com/Mateoloperaortiz/ProyectoIntegrador1.git
+cd ProyectoIntegrador1
 ```
 
-2.Create and activate a virtual environment:
-
+2. Create and activate a virtual environment:
 ```bash
 python -m venv venv
 source venv/bin/activate  # On Windows, use: venv\Scripts\activate
 ```
 
-3.Install dependencies:
-
+3. Install dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
-4.Apply migrations:
+4. Set up environment variables:
+Create a `.envrc` file in the root directory with the following content:
+```
+export OPENAI_API_KEY=your_openai_api_key
+export HUGGINGFACE_API_KEY=your_huggingface_api_key
+```
 
+5. Apply migrations:
 ```bash
 python manage.py migrate
 ```
 
-5.Create a superuser:
-
+6. Create a superuser:
 ```bash
 python manage.py createsuperuser
 ```
 
-6.Import AIs
-
+7. Import AI tools:
 ```bash
 python manage.py populate_ai_tools
 ```
 
-7.Run the development server:
-
+8. Run the development server:
 ```bash
 python manage.py runserver
 ```
 
-8.Access the application at <http://127.0.0.1:8000/>
+9. Access the application at [http://127.0.0.1:8000/](http://127.0.0.1:8000/)
 
-## Usage
+## 📚 Usage
 
 ### Admin Interface
-
-- Access the admin interface at <http://127.0.0.1:8000/admin/>
+- Access the admin interface at [http://127.0.0.1:8000/admin/](http://127.0.0.1:8000/admin/)
 - Use the superuser credentials created during installation
 - Add, modify, or delete AI tools, users, categories, and other data
 
 ### User Interface
-
 - **Home Page**: Discover featured AI tools and platform highlights
 - **Catalog**: Browse all available AI tools with filtering options
 - **Tool Detail**: View detailed information and interact with specific AI tools
 - **Profile**: Manage your account, favorites, and conversation history
 - **Conversations**: Chat with AI tools that have API integration
 
-## Project Structure
+## 🧩 Project Structure
 
 The project follows Django's MVC architecture with the following main apps:
 
@@ -106,30 +114,61 @@ The project follows Django's MVC architecture with the following main apps:
 - **interaction**: Handles user interactions with AI tools (conversations, ratings, favorites)
 
 Key directories:
-
 - **templates/**: HTML templates organized by app
 - **static/**: CSS, JavaScript, and images
 - **media/**: User-uploaded content
 - **inspireai/**: Main project configuration
 
-## Technologies Used
+## 💻 Tech Stack
 
-- **Backend**: Django 5.1.7, Python 3.9+
-- **Frontend**: HTML5, CSS3, JavaScript, Bootstrap 5
-- **Database**: SQLite (default)
-- **UI Components**: Django-Bootstrap5
-- **Image Processing**: Pillow
-- **Icons**: Font Awesome
+### Backend
+- **Django 5.1.7**: High-level Python web framework
+- **Python 3.9+**: Programming language
+- **SQLite**: Database (default, configurable)
 
-## Development Guidelines
+### Frontend
+- **HTML5/CSS3**: Markup and styling
+- **JavaScript**: Client-side scripting
+- **Bootstrap 5**: Frontend framework
+- **Font Awesome**: Icon library
+
+### APIs
+- **OpenAI API**: For AI chat interactions
+- **Hugging Face API**: For AI model integrations
+- **Google AI API**: For additional AI capabilities
+
+## 👥 Team
+
+<div align="center">
+  <table>
+    <tr>
+      <td align="center">
+        <strong>Mateo Lopera</strong><br>
+        Developerr<br>
+        EAFIT University
+      </td>
+      <td align="center">
+        <strong>Maria Mercedes Olaya</strong><br>
+        Developer<br>
+        EAFIT University
+      </td>
+      <td align="center">
+        <strong>Sofia Acosta</strong><br>
+        Developer<br>
+        EAFIT University
+      </td>
+    </tr>
+  </table>
+</div>
+
+## 📝 Development Guidelines
 
 - Follow PEP 8 standards for Python code
 - Use Django's class-based views where appropriate
 - Maintain separation of concerns between apps
 - Write docstrings for all classes and functions
-- Follow the code style conventions in CLAUDE.md
 
-## Contributing
+## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature/your-feature-name`
@@ -137,6 +176,12 @@ Key directories:
 4. Push to the branch: `git push origin feature/your-feature-name`
 5. Submit a pull request
 
-## License
+## 📄 License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+
+---
+
+<div align="center">
+  <p>Made with ❤️ at EAFIT University | Proyecto Integrador 1 | 2025-1</p>
+</div>
