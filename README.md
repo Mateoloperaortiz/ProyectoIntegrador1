@@ -31,6 +31,10 @@ Whether you're an AI enthusiast, a student, or a professional looking to leverag
 - **❤️ Favorites**: Save your favorite AI tools for quick access
 - **🔎 Search & Filtering**: Find tools by name, category, functionality, or popularity
 - **📱 Responsive Design**: Modern UI that works seamlessly across devices of all sizes
+- **✨ Markdown Support**: Rich text formatting in chat with support for headings, lists, links, and more
+- **🖥️ Code Syntax Highlighting**: Beautiful code blocks with syntax highlighting for 15+ programming languages
+- **🎨 Theme Selection**: Choose from multiple syntax highlighting themes (GitHub, Atom One Dark, Dracula, and more)
+- **📋 Code Copy**: One-click copy functionality for code blocks with visual feedback
 
 ## 🎮 Demo
 
@@ -84,12 +88,17 @@ python manage.py createsuperuser
 python manage.py populate_ai_tools
 ```
 
-8. Run the development server:
+8. Run the server with Daphne (for WebSocket support):
+```bash
+daphne -b 0.0.0.0 -p 8000 inspireai.asgi:application
+```
+
+9. Alternatively, for development without WebSocket features:
 ```bash
 python manage.py runserver
 ```
 
-9. Access the application at [http://127.0.0.1:8000/](http://127.0.0.1:8000/)
+10. Access the application at [http://127.0.0.1:8000/](http://127.0.0.1:8000/)
 
 ## 📚 Usage
 
@@ -123,14 +132,18 @@ Key directories:
 
 ### Backend
 - **Django 5.1.7**: High-level Python web framework
+- **Django Channels**: WebSocket support for real-time features
 - **Python 3.9+**: Programming language
 - **SQLite**: Database (default, configurable)
+- **Daphne**: ASGI server for WebSocket support
 
 ### Frontend
 - **HTML5/CSS3**: Markup and styling
 - **JavaScript**: Client-side scripting
 - **Bootstrap 5**: Frontend framework
 - **Font Awesome**: Icon library
+- **Marked.js**: Markdown parsing and rendering
+- **Highlight.js**: Code syntax highlighting with 15+ language support
 
 ### APIs
 - **OpenAI API**: For AI chat interactions
