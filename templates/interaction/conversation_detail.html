@@ -335,8 +335,8 @@
                                         {% endif %}
                                     </div>
                                     <div style="clear:both"></div>
-                                    <div class="message-content">
-                                        {{ message.content|linebreaksbr }}
+                                    <div class="message-content markdown-content">
+                                        {{ message.content }}
                                     </div>
                                     <div style="clear:both"></div>
                                     <div class="message-time">
@@ -367,6 +367,17 @@
                                 </button>
                             </div>
                         </form>
+                        <div class="code-theme-selector">
+                            <label for="code-theme">Code Theme:</label>
+                            <select id="code-theme" onchange="changeCodeTheme(this.value)">
+                                <option value="github">GitHub</option>
+                                <option value="default">Default</option>
+                                <option value="atom-one-dark">Atom One Dark</option>
+                                <option value="dracula">Dracula</option>
+                                <option value="vs">Visual Studio</option>
+                                <option value="xcode">XCode</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -491,6 +502,166 @@
     removeModalBackdrop();
 
     document.addEventListener('DOMContentLoaded', function() {
+        // Configure marked.js
+        marked.setOptions({
+            highlight: function(code, lang) {
+                if (lang && hljs.getLanguage(lang)) {
+                    return hljs.highlight(code, { language: lang }).value;
+                } else {
+                    return hljs.highlightAuto(code).value;
+                }
+            },
+            breaks: true,
+            gfm: true,
+            pedantic: false,
+            smartLists: true,
+            xhtml: false
+        });
+        
+        // Use the custom renderer with marked
+        marked.use({ renderer: window.renderer });
+    });
+    
+    removeModalBackdrop();
+
+    // Function to change code highlighting theme - defined in global scope
+    window.changeCodeTheme = function(theme) {
+        // Disable all themes
+        document.querySelectorAll('link[rel="stylesheet"][href*="highlight.js"]').forEach(link => {
+            link.disabled = true;
+        });
+        
+        // Enable selected theme
+        const selectedTheme = document.querySelector(`link[rel="stylesheet"][href*="${theme}.min.css"]`);
+        if (selectedTheme) {
+            selectedTheme.disabled = false;
+        }
+        
+        // Save preference in localStorage
+        localStorage.setItem('preferredCodeTheme', theme);
+        
+        // Re-highlight all code blocks with new theme
+        document.querySelectorAll('pre code').forEach((block) => {
+            hljs.highlightElement(block);
+        });
+    };
+
+    document.addEventListener('DOMContentLoaded', function() {
+        
+        // Load user's preferred theme on page load
+        const savedTheme = localStorage.getItem('preferredCodeTheme');
+        if (savedTheme) {
+            changeCodeTheme(savedTheme);
+            const themeSelector = document.getElementById('code-theme');
+            if (themeSelector) {
+                themeSelector.value = savedTheme;
+            }
+        }
+    });
+    
+    // Create custom renderer to ensure code blocks are properly formatted - defined in global scope
+    window.renderer = new marked.Renderer();
+    window.renderer.code = function(code, language) {
+        // Extract language from the first line if it follows a specific pattern: ```language
+        let detectedLanguage = language;
+        
+        if (!detectedLanguage || detectedLanguage === 'plaintext') {
+            // Try to extract language from the first line if it starts with a specific pattern
+            const firstLine = code.split('\n')[0].trim();
+            if (firstLine.match(/^[a-zA-Z0-9_+-]+$/)) {
+                detectedLanguage = firstLine;
+                code = code.substring(firstLine.length).trim();
+            }
+        }
+        
+        // Normalize language name
+        const languageMap = {
+            'js': 'javascript',
+            'ts': 'typescript',
+            'py': 'python',
+            'rb': 'ruby',
+            'sh': 'bash',
+            'shell': 'bash',
+            'html': 'xml',
+            'md': 'markdown'
+        };
+        
+        if (languageMap[detectedLanguage]) {
+            detectedLanguage = languageMap[detectedLanguage];
+        }
+        
+        const validLanguage = hljs.getLanguage(detectedLanguage) ? detectedLanguage : 'plaintext';
+        const highlightedCode = hljs.highlight(code, { language: validLanguage }).value;
+        
+        // Add language badge and copy button for all code blocks - simplified HTML structure
+        if (validLanguage !== 'plaintext') {
+            return '<div class="code-block-container"><pre><span class="code-language-badge">' + validLanguage + '</span><button class="copy-code-button" onclick="copyCodeToClipboard(this)"><i class="fas fa-copy"></i></button><code class="hljs language-' + validLanguage + '">' + highlightedCode + '</code></pre></div>';
+        } else {
+            return '<div class="code-block-container"><pre><button class="copy-code-button" onclick="copyCodeToClipboard(this)"><i class="fas fa-copy"></i></button><code class="hljs language-' + validLanguage + '">' + highlightedCode + '</code></pre></div>';
+        }
+    };
+    
+    // Use the renderer with marked
+    marked.use({ renderer: window.renderer });
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize existing code blocks on page load
+        document.querySelectorAll('.message-content').forEach(element => {
+            // Convert existing content to markdown
+            const originalContent = element.textContent.trim();
+            if (originalContent) {
+                // Check if content contains code blocks
+                if (originalContent.includes('```') || element.closest('.message-ai')) {
+                    // Process content with code blocks using marked
+                    const processedContent = originalContent.replace(/```/g, '\n```\n');
+                    element.innerHTML = marked.parse(processedContent);
+                    
+                    // Apply syntax highlighting to code blocks
+                    element.querySelectorAll('pre code').forEach((block) => {
+                        hljs.highlightElement(block);
+                    });
+                }
+            }
+        });
+    });
+    
+    // Function to copy code to clipboard - defined in global scope
+    window.copyCodeToClipboard = function(button) {
+        const codeBlock = button.parentElement.querySelector('code');
+        const code = codeBlock.textContent;
+        
+        navigator.clipboard.writeText(code).then(function() {
+            // Show success feedback
+            button.innerHTML = '<i class="fas fa-check"></i>';
+            setTimeout(function() {
+                button.innerHTML = '<i class="fas fa-copy"></i>';
+            }, 2000);
+        }).catch(function(err) {
+            console.error('Could not copy text: ', err);
+        });
+    };
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        
+        // Initialize existing code blocks on page load
+        document.querySelectorAll('.message-content').forEach(element => {
+            // Convert existing content to markdown
+            const originalContent = element.textContent.trim();
+            if (originalContent) {
+                // Check if content contains code blocks
+                if (originalContent.includes('```') || element.closest('.message-ai')) {
+                    // Process content with code blocks using marked
+                    const processedContent = originalContent.replace(/```/g, '\n```\n');
+                    element.innerHTML = marked.parse(processedContent);
+                    
+                    // Apply syntax highlighting to code blocks
+                    element.querySelectorAll('pre code').forEach((block) => {
+                        hljs.highlightElement(block);
+                    });
+                }
+            }
+        });
+        
         // Scroll to bottom of message list
         const messageList = document.getElementById('message-list');
         if (messageList) {
@@ -540,20 +711,37 @@
             }
         });
 
-        function appendMessage(content, isUser, isTemp=false) {
+        function appendMessage(content, isUser, isTemp = false) {
             const msgList = document.getElementById('message-list');
             const bubble = document.createElement('div');
             bubble.className = 'message-bubble ' + (isUser ? 'message-user' : 'message-ai');
             if (isTemp) bubble.id = 'ai-streaming-bubble';
+            
+            // Create message structure first
             bubble.innerHTML = `
                 <div class="message-avatar">${isUser ? '<i class="fas fa-user"></i>' : '<i class="fas fa-robot"></i>'}</div>
                 <div style="clear:both"></div>
-                <div class="message-content">${content.replace(/\n/g, '<br>')}</div>
+                <div class="message-content markdown-content"></div>
                 <div style="clear:both"></div>
                 <div class="message-time">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
                 <div style="clear:both"></div>
             `;
+            
+            // Add to DOM first
             msgList.appendChild(bubble);
+            
+            // Format the content using marked.js for markdown
+            const messageContent = bubble.querySelector('.message-content');
+            
+            // Ensure code blocks are properly parsed by adding newlines around triple backticks
+            const processedContent = content.replace(/```/g, '\n```\n');
+            messageContent.innerHTML = marked.parse(processedContent);
+            
+            // Apply syntax highlighting to code blocks
+            bubble.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightElement(block);
+            });
+            
             msgList.scrollTop = msgList.scrollHeight;
         }
 
@@ -563,14 +751,34 @@
                 appendMessage('', false, true);
                 bubble = document.getElementById('ai-streaming-bubble');
             }
-            bubble.querySelector('.message-content').innerHTML = content.replace(/\n/g, '<br>');
+            
+            // Format the content using marked.js for markdown
+            // Ensure code blocks are properly parsed by adding newlines around triple backticks
+            const processedContent = content.replace(/```/g, '\n```\n');
+            const messageContent = bubble.querySelector('.message-content');
+            messageContent.innerHTML = marked.parse(processedContent);
+            
+            // Apply syntax highlighting to code blocks
+            bubble.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightElement(block);
+            });
+            
             messageList.scrollTop = messageList.scrollHeight;
         }
 
         function finalizeAIStreamingBubble(content) {
-            updateAIStreamingBubble(content);
+            // Ensure code blocks are properly parsed by adding newlines around triple backticks
+            const processedContent = content.replace(/```/g, '\n```\n');
+            updateAIStreamingBubble(processedContent);
             const bubble = document.getElementById('ai-streaming-bubble');
-            if (bubble) bubble.removeAttribute('id');
+            if (bubble) {
+                bubble.removeAttribute('id');
+                
+                // Final highlighting pass to ensure all code blocks are properly highlighted
+                bubble.querySelectorAll('pre code').forEach((block) => {
+                    hljs.highlightElement(block);
+                });
+            }
         }
 
         function streamAIMessageWebSocket(conversationId, userMessage) {

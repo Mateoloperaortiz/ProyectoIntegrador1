@@ -25,7 +25,14 @@ class ChatConsumer(AsyncWebsocketConsumer):
         user = self.scope["user"]
 
         conversation = await database_sync_to_async(Conversation.objects.get)(id=self.conversation_id, user=user)
-        tool = conversation.tool
+        
+        # Properly wrap the access to conversation.tool with database_sync_to_async
+        @database_sync_to_async
+        def get_tool(conversation):
+            return conversation.tool
+            
+        tool = await get_tool(conversation)
+        
         await database_sync_to_async(Message.objects.create)(
             conversation=conversation, is_from_user=True, content=user_message
         )
@@ -66,4 +73,4 @@ class ChatConsumer(AsyncWebsocketConsumer):
             )
             await self.send(text_data=json.dumps({'type': 'ai_message', 'content': ai_content, 'done': True}))
         except Exception as e:
-            await self.send(text_data=json.dumps({'type': 'error', 'content': str(e)})) 
+            await self.send(text_data=json.dumps({'type': 'error', 'content': str(e)}))  
