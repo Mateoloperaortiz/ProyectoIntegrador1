@@ -210,45 +210,34 @@ def simulate_ai_response(tool, user_message):
 
 def generate_openai_response(tool, user_message):
     """
-    Generate a response using OpenAI API.
+    Generate a response using OpenAI API (using the new responses endpoint as per official docs).
     """
     import os
     from openai import OpenAI
-    
+
     api_key = os.environ.get('OPENAI_API_KEY')
     if not api_key:
         return fallback_response(tool, user_message, "OpenAI API key not found in environment.")
-    
+
     client = OpenAI(api_key=api_key)
-    
-    # Determine which model to use based on tool category
-    model = tool.api_model if tool.api_model else "gpt-3.5-turbo"
-    
-    if tool.category == 'IMAGE':
-        try:
-            response = client.images.generate(
-                model="dall-e-3" if model == "dall-e-3" else "dall-e-2",
-                prompt=user_message,
-                size="1024x1024",
-                quality="standard",
-                n=1,
-            )
-            return f"I've created an image based on your description. Here's the URL: {response.data[0].url}"
-        except Exception as e:
-            return fallback_response(tool, user_message, f"Image generation error: {str(e)}")
-    else:
-        try:
-            response = client.chat.completions.create(
+    model = tool.api_model if tool.api_model else "o4-mini-2025-04-16"
+
+    # Use the new responses endpoint for text and image (vision) models
+    try:
+        # If the tool is for images, check if user_message is a dict/list for vision input
+        if tool.category == 'IMAGE' and isinstance(user_message, (list, dict)):
+            response = client.responses.create(
                 model=model,
-                messages=[
-                    {"role": "system", "content": f"You are {tool.name}, an AI assistant by {tool.provider}. Respond as if you are this specific AI tool."},
-                    {"role": "user", "content": user_message}
-                ],
-                max_tokens=500
+                input=user_message
             )
-            return response.choices[0].message.content
-        except Exception as e:
-            return fallback_response(tool, user_message, f"Text generation error: {str(e)}")
+        else:
+            response = client.responses.create(
+                model=model,
+                input=user_message
+            )
+        return getattr(response, 'output_text', str(response))
+    except Exception as e:
+        return fallback_response(tool, user_message, f"OpenAI API error: {str(e)}")
 
 
 def generate_huggingface_response(tool, user_message):
