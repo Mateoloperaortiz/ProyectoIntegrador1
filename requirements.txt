@@ -2,8 +2,11 @@ Django==5.1.7
 django-bootstrap5==25.1
 Pillow==11.1.0
 reportlab==4.1.0
-openai
-dotenv
-requests
-daphne
-channels
+openai>=1.0.0
+python-dotenv>=1.0.0
+requests>=2.31.0
+daphne>=4.0.0
+channels>=4.0.0
+channels-redis>=4.1.0
+django-environ>=0.11.2
+asgiref>=3.7.2
