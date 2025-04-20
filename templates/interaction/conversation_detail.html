@@ -49,31 +49,50 @@
         max-width: 500px;
         width: 90%;
     }
+
+    /* Add ID to the main row for easier targeting */
+    #chat-layout-row {
+        /* Adjust min-height based on your header/footer/padding */
+        min-height: calc(100vh - 150px); 
+        display: flex;
+        flex-wrap: wrap; 
+    }
+
+    #chat-layout-row > .col-lg-3,
+    #chat-layout-row > .col-lg-9 {
+        display: flex; /* Make columns flex containers */
+        flex-direction: column;
+    }
     
-    /* Modern chat styles */
-    .chat-container {
-        border-radius: 12px;
-        height: calc(100vh - 200px); /* Increased height to extend down */
-        min-height: 600px; /* Increased min-height for better vertical alignment */
+    /* Modern chat styles - override global .chat-container with more specific selector */
+    #chat-layout-row .chat-container {
+        /* Adjust height to be flexible but with constraints */
+        min-height: 400px;
+        max-height: calc(100vh - 250px); /* Prevent infinite scrolling down */
+        flex: 1; /* Still use flex growth within constraints */
         display: flex;
         flex-direction: column;
         background-color: #f8f9fb;
-        overflow-x: hidden; /* Prevents horizontal scrollbar */
-        margin-bottom: 20px; /* Add some space at the bottom */
+        overflow: hidden; /* Contain the scrolling list */
+        border-radius: 0; /* Remove radius as it's inside the card now */
+        padding: 0;
+        margin-bottom: 0;
     }
     
     /* Chat area wrapper - makes the card extend fully */
     .chat-area-wrapper {
-        height: 100%;
+        flex: 1; /* Grow to fill the column's height */
         display: flex;
         flex-direction: column;
+        max-height: calc(100vh - 180px); /* Constraint to prevent overflow */
     }
     
     /* Make the card fill the entire height */
     .chat-card {
-        height: 100%;
+        flex: 1; /* Grow to fill the wrapper's height */
         display: flex;
         flex-direction: column;
+        max-height: 100%; /* Constraint to prevent overflow */
     }
     
     .message-list {
@@ -197,7 +216,8 @@
         padding: 15px 20px;
         background: white;
         border-top: 1px solid var(--gray-light);
-        border-radius: 0 0 12px 12px;
+        flex-shrink: 0; /* Prevent shrinking */
+        border-radius: 0 0 12px 12px; /* Ensure bottom radius is on the form container */
     }
     
     .conversation-header {
@@ -206,7 +226,8 @@
         padding: 15px 20px;
         background: white;
         border-bottom: 1px solid var(--gray-light);
-        border-radius: 12px 12px 0 0;
+        flex-shrink: 0; /* Prevent shrinking */
+        border-radius: 12px 12px 0 0; /* Ensure top radius is on the header */
     }
     
     /* Tool information card */
@@ -412,6 +433,27 @@
     
     /* Mobile optimizations */
     @media (max-width: 991px) {
+        #chat-layout-row {
+            min-height: auto; /* Reset min-height */
+            display: block; /* Revert flex for stacking */
+        }
+        #chat-layout-row > .col-lg-3,
+        #chat-layout-row > .col-lg-9 {
+            display: block; /* Revert flex */
+            height: auto; /* Reset height */
+            flex: none; /* Reset flex */
+        }
+        .chat-area-wrapper, .chat-card {
+             height: auto; /* Let height be determined by content */
+             flex: none; /* Reset flex grow */
+             max-height: none; /* Remove max-height constraint */
+        }
+        
+        #chat-layout-row .chat-container {
+            height: auto; /* Let flexbox handle height */
+            min-height: 450px; /* Slightly increased from 400px for better mobile experience */
+            max-height: 600px; /* Constraint for mobile to prevent too much scrolling */
+        }
         .message-bubble {
             max-width: 85%;
         }
@@ -423,9 +465,11 @@
             cursor: pointer;
         }
         
-        .chat-container {
-            height: calc(100vh - 280px);
-            overflow-x: hidden;
+        #chat-layout-row .chat-container {
+            height: auto; /* Let flexbox handle height */
+            min-height: 450px; /* Slightly increased from 400px for better mobile experience */
+            flex: 1; /* Allow growing */
+            overflow: hidden;
         }
     }
 </style>
@@ -433,7 +477,7 @@
 
 {% block content %}
 <div class="container-fluid py-4">
-    <div class="row">
+    <div class="row" id="chat-layout-row">
         <!-- Sidebar with Recent Chats -->
         <div class="col-lg-3 mb-4">
             <div class="mb-3">

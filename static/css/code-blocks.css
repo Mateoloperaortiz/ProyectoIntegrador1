@@ -1,0 +1,151 @@
+/* Code blocks styling - consolidated from markdown.css and styles.css */
+
+/* Code block container styling */
+.code-block-container {
+    position: relative;
+    margin: 1.5rem 0;
+    border-radius: 8px;
+    overflow: hidden;
+    display: block;
+    width: 100%;
+}
+
+.code-block-container pre {
+    margin: 0;
+    padding: 2.5rem 1rem 1rem 1rem;
+    border-radius: 8px;
+    overflow: auto;
+    position: relative;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    background-color: #1e1e1e;
+    color: #f8f9fb;
+}
+
+/* Language badge for code blocks */
+.code-block-container .code-language-badge {
+    position: absolute;
+    top: 0;
+    left: 0;
+    color: #ffffff;
+    padding: 2px 10px;
+    font-size: 0.7rem;
+    border-radius: 0 0 4px 0;
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 5;
+}
+
+/* Copy code button */
+.code-block-container .copy-code-button {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background-color: rgba(0, 0, 0, 0.4);
+    border: none;
+    color: white;
+    padding: 2px 10px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    border-radius: 0 0 0 4px;
+    z-index: 5;
+}
+
+.code-block-container .copy-code-button:hover {
+    background-color: rgba(0, 0, 0, 0.6);
+}
+
+/* General code styling */
+.markdown-content code {
+    font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+    font-size: 0.9em;
+    line-height: 1.6;
+    padding: 0.2em 0.4em;
+    border-radius: 3px;
+}
+
+.markdown-content :not(pre) > code {
+    background-color: rgba(0, 0, 0, 0.05);
+    color: #e83e8c;
+    padding: 0.2em 0.4em;
+    border-radius: 4px;
+}
+
+/* Theme selector styling */
+.code-theme-selector {
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    font-size: 0.85em;
+}
+
+.code-theme-selector label {
+    margin-right: 8px;
+    color: #6c757d;
+}
+
+.code-theme-selector select {
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid #ced4da;
+    background-color: #f8f9fa;
+}
+
+/* Message-specific styling */
+.message-user .markdown-content pre {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.message-user .markdown-content code {
+    color: #f8f9fa;
+}
+
+.message-ai .markdown-content pre {
+    background-color: #1e1e1e;
+    color: #f8f9fb;
+}
+
+/* Dracula theme enhancements - moved from styles.css */
+.hljs.dracula-theme {
+    background: #282a36;
+    color: #f8f8f2;
+    border-radius: 8px;
+}
+
+.hljs.dracula-theme .hljs-keyword {
+    color: #ff79c6;
+}
+
+.hljs.dracula-theme .hljs-built_in {
+    color: #8be9fd;
+}
+
+.hljs.dracula-theme .hljs-type {
+    color: #8be9fd;
+}
+
+.hljs.dracula-theme .hljs-literal {
+    color: #bd93f9;
+}
+
+.hljs.dracula-theme .hljs-number {
+    color: #bd93f9;
+}
+
+.hljs.dracula-theme .hljs-string {
+    color: #f1fa8c;
+}
+
+.hljs.dracula-theme .hljs-comment {
+    color: #6272a4;
+}
+
+.hljs.dracula-theme .hljs-function {
+    color: #50fa7b;
+}
+
+.hljs.dracula-theme .hljs-params {
+    color: #f8f8f2;
+}

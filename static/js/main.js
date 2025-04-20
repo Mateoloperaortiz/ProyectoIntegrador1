@@ -34,11 +34,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // NOTE: The Enter key event listener for message form was moved to conversation_detail.html
-    // to avoid duplicate form submissions
-
-    // Initialize highlight.js for all pages
-    initializeHighlightJS();
+    // Initialize highlight.js for all pages - only if not already initialized in the base template
+    if (typeof hljs !== 'undefined' && !window.hljs_initialized) {
+        initializeHighlightJS();
+        window.hljs_initialized = true;
+    }
 });
 
 /**
@@ -107,8 +107,8 @@ function initializeHighlightJS() {
         marked.use({ renderer: renderer });
     }
     
-    // Apply highlighting to all code blocks
-    document.querySelectorAll('pre code').forEach((block) => {
+    // Apply highlighting to all code blocks that haven't been highlighted yet
+    document.querySelectorAll('pre code:not(.hljs)').forEach((block) => {
         hljs.highlightElement(block);
     });
     

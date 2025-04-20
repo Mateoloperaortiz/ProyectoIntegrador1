@@ -15,10 +15,11 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <!-- Highlight.js for code syntax highlighting -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/default.min.css" id="code-theme-css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/default.min.css">
     <!-- Custom Styles -->
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
-    <link rel="stylesheet" href="{% static 'css/markdown.css' %}">
+    <link rel="stylesheet" href="{% static 'css/animations.css' %}">
+    <link rel="stylesheet" href="{% static 'css/code-blocks.css' %}">
     {% block extra_css %}{% endblock %}
 </head>
 <body>
@@ -26,8 +27,8 @@
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
         <div class="container">
             <a class="navbar-brand d-flex align-items-center" href="{% url 'catalog:home' %}">
-                <div class="me-2 d-flex align-items-center justify-content-center rounded-circle bg-white" style="width: 36px; height: 36px;">
-                    <img src="{% static 'images/icon.png' %}" alt="InspireAI Logo" style="width: 24px; height: 24px;">
+                <div class="me-2 d-flex align-items-center justify-content-center rounded-circle bg-white nav-logo-container">
+                    <img src="{% static 'images/icon.png' %}" alt="InspireAI Logo" class="nav-logo-img">
                 </div>
                 <span>Inspire<span class="fw-bold">AI</span></span>
             </a>
@@ -135,8 +136,8 @@
             <div class="row">
                 <div class="col-lg-4 mb-4 mb-lg-0">
                     <h5 class="mb-3 d-flex align-items-center">
-                        <div class="me-2 d-flex align-items-center justify-content-center rounded-circle bg-white" style="width: 28px; height: 28px;">
-                            <img src="{% static 'images/icon.png' %}" alt="InspireAI Logo" style="width: 18px; height: 18px;">
+                        <div class="me-2 d-flex align-items-center justify-content-center rounded-circle bg-white footer-logo-container">
+                            <img src="{% static 'images/icon.png' %}" alt="InspireAI Logo" class="footer-logo-img">
                         </div>
                         Inspire<span class="fw-bold">AI</span>
                     </h5>
@@ -213,6 +214,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/swift.min.js"></script>
     <script src="{% static 'js/main.js' %}"></script>
     <script>
+        window.hljs_initialized = true;
         hljs.highlightAll();
     </script>
     {% block extra_js %}{% endblock %}

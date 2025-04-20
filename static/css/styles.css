@@ -60,11 +60,31 @@ main {
     letter-spacing: -0.5px;
 }
 
+.nav-logo-container {
+    width: 36px;
+    height: 36px;
+}
+
+.nav-logo-img {
+    width: 24px;
+    height: 24px;
+}
+
+.footer-logo-container {
+    width: 28px;
+    height: 28px;
+}
+
+.footer-logo-img {
+    width: 18px;
+    height: 18px;
+}
+
 .nav-link {
     font-weight: 500;
     margin: 0 5px;
     border-radius: var(--border-radius-sm);
-    padding: 8px 12px !important;
+    padding: 8px 12px;
     transition: var(--transition);
 }
 
@@ -313,7 +333,7 @@ main {
     justify-content: center;
     background: var(--gradient-primary);
     color: white;
-    margin-bottom: 20px;
+    margin: 0 auto 20px;
 }
 
 .feature-icon i {
@@ -385,7 +405,6 @@ footer a:hover {
 }
 
 /* Rating Stars Styling */
-
 .star-rating {
     direction: rtl;
     font-size: 2rem;
@@ -407,219 +426,4 @@ footer a:hover {
 .star-rating label:hover,
 .star-rating label:hover ~ label {
     color: gold;
-}
-
-/* Custom code block styling to enhance syntax highlighting */
-/* Code block container styling */
-.code-block-container {
-    position: relative !important;
-    margin: 1.5rem 0 !important;
-    border-radius: 8px !important;
-    overflow: hidden !important;
-}
-
-.code-block-container pre {
-    margin: 0 !important;
-    padding: 2.5rem 1rem 1rem 1rem !important;
-    border-radius: 8px !important;
-    overflow: auto !important;
-}
-
-/* Language badge styling */
-.code-language-badge {
-    position: absolute !important;
-    top: 0 !important;
-    left: 0 !important;
-    color: #ffffff !important;
-    padding: 2px 10px !important;
-    font-size: 0.7rem !important;
-    border-radius: 0 0 4px 0 !important;
-    text-transform: uppercase !important;
-    font-weight: 600 !important;
-    letter-spacing: 0.5px !important;
-    background-color: rgba(0, 0, 0, 0.5) !important;
-    z-index: 5 !important;
-}
-
-/* Copy button styling */
-.copy-code-button {
-    position: absolute !important;
-    top: 0 !important;
-    right: 0 !important;
-    background-color: rgba(0, 0, 0, 0.4) !important;
-    border: none !important;
-    color: white !important;
-    padding: 2px 10px !important;
-    font-size: 0.75rem !important;
-    cursor: pointer !important;
-    border-radius: 0 0 0 4px !important;
-    z-index: 5 !important;
-}
-
-.copy-code-button:hover {
-    background-color: rgba(0, 0, 0, 0.6) !important;
-}
-
-/* Dracula theme enhancements */
-body .hljs-dracula, 
-.hljs.dracula-theme {
-    background: #282a36 !important;
-    color: #f8f8f2 !important;
-    border-radius: 8px !important;
-}
-
-body .hljs-dracula .hljs-keyword,
-.hljs.dracula-theme .hljs-keyword {
-    color: #ff79c6 !important; 
-}
-
-body .hljs-dracula .hljs-built_in,
-.hljs.dracula-theme .hljs-built_in {
-    color: #8be9fd !important;
-}
-
-body .hljs-dracula .hljs-type,
-.hljs.dracula-theme .hljs-type {
-    color: #8be9fd !important;
-}
-
-body .hljs-dracula .hljs-literal,
-.hljs.dracula-theme .hljs-literal {
-    color: #bd93f9 !important;
-}
-
-body .hljs-dracula .hljs-number,
-.hljs.dracula-theme .hljs-number {
-    color: #bd93f9 !important;
-}
-
-body .hljs-dracula .hljs-regexp,
-.hljs.dracula-theme .hljs-regexp {
-    color: #ff5555 !important;
-}
-
-body .hljs-dracula .hljs-string,
-.hljs.dracula-theme .hljs-string {
-    color: #f1fa8c !important;
-}
-
-body .hljs-dracula .hljs-subst,
-.hljs.dracula-theme .hljs-subst {
-    color: #f8f8f2 !important;
-}
-
-body .hljs-dracula .hljs-symbol,
-.hljs.dracula-theme .hljs-symbol {
-    color: #f1fa8c !important;
-}
-
-body .hljs-dracula .hljs-class,
-.hljs.dracula-theme .hljs-class {
-    color: #8be9fd !important;
-}
-
-body .hljs-dracula .hljs-function,
-.hljs.dracula-theme .hljs-function {
-    color: #50fa7b !important;
-}
-
-body .hljs-dracula .hljs-title,
-.hljs.dracula-theme .hljs-title {
-    color: #50fa7b !important;
-}
-
-body .hljs-dracula .hljs-params,
-.hljs.dracula-theme .hljs-params {
-    color: #f8f8f2 !important;
-}
-
-body .hljs-dracula .hljs-comment,
-.hljs.dracula-theme .hljs-comment {
-    color: #6272a4 !important;
-}
-
-body .hljs-dracula .hljs-doctag,
-.hljs.dracula-theme .hljs-doctag {
-    color: #f1fa8c !important;
-}
-
-body .hljs-dracula .hljs-meta,
-.hljs.dracula-theme .hljs-meta {
-    color: #6272a4 !important;
-}
-
-body .hljs-dracula .hljs-section,
-.hljs.dracula-theme .hljs-section {
-    color: #50fa7b !important;
-}
-
-body .hljs-dracula .hljs-tag,
-.hljs.dracula-theme .hljs-tag {
-    color: #ff79c6 !important;
-}
-
-body .hljs-dracula .hljs-name,
-.hljs.dracula-theme .hljs-name {
-    color: #ff79c6 !important;
-}
-
-body .hljs-dracula .hljs-attr,
-.hljs.dracula-theme .hljs-attr {
-    color: #50fa7b !important;
-}
-
-body .hljs-dracula .hljs-attribute,
-.hljs.dracula-theme .hljs-attribute {
-    color: #50fa7b !important;
-}
-
-body .hljs-dracula .hljs-variable,
-.hljs.dracula-theme .hljs-variable {
-    color: #8be9fd !important;
-}
-
-body .hljs-dracula .hljs-template-variable,
-.hljs.dracula-theme .hljs-template-variable {
-    color: #8be9fd !important;
-}
-
-body .hljs-dracula .hljs-addition,
-.hljs.dracula-theme .hljs-addition {
-    color: #50fa7b !important;
-}
-
-body .hljs-dracula .hljs-deletion,
-.hljs.dracula-theme .hljs-deletion {
-    color: #ff5555 !important;
-}
-
-/* Python-specific Dracula enhancements */
-body .hljs-dracula.language-python .hljs-function,
-.hljs.dracula-theme.language-python .hljs-function {
-    color: #50fa7b !important;
-}
-
-body .hljs-dracula.language-python .hljs-keyword,
-.hljs.dracula-theme.language-python .hljs-keyword {
-    color: #ff79c6 !important;
-}
-
-body .hljs-dracula.language-python .hljs-number,
-.hljs.dracula-theme.language-python .hljs-number {
-    color: #bd93f9 !important;
-}
-
-body .hljs-dracula.language-python .hljs-string,
-.hljs.dracula-theme.language-python .hljs-string {
-    color: #f1fa8c !important;
-}
-
-body .hljs-dracula.language-python .hljs-built_in,
-.hljs.dracula-theme.language-python .hljs-built_in {
-    color: #8be9fd !important;
-}
-
-body .hljs-dracula.language-python .hljs-operator,
-.hljs.dracula-theme.language-python .hljs-operator {
-    color: #ff79c6 !important;
 }
