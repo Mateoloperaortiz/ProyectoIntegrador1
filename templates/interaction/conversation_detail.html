@@ -479,7 +479,6 @@
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    // Function to fix stuck modal backdrop
     function removeModalBackdrop() {
         const backdrops = document.querySelectorAll('.modal-backdrop');
         backdrops.forEach(backdrop => {
@@ -489,33 +488,27 @@
         document.body.style.overflow = '';
         document.body.style.paddingRight = '';
     }
-    
-    // Clean up any existing modal backdrops when the page loads
     removeModalBackdrop();
-    
+
     document.addEventListener('DOMContentLoaded', function() {
         // Scroll to bottom of message list
         const messageList = document.getElementById('message-list');
         if (messageList) {
             messageList.scrollTop = messageList.scrollHeight;
         }
-        
         // Focus on message input
         const messageInput = document.getElementById('id_content');
         if (messageInput) {
             messageInput.focus();
         }
-        
         // Toggle sidebar on mobile
         const sidebarToggle = document.getElementById('sidebar-toggle');
         const infoSidebar = document.getElementById('info-sidebar');
-        
         if (sidebarToggle && infoSidebar) {
             sidebarToggle.addEventListener('click', function() {
                 infoSidebar.classList.toggle('d-none');
             });
         }
-        
         // Handle suggested prompts
         const promptSuggestions = document.querySelectorAll('.prompt-suggestion');
         promptSuggestions.forEach(button => {
@@ -524,11 +517,113 @@
                 messageInput.focus();
             });
         });
-        
-        // Do not programmatically initialize the modal
-        // Let Bootstrap handle it natively through data-bs-toggle="modal"
-        
-        // Remove custom form handling as we're using the native form
+
+        // --- WebSocket Chat Streaming ---
+        const conversationId = "{{ conversation.id }}";
+        const apiType = "{{ conversation.tool.api_type|escapejs }}";
+        const messageForm = document.getElementById('message-form');
+        let socket = null;
+        messageForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const userMessage = messageInput.value.trim();
+            if (!userMessage) return;
+            // Add user message to chat
+            appendMessage(userMessage, true);
+            messageInput.value = '';
+            messageInput.focus();
+            // For OpenAI tools, use WebSocket streaming
+            if (apiType === 'OPENAI') {
+                streamAIMessageWebSocket(conversationId, userMessage);
+            } else {
+                // Fallback: AJAX POST
+                sendMessageAjax(userMessage);
+            }
+        });
+
+        function appendMessage(content, isUser, isTemp=false) {
+            const msgList = document.getElementById('message-list');
+            const bubble = document.createElement('div');
+            bubble.className = 'message-bubble ' + (isUser ? 'message-user' : 'message-ai');
+            if (isTemp) bubble.id = 'ai-streaming-bubble';
+            bubble.innerHTML = `
+                <div class="message-avatar">${isUser ? '<i class="fas fa-user"></i>' : '<i class="fas fa-robot"></i>'}</div>
+                <div style="clear:both"></div>
+                <div class="message-content">${content.replace(/\n/g, '<br>')}</div>
+                <div style="clear:both"></div>
+                <div class="message-time">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                <div style="clear:both"></div>
+            `;
+            msgList.appendChild(bubble);
+            msgList.scrollTop = msgList.scrollHeight;
+        }
+
+        function updateAIStreamingBubble(content) {
+            let bubble = document.getElementById('ai-streaming-bubble');
+            if (!bubble) {
+                appendMessage('', false, true);
+                bubble = document.getElementById('ai-streaming-bubble');
+            }
+            bubble.querySelector('.message-content').innerHTML = content.replace(/\n/g, '<br>');
+            messageList.scrollTop = messageList.scrollHeight;
+        }
+
+        function finalizeAIStreamingBubble(content) {
+            updateAIStreamingBubble(content);
+            const bubble = document.getElementById('ai-streaming-bubble');
+            if (bubble) bubble.removeAttribute('id');
+        }
+
+        function streamAIMessageWebSocket(conversationId, userMessage) {
+            if (socket) socket.close();
+            const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+            socket = new WebSocket(`${protocol}://${window.location.host}/ws/chat/${conversationId}/`);
+            let aiContent = '';
+            socket.onopen = function() {
+                socket.send(JSON.stringify({message: userMessage}));
+            };
+            socket.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                if (data.type === 'ai_message') {
+                    aiContent = data.content;
+                    updateAIStreamingBubble(aiContent);
+                    if (data.done) {
+                        finalizeAIStreamingBubble(aiContent);
+                        socket.close();
+                    }
+                } else if (data.type === 'error') {
+                    updateAIStreamingBubble('<span class="text-danger">Error: ' + data.content + '</span>');
+                    socket.close();
+                }
+            };
+            socket.onerror = function() {
+                updateAIStreamingBubble('<span class="text-danger">WebSocket error.</span>');
+            };
+            socket.onclose = function() {};
+        }
+
+        function sendMessageAjax(userMessage) {
+            // Fallback for non-OpenAI tools: AJAX POST
+            fetch(messageForm.action, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': messageForm.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'content=' + encodeURIComponent(userMessage)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.ai_message) {
+                    appendMessage(data.ai_message.content, false);
+                } else if (data.ai_message && data.ai_message.error) {
+                    appendMessage('<span class="text-danger">' + data.ai_message.error + '</span>', false);
+                }
+            })
+            .catch(() => {
+                appendMessage('<span class="text-danger">AJAX error.</span>', false);
+            });
+        }
     });
 </script>
 {% endblock %}
