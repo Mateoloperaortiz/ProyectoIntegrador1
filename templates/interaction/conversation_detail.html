@@ -99,6 +99,7 @@
     
     .message-ai {
         float: left;
+        width: 80%;
     }
     
     .message-avatar {
@@ -275,7 +276,7 @@
 <div class="container-fluid py-4">
     <div class="row">
         <!-- Chat Area -->
-        <div class="col-lg-8 mb-4">
+        <div class="col-lg-9 mb-4">
             <div class="mb-3 d-flex justify-content-between align-items-center">
                 <a href="{% url 'interaction:conversation_list' %}" class="btn btn-sm btn-outline-secondary">
                     <i class="fas fa-arrow-left me-1"></i> Back to Conversations
@@ -366,6 +367,9 @@
                                     <i class="fas fa-paper-plane"></i>
                                 </button>
                             </div>
+                            <div class="keyboard-shortcuts-info text-muted small mt-1">
+                                <i class="fas fa-keyboard me-1"></i> Press <kbd>Enter</kbd> to send, <kbd>Shift</kbd>+<kbd>Enter</kbd> for new line
+                            </div>
                         </form>
                         <div class="code-theme-selector">
                             <label for="code-theme">Code Theme:</label>
@@ -383,11 +387,14 @@
             </div>
         </div>
         
-        <!-- Conversation Info -->
-        <div class="col-lg-4" id="info-sidebar">
+        <!-- Conversation Info Sidebar -->
+        <div class="col-lg-3" id="info-sidebar">
             <div class="tool-info-card">
                 <!-- Tool Info -->
                 <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-primary text-white p-3">
+                        <h5 class="mb-0">Tool Information</h5>
+                    </div>
                     <div class="card-body">
                         <div class="d-flex align-items-center mb-4">
                             {% if conversation.tool.image %}
@@ -468,9 +475,9 @@
                     </div>
                 </div>
                 
-                <!-- Suggested prompts (optional) -->
+                <!-- Suggested prompts -->
                 <div class="card shadow-sm border-0">
-                    <div class="card-header bg-light">
+                    <div class="card-header bg-light p-3">
                         <h5 class="mb-0">Suggested Prompts</h5>
                     </div>
                     <div class="card-body">

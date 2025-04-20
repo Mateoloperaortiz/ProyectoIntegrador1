@@ -33,4 +33,16 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+    
+    const messageForm = document.getElementById('message-form');
+    const messageInput = document.getElementById('id_content');
+    
+    if (messageForm && messageInput) {
+        messageInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault(); // Prevent default behavior (new line)
+                messageForm.submit(); // Submit the form
+            }
+        });
+    }
 });
