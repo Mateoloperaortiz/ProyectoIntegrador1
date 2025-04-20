@@ -53,12 +53,27 @@
     /* Modern chat styles */
     .chat-container {
         border-radius: 12px;
-        height: calc(100vh - 320px);
-        min-height: 500px;
+        height: calc(100vh - 200px); /* Increased height to extend down */
+        min-height: 600px; /* Increased min-height for better vertical alignment */
         display: flex;
         flex-direction: column;
         background-color: #f8f9fb;
         overflow-x: hidden; /* Prevents horizontal scrollbar */
+        margin-bottom: 20px; /* Add some space at the bottom */
+    }
+    
+    /* Chat area wrapper - makes the card extend fully */
+    .chat-area-wrapper {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    /* Make the card fill the entire height */
+    .chat-card {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
     }
     
     .message-list {
@@ -251,10 +266,154 @@
         justify-content: center;
     }
     
+    /* Chat list sidebar */
+    .chats-sidebar {
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    
+    .chat-list-header {
+        padding: 15px;
+        background: var(--gradient-primary);
+        color: white;
+    }
+    
+    .chat-list-container {
+        max-height: calc(100vh - 350px);
+        overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(0,0,0,0.2) transparent;
+    }
+    
+    .chat-list-container::-webkit-scrollbar {
+        width: 5px;
+    }
+    
+    .chat-list-container::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    
+    .chat-list-container::-webkit-scrollbar-thumb {
+        background-color: rgba(0,0,0,0.2);
+        border-radius: 10px;
+    }
+    
+    .chat-list-item {
+        padding: 12px 15px;
+        border-left: 3px solid transparent;
+        border-bottom: 1px solid var(--gray-light);
+        transition: all 0.2s ease;
+    }
+    
+    .chat-list-item.active {
+        border-left-color: var(--primary);
+        background-color: rgba(67, 97, 238, 0.05);
+    }
+    
+    .chat-list-item:hover {
+        background-color: rgba(67, 97, 238, 0.05);
+    }
+    
+    .chat-list-title {
+        font-weight: 500;
+        margin-bottom: 3px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .chat-list-preview {
+        color: var(--gray);
+        font-size: 12px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-bottom: 5px;
+    }
+    
+    .chat-list-meta {
+        font-size: 11px;
+        color: var(--gray);
+        display: flex;
+        justify-content: space-between;
+    }
+    
+    .chat-list-section-title {
+        padding: 10px 15px;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--gray);
+        background-color: var(--gray-light);
+    }
+    
+    /* Enhanced code block styling */
+    .code-block-container {
+        position: relative !important;
+        margin-bottom: 1rem !important;
+    }
+    
+    .code-block-container pre {
+        margin: 0 !important;
+        border-radius: 8px !important;
+        padding: 2.5rem 1rem 1rem 1rem !important;
+    }
+    
+    .code-language-badge {
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        color: #ffffff !important;
+        padding: 2px 10px !important;
+        font-size: 0.7rem !important;
+        border-radius: 0 0 4px 0 !important;
+        text-transform: uppercase !important;
+        font-weight: 600 !important;
+        letter-spacing: 0.5px !important;
+        background-color: rgba(0, 0, 0, 0.5) !important;
+        z-index: 5 !important;
+    }
+    
+    .copy-code-button {
+        position: absolute !important;
+        top: 0 !important;
+        right: 0 !important;
+        background-color: rgba(0, 0, 0, 0.4) !important;
+        border: none !important;
+        color: white !important;
+        padding: 2px 10px !important;
+        font-size: 0.75rem !important;
+        cursor: pointer !important;
+        border-radius: 0 0 0 4px !important;
+        z-index: 5 !important;
+    }
+    
+    .copy-code-button:hover {
+        background-color: rgba(0, 0, 0, 0.6) !important;
+    }
+    
+    /* Custom styling for the tool-info and prompts buttons */
+    .tool-info-btn, .prompts-btn {
+        border-radius: 30px !important; /* More elliptical shape */
+        width: 50px !important; /* Wider button */
+        height: 36px !important; /* Slightly less height for elliptical shape */
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        background-color: #f0f0f0 !important;
+        border: none !important;
+        transition: background-color 0.2s ease !important;
+    }
+    
+    .tool-info-btn:hover, .prompts-btn:hover {
+        background-color: #e0e0e0 !important;
+    }
+    
     /* Mobile optimizations */
     @media (max-width: 991px) {
         .message-bubble {
-            max-width: 75%;
+            max-width: 85%;
         }
         
         .sidebar-toggle {
@@ -275,219 +434,317 @@
 {% block content %}
 <div class="container-fluid py-4">
     <div class="row">
-        <!-- Chat Area -->
-        <div class="col-lg-9 mb-4">
-            <div class="mb-3 d-flex justify-content-between align-items-center">
+        <!-- Sidebar with Recent Chats -->
+        <div class="col-lg-3 mb-4">
+            <div class="mb-3">
                 <a href="{% url 'interaction:conversation_list' %}" class="btn btn-sm btn-outline-secondary">
-                    <i class="fas fa-arrow-left me-1"></i> Back to Conversations
+                    <i class="fas fa-arrow-left me-1"></i> All Conversations
                 </a>
-                
-                <form method="post" action="{% url 'interaction:update_title' conversation_id=conversation.id %}" class="d-inline-flex" style="max-width: 400px;">
-                    {% csrf_token %}
-                    <div class="input-group input-group-sm">
-                        <input type="text" name="title" value="{{ conversation.title }}" class="form-control" id="id_title" placeholder="Conversation Title">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save"></i>
-                        </button>
-                    </div>
-                </form>
+                <a href="{% url 'catalog:catalog' %}?category=CHAT" class="btn btn-sm btn-primary ms-2">
+                    <i class="fas fa-plus me-1"></i> New Chat
+                </a>
             </div>
             
-            <div class="card shadow-sm border-0">
-                <!-- Chat Header -->
-                <div class="conversation-header">
-                    <div class="d-flex align-items-center">
-                        <div class="d-md-none sidebar-toggle me-2" id="sidebar-toggle">
-                            <i class="fas fa-bars"></i>
+            <!-- Chats List -->
+            <div class="card shadow-sm border-0 chats-sidebar">
+                <div class="chat-list-header">
+                    <h5 class="mb-0"><i class="fas fa-comment-dots me-2"></i> Chat History</h5>
+                </div>
+                
+                <div class="chat-list-section-title">
+                    Recent Conversations
+                </div>
+                
+                <div class="chat-list-container">
+                    {% for chat in user.conversation_set.all|slice:":10" %}
+                    <a href="{% url 'interaction:conversation_detail' pk=chat.id %}" class="text-decoration-none text-dark">
+                        <div class="chat-list-item {% if chat.id == conversation.id %}active{% endif %}">
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="rounded-circle bg-light d-flex align-items-center justify-content-center me-2" style="width: 24px; height: 24px;">
+                                    {% if chat.tool.image %}
+                                        <img src="{{ chat.tool.image.url }}" alt="{{ chat.tool.name }}" class="rounded-circle" style="width: 100%; height: 100%; object-fit: cover;">
+                                    {% else %}
+                                        <i class="fas fa-robot text-primary" style="font-size: 12px;"></i>
+                                    {% endif %}
+                                </div>
+                                <span class="chat-list-title">{{ chat.title|truncatechars:25 }}</span>
+                            </div>
+                            <div class="chat-list-preview">
+                                {% with last_message=chat.message_set.last %}
+                                    {% if last_message %}
+                                        {{ last_message.content|truncatechars:40 }}
+                                    {% else %}
+                                        No messages yet
+                                    {% endif %}
+                                {% endwith %}
+                            </div>
+                            <div class="chat-list-meta">
+                                <span>{{ chat.updated_at|date:"M d, Y" }}</span>
+                                <span><i class="fas fa-comment-dots me-1"></i> {{ chat.message_set.count }}</span>
+                            </div>
+                        </div>
+                    </a>
+                    {% empty %}
+                    <div class="p-3 text-center text-muted">
+                        <p>No recent conversations</p>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <div class="chat-list-section-title">
+                    Older Conversations
+                </div>
+                
+                <div class="chat-list-container">
+                    {% for chat in user.conversation_set.all|slice:"10:" %}
+                    <a href="{% url 'interaction:conversation_detail' pk=chat.id %}" class="text-decoration-none text-dark">
+                        <div class="chat-list-item {% if chat.id == conversation.id %}active{% endif %}">
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="rounded-circle bg-light d-flex align-items-center justify-content-center me-2" style="width: 24px; height: 24px;">
+                                    {% if chat.tool.image %}
+                                        <img src="{{ chat.tool.image.url }}" alt="{{ chat.tool.name }}" class="rounded-circle" style="width: 100%; height: 100%; object-fit: cover;">
+                                    {% else %}
+                                        <i class="fas fa-robot text-primary" style="font-size: 12px;"></i>
+                                    {% endif %}
+                                </div>
+                                <span class="chat-list-title">{{ chat.title|truncatechars:25 }}</span>
+                            </div>
+                            <div class="chat-list-meta">
+                                <span>{{ chat.updated_at|date:"M d, Y" }}</span>
+                                <span><i class="fas fa-comment-dots me-1"></i> {{ chat.message_set.count }}</span>
+                            </div>
+                        </div>
+                    </a>
+                    {% empty %}
+                    <div class="p-3 text-center text-muted">
+                        <p>No older conversations</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Chat Area -->
+        <div class="col-lg-9 mb-4">
+            <div class="chat-area-wrapper">
+                <div class="card shadow-sm border-0 chat-card">
+                    <!-- Chat Header -->
+                    <div class="conversation-header">
+                        <div class="d-flex align-items-center">
+                            <div class="d-md-none sidebar-toggle me-2" id="sidebar-toggle">
+                                <i class="fas fa-bars"></i>
+                            </div>
+                            
+                            <div class="rounded-circle bg-light d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                {% if conversation.tool.image %}
+                                    <img src="{{ conversation.tool.image.url }}" alt="{{ conversation.tool.name }}" style="width: 40px; height: 40px; object-fit: cover;" class="rounded-circle">
+                                {% else %}
+                                    <i class="fas fa-robot text-primary"></i>
+                                {% endif %}
+                            </div>
+                            
+                            <div>
+                                <h5 class="mb-0">{{ conversation.tool.name }}</h5>
+                                <span class="badge bg-primary rounded-pill">{{ conversation.tool.get_category_display }}</span>
+                            </div>
                         </div>
                         
-                        <div class="rounded-circle bg-light d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
-                            {% if conversation.tool.image %}
-                                <img src="{{ conversation.tool.image.url }}" alt="{{ conversation.tool.name }}" style="width: 40px; height: 40px; object-fit: cover;" class="rounded-circle">
+                        <div class="ms-auto d-flex align-items-center">
+                            <!-- Tool info button -->
+                            <button type="button" class="btn btn-light btn-sm me-2 tool-info-btn" data-bs-toggle="modal" data-bs-target="#toolInfoModal">
+                                <i class="fas fa-info-circle"></i>
+                            </button>
+                            
+                            <!-- Suggested prompts button -->
+                            <button type="button" class="btn btn-light btn-sm me-3 prompts-btn" data-bs-toggle="modal" data-bs-target="#promptsModal">
+                                <i class="fas fa-lightbulb"></i>
+                            </button>
+                        
+                            <form method="post" action="{% url 'interaction:update_title' conversation_id=conversation.id %}" class="d-inline-flex" style="max-width: 250px;">
+                                {% csrf_token %}
+                                <div class="input-group input-group-sm">
+                                    <input type="text" name="title" value="{{ conversation.title }}" class="form-control" id="id_title" placeholder="Conversation Title">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save"></i>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <!-- Chat Messages -->
+                    <div class="chat-container">
+                        <div class="message-list" id="message-list">
+                            {% if messages %}
+                                {% for message in messages %}
+                                    <div class="message-bubble {% if message.is_from_user %}message-user{% else %}message-ai{% endif %}">
+                                        <div class="message-avatar">
+                                            {% if message.is_from_user %}
+                                                <i class="fas fa-user"></i>
+                                            {% else %}
+                                                <i class="fas fa-robot"></i>
+                                            {% endif %}
+                                        </div>
+                                        <div style="clear:both"></div>
+                                        <div class="message-content markdown-content">
+                                            {{ message.content }}
+                                        </div>
+                                        <div style="clear:both"></div>
+                                        <div class="message-time">
+                                            {{ message.timestamp|date:"g:i a" }}
+                                        </div>
+                                        <div style="clear:both"></div>
+                                    </div>
+                                {% endfor %}
                             {% else %}
-                                <i class="fas fa-robot text-primary"></i>
+                                <div class="text-center py-5 text-muted">
+                                    <div class="mb-3">
+                                        <i class="fas fa-comment-dots" style="font-size: 48px;"></i>
+                                    </div>
+                                    <h5>Start chatting with {{ conversation.tool.name }}</h5>
+                                    <p>Type a message below to begin your conversation</p>
+                                </div>
                             {% endif %}
                         </div>
                         
-                        <div>
-                            <h5 class="mb-0">{{ conversation.tool.name }}</h5>
-                            <span class="badge bg-primary rounded-pill">{{ conversation.tool.get_category_display }}</span>
-                        </div>
-                    </div>
-                    
-                    <div class="ms-auto">
-                        <small class="text-muted">
-                            <i class="fas fa-comment-dots"></i> {{ messages|length }} messages
-                        </small>
-                    </div>
-                </div>
-                
-                <!-- Chat Messages -->
-                <div class="chat-container">
-                    <div class="message-list" id="message-list">
-                        {% if messages %}
-                            {% for message in messages %}
-                                <div class="message-bubble {% if message.is_from_user %}message-user{% else %}message-ai{% endif %}">
-                                    <div class="message-avatar">
-                                        {% if message.is_from_user %}
-                                            <i class="fas fa-user"></i>
-                                        {% else %}
-                                            <i class="fas fa-robot"></i>
-                                        {% endif %}
-                                    </div>
-                                    <div style="clear:both"></div>
-                                    <div class="message-content markdown-content">
-                                        {{ message.content }}
-                                    </div>
-                                    <div style="clear:both"></div>
-                                    <div class="message-time">
-                                        {{ message.timestamp|date:"g:i a" }}
-                                    </div>
-                                    <div style="clear:both"></div>
+                        <!-- Message Form -->
+                        <div class="message-form-container">
+                            <form method="post" action="{% url 'interaction:send_message' conversation_id=conversation.id %}" id="message-form">
+                                {% csrf_token %}
+                                <div class="message-input-container">
+                                    <textarea name="content" class="form-control" id="id_content" rows="2" placeholder="Type your message here..." required></textarea>
+                                    <button type="submit" class="btn btn-primary send-button">
+                                        <i class="fas fa-paper-plane"></i>
+                                    </button>
                                 </div>
-                            {% endfor %}
-                        {% else %}
-                            <div class="text-center py-5 text-muted">
-                                <div class="mb-3">
-                                    <i class="fas fa-comment-dots" style="font-size: 48px;"></i>
+                                <div class="keyboard-shortcuts-info text-muted small mt-1">
+                                    <i class="fas fa-keyboard me-1"></i> Press <kbd>Enter</kbd> to send, <kbd>Shift</kbd>+<kbd>Enter</kbd> for new line
                                 </div>
-                                <h5>Start chatting with {{ conversation.tool.name }}</h5>
-                                <p>Type a message below to begin your conversation</p>
-                            </div>
-                        {% endif %}
-                    </div>
-                    
-                    <!-- Message Form -->
-                    <div class="message-form-container">
-                        <form method="post" action="{% url 'interaction:send_message' conversation_id=conversation.id %}" id="message-form">
-                            {% csrf_token %}
-                            <div class="message-input-container">
-                                <textarea name="content" class="form-control" id="id_content" rows="2" placeholder="Type your message here..." required></textarea>
-                                <button type="submit" class="btn btn-primary send-button">
-                                    <i class="fas fa-paper-plane"></i>
+                            </form>
+                            <div class="d-flex justify-content-between align-items-center mt-3">
+                                <div class="code-theme-selector">
+                                    <label for="code-theme">Code Theme:</label>
+                                    <select id="code-theme" class="form-select form-select-sm" style="width: auto;" onchange="changeCodeTheme(this.value)">
+                                        <option value="github">GitHub</option>
+                                        <option value="default">Default</option>
+                                        <option value="atom-one-dark">Atom One Dark</option>
+                                        <option value="dracula">Dracula</option>
+                                        <option value="vs">Visual Studio</option>
+                                        <option value="xcode">XCode</option>
+                                    </select>
+                                </div>
+                                
+                                <button class="btn btn-outline-danger btn-sm delete-chat-btn" data-bs-toggle="modal" data-bs-target="#deleteConversationModal">
+                                    <i class="fas fa-trash-alt me-1"></i> Delete Chat
                                 </button>
                             </div>
-                            <div class="keyboard-shortcuts-info text-muted small mt-1">
-                                <i class="fas fa-keyboard me-1"></i> Press <kbd>Enter</kbd> to send, <kbd>Shift</kbd>+<kbd>Enter</kbd> for new line
-                            </div>
-                        </form>
-                        <div class="code-theme-selector">
-                            <label for="code-theme">Code Theme:</label>
-                            <select id="code-theme" onchange="changeCodeTheme(this.value)">
-                                <option value="github">GitHub</option>
-                                <option value="default">Default</option>
-                                <option value="atom-one-dark">Atom One Dark</option>
-                                <option value="dracula">Dracula</option>
-                                <option value="vs">Visual Studio</option>
-                                <option value="xcode">XCode</option>
-                            </select>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        
-        <!-- Conversation Info Sidebar -->
-        <div class="col-lg-3" id="info-sidebar">
-            <div class="tool-info-card">
-                <!-- Tool Info -->
-                <div class="card shadow-sm border-0 mb-4">
-                    <div class="card-header bg-primary text-white p-3">
-                        <h5 class="mb-0">Tool Information</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="d-flex align-items-center mb-4">
-                            {% if conversation.tool.image %}
-                                <img src="{{ conversation.tool.image.url }}" alt="{{ conversation.tool.name }}" class="rounded-circle me-3" style="width: 64px; height: 64px; object-fit: cover;">
-                            {% else %}
-                                <div class="rounded-circle bg-light d-flex align-items-center justify-content-center me-3" style="width: 64px; height: 64px;">
-                                    <i class="fas fa-robot text-primary fa-2x"></i>
-                                </div>
-                            {% endif %}
-                            <div>
-                                <h4 class="mb-1">{{ conversation.tool.name }}</h4>
-                                <span class="badge bg-primary rounded-pill">{{ conversation.tool.get_category_display }}</span>
-                                <small class="d-block text-muted mt-1">By {{ conversation.tool.provider }}</small>
-                            </div>
+    </div>
+</div>
+
+<!-- Tool Information Modal -->
+<div class="modal fade" id="toolInfoModal" tabindex="-1" aria-labelledby="toolInfoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="toolInfoModalLabel">Tool Information</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex align-items-center mb-4">
+                    {% if conversation.tool.image %}
+                        <img src="{{ conversation.tool.image.url }}" alt="{{ conversation.tool.name }}" class="rounded-circle me-3" style="width: 64px; height: 64px; object-fit: cover;">
+                    {% else %}
+                        <div class="rounded-circle bg-light d-flex align-items-center justify-content-center me-3" style="width: 64px; height: 64px;">
+                            <i class="fas fa-robot text-primary fa-2x"></i>
                         </div>
-                        
-                        <p>{{ conversation.tool.description|truncatechars:200 }}</p>
-                        
-                        <hr>
-                        
-                        <div class="d-flex justify-content-between mb-2">
-                            <strong>Created</strong>
-                            <span>{{ conversation.created_at|date:"M d, Y" }}</span>
-                        </div>
-                        
-                        <div class="d-flex justify-content-between mb-2">
-                            <strong>Last activity</strong>
-                            <span>{{ conversation.updated_at|date:"M d, Y" }}</span>
-                        </div>
-                        
-                        <div class="d-flex justify-content-between mb-2">
-                            <strong>Messages</strong>
-                            <span>{{ messages|length }}</span>
-                        </div>
-                        
-                        <div class="conversation-actions">
-                            <a href="{% url 'catalog:tool_detail' conversation.tool.slug %}" class="action-button text-decoration-none">
-                                <i class="fas fa-info-circle text-primary"></i>
-                                Tool Details
-                            </a>
-                            
-                            <a href="#" class="action-button text-decoration-none">
-                                <i class="fas fa-download text-success"></i>
-                                Download Chat
-                            </a>
-                            
-                            <button type="button" id="delete-conversation-btn" class="action-button text-decoration-none text-danger" onclick="removeModalBackdrop()" data-bs-toggle="modal" data-bs-target="#deleteConversationModal" style="border: 1px solid var(--gray-light); background: none; width: 100%; text-align: center; cursor: pointer;">
-                                <i class="fas fa-trash-alt text-danger"></i>
-                                Delete Chat
-                            </button>
-                        </div>
-                        
-                        <!-- Delete Confirmation Modal -->
-                        <div class="modal fade" id="deleteConversationModal" tabindex="-1" aria-labelledby="deleteConversationModalLabel" aria-hidden="true">
-                            <div class="modal-dialog modal-dialog-centered">
-                                <div class="modal-content">
-                                    <div class="modal-header">
-                                        <h5 class="modal-title fw-bold" id="deleteConversationModalLabel">Confirm Delete</h5>
-                                        <button type="button" class="btn-close" onclick="removeModalBackdrop()" data-bs-dismiss="modal" aria-label="Close"></button>
-                                    </div>
-                                    <div class="modal-body">
-                                        <div class="text-center mb-4">
-                                            <i class="fas fa-exclamation-triangle text-danger" style="font-size: 3rem;"></i>
-                                        </div>
-                                        <p class="text-center">Are you sure you want to delete this conversation with <strong>{{ conversation.tool.name }}</strong>?</p>
-                                        <p class="text-danger fw-bold text-center">This action cannot be undone and all messages will be lost.</p>
-                                    </div>
-                                    <div class="modal-footer justify-content-center">
-                                        <button type="button" class="btn btn-outline-secondary px-4" onclick="removeModalBackdrop()" data-bs-dismiss="modal">Cancel</button>
-                                        <form method="post" action="{% url 'interaction:delete_conversation' conversation_id=conversation.id %}" class="d-inline-block">
-                                            {% csrf_token %}
-                                            <button type="submit" onclick="removeModalBackdrop()" class="btn btn-danger px-4 ms-2">Delete</button>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                    {% endif %}
+                    <div>
+                        <h4 class="mb-1">{{ conversation.tool.name }}</h4>
+                        <span class="badge bg-primary rounded-pill">{{ conversation.tool.get_category_display }}</span>
+                        <small class="d-block text-muted mt-1">By {{ conversation.tool.provider }}</small>
                     </div>
                 </div>
                 
-                <!-- Suggested prompts -->
-                <div class="card shadow-sm border-0">
-                    <div class="card-header bg-light p-3">
-                        <h5 class="mb-0">Suggested Prompts</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="d-grid gap-2">
-                            <button class="btn btn-outline-primary prompt-suggestion">Tell me about your features</button>
-                            <button class="btn btn-outline-primary prompt-suggestion">How can you help me?</button>
-                            <button class="btn btn-outline-primary prompt-suggestion">Show me an example</button>
-                        </div>
-                    </div>
+                <p>{{ conversation.tool.description|truncatechars:200 }}</p>
+                
+                <hr>
+                
+                <div class="d-flex justify-content-between mb-2">
+                    <strong>Created</strong>
+                    <span>{{ conversation.created_at|date:"M d, Y" }}</span>
                 </div>
+                
+                <div class="d-flex justify-content-between mb-2">
+                    <strong>Last activity</strong>
+                    <span>{{ conversation.updated_at|date:"M d, Y" }}</span>
+                </div>
+                
+                <div class="d-flex justify-content-between mb-2">
+                    <strong>Messages</strong>
+                    <span>{{ messages|length }}</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <a href="{% url 'catalog:tool_detail' conversation.tool.slug %}" class="btn btn-primary">
+                    <i class="fas fa-info-circle me-1"></i> Tool Details
+                </a>
+                <a href="#" class="btn btn-success">
+                    <i class="fas fa-download me-1"></i> Download Chat
+                </a>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Suggested Prompts Modal -->
+<div class="modal fade" id="promptsModal" tabindex="-1" aria-labelledby="promptsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="promptsModalLabel">Suggested Prompts</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-grid gap-3">
+                    <button class="btn btn-outline-primary prompt-suggestion">Tell me about your features</button>
+                    <button class="btn btn-outline-primary prompt-suggestion">How can you help me?</button>
+                    <button class="btn btn-outline-primary prompt-suggestion">Show me an example</button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteConversationModal" tabindex="-1" aria-labelledby="deleteConversationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title fw-bold" id="deleteConversationModalLabel">Confirm Delete</h5>
+                <button type="button" class="btn-close btn-close-white" onclick="removeModalBackdrop()" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-4">
+                    <i class="fas fa-exclamation-triangle text-danger" style="font-size: 3rem;"></i>
+                </div>
+                <p class="text-center">Are you sure you want to delete this conversation with <strong>{{ conversation.tool.name }}</strong>?</p>
+                <p class="text-danger fw-bold text-center">This action cannot be undone and all messages will be lost.</p>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-outline-secondary px-4" onclick="removeModalBackdrop()" data-bs-dismiss="modal">Cancel</button>
+                <form method="post" action="{% url 'interaction:delete_conversation' conversation_id=conversation.id %}" class="d-inline-block">
+                    {% csrf_token %}
+                    <button type="submit" onclick="removeModalBackdrop()" class="btn btn-danger px-4 ms-2">Delete</button>
+                </form>
             </div>
         </div>
     </div>
@@ -508,64 +765,6 @@
     }
     removeModalBackdrop();
 
-    document.addEventListener('DOMContentLoaded', function() {
-        // Configure marked.js
-        marked.setOptions({
-            highlight: function(code, lang) {
-                if (lang && hljs.getLanguage(lang)) {
-                    return hljs.highlight(code, { language: lang }).value;
-                } else {
-                    return hljs.highlightAuto(code).value;
-                }
-            },
-            breaks: true,
-            gfm: true,
-            pedantic: false,
-            smartLists: true,
-            xhtml: false
-        });
-        
-        // Use the custom renderer with marked
-        marked.use({ renderer: window.renderer });
-    });
-    
-    removeModalBackdrop();
-
-    // Function to change code highlighting theme - defined in global scope
-    window.changeCodeTheme = function(theme) {
-        // Disable all themes
-        document.querySelectorAll('link[rel="stylesheet"][href*="highlight.js"]').forEach(link => {
-            link.disabled = true;
-        });
-        
-        // Enable selected theme
-        const selectedTheme = document.querySelector(`link[rel="stylesheet"][href*="${theme}.min.css"]`);
-        if (selectedTheme) {
-            selectedTheme.disabled = false;
-        }
-        
-        // Save preference in localStorage
-        localStorage.setItem('preferredCodeTheme', theme);
-        
-        // Re-highlight all code blocks with new theme
-        document.querySelectorAll('pre code').forEach((block) => {
-            hljs.highlightElement(block);
-        });
-    };
-
-    document.addEventListener('DOMContentLoaded', function() {
-        
-        // Load user's preferred theme on page load
-        const savedTheme = localStorage.getItem('preferredCodeTheme');
-        if (savedTheme) {
-            changeCodeTheme(savedTheme);
-            const themeSelector = document.getElementById('code-theme');
-            if (themeSelector) {
-                themeSelector.value = savedTheme;
-            }
-        }
-    });
-    
     // Create custom renderer to ensure code blocks are properly formatted - defined in global scope
     window.renderer = new marked.Renderer();
     window.renderer.code = function(code, language) {
@@ -600,7 +799,7 @@
         const validLanguage = hljs.getLanguage(detectedLanguage) ? detectedLanguage : 'plaintext';
         const highlightedCode = hljs.highlight(code, { language: validLanguage }).value;
         
-        // Add language badge and copy button for all code blocks - simplified HTML structure
+        // Add language badge and copy button for all code blocks with improved positioning
         if (validLanguage !== 'plaintext') {
             return '<div class="code-block-container"><pre><span class="code-language-badge">' + validLanguage + '</span><button class="copy-code-button" onclick="copyCodeToClipboard(this)"><i class="fas fa-copy"></i></button><code class="hljs language-' + validLanguage + '">' + highlightedCode + '</code></pre></div>';
         } else {
@@ -608,29 +807,27 @@
         }
     };
     
-    // Use the renderer with marked
-    marked.use({ renderer: window.renderer });
-    
-    document.addEventListener('DOMContentLoaded', function() {
-        // Initialize existing code blocks on page load
-        document.querySelectorAll('.message-content').forEach(element => {
-            // Convert existing content to markdown
-            const originalContent = element.textContent.trim();
-            if (originalContent) {
-                // Check if content contains code blocks
-                if (originalContent.includes('```') || element.closest('.message-ai')) {
-                    // Process content with code blocks using marked
-                    const processedContent = originalContent.replace(/```/g, '\n```\n');
-                    element.innerHTML = marked.parse(processedContent);
-                    
-                    // Apply syntax highlighting to code blocks
-                    element.querySelectorAll('pre code').forEach((block) => {
-                        hljs.highlightElement(block);
-                    });
-                }
-            }
+    // Function to change code highlighting theme - defined in global scope
+    window.changeCodeTheme = function(theme) {
+        // Disable all themes
+        document.querySelectorAll('link[rel="stylesheet"][href*="highlight.js"]').forEach(link => {
+            link.disabled = true;
         });
-    });
+        
+        // Enable selected theme
+        const selectedTheme = document.querySelector(`link[rel="stylesheet"][href*="${theme}.min.css"]`);
+        if (selectedTheme) {
+            selectedTheme.disabled = false;
+        }
+        
+        // Save preference in localStorage
+        localStorage.setItem('preferredCodeTheme', theme);
+        
+        // Re-highlight all code blocks with new theme
+        document.querySelectorAll('pre code').forEach((block) => {
+            hljs.highlightElement(block);
+        });
+    };
     
     // Function to copy code to clipboard - defined in global scope
     window.copyCodeToClipboard = function(button) {
@@ -648,15 +845,13 @@
         });
     };
     
-    document.addEventListener('DOMContentLoaded', function() {
-        
-        // Initialize existing code blocks on page load
+    // Function to format messages with markdown and syntax highlighting
+    function formatMessageContent() {
         document.querySelectorAll('.message-content').forEach(element => {
-            // Convert existing content to markdown
-            const originalContent = element.textContent.trim();
-            if (originalContent) {
-                // Check if content contains code blocks
-                if (originalContent.includes('```') || element.closest('.message-ai')) {
+            // Get original content (only if it hasn't been processed)
+            if (!element.dataset.processed) {
+                const originalContent = element.textContent.trim();
+                if (originalContent) {
                     // Process content with code blocks using marked
                     const processedContent = originalContent.replace(/```/g, '\n```\n');
                     element.innerHTML = marked.parse(processedContent);
@@ -665,9 +860,50 @@
                     element.querySelectorAll('pre code').forEach((block) => {
                         hljs.highlightElement(block);
                     });
+                    
+                    // Mark as processed to avoid duplicate processing
+                    element.dataset.processed = "true";
                 }
             }
         });
+    }
+
+    // Run immediately to ensure it works when included in page source
+    // Configure marked.js
+    marked.setOptions({
+        highlight: function(code, lang) {
+            if (lang && hljs.getLanguage(lang)) {
+                return hljs.highlight(code, { language: lang }).value;
+            } else {
+                return hljs.highlightAuto(code).value;
+            }
+        },
+        breaks: true,
+        gfm: true,
+        pedantic: false,
+        smartLists: true,
+        xhtml: false
+    });
+    
+    // Use the custom renderer with marked
+    marked.use({ renderer: window.renderer });
+    
+    // Ensure this runs as soon as possible
+    formatMessageContent();
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Format messages again on page load (handles any race conditions)
+        formatMessageContent();
+        
+        // Load user's preferred theme on page load
+        const savedTheme = localStorage.getItem('preferredCodeTheme');
+        if (savedTheme) {
+            changeCodeTheme(savedTheme);
+            const themeSelector = document.getElementById('code-theme');
+            if (themeSelector) {
+                themeSelector.value = savedTheme;
+            }
+        }
         
         // Scroll to bottom of message list
         const messageList = document.getElementById('message-list');
@@ -839,6 +1075,20 @@
                 appendMessage('<span class="text-danger">AJAX error.</span>', false);
             });
         }
+        
+        // Handle Enter key for sending messages
+        messageInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                if (!e.shiftKey) {
+                    // Enter without Shift: send message
+                    e.preventDefault();
+                    messageForm.dispatchEvent(new Event('submit'));
+                } else {
+                    // Shift+Enter: allow default behavior (new line)
+                    // No need to prevent default as we want the newline to be inserted
+                }
+            }
+        });
     });
 </script>
 {% endblock %}
