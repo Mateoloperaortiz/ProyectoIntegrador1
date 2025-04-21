@@ -685,11 +685,15 @@
                                     </button>
                                     <input type="file" id="image-input" accept="image/*" style="display:none;">
                                     <input type="file" id="pdf-input" accept="application/pdf" style="display:none;">
+                                    <input type="file" id="video-input" accept="video/*" style="display:none;">
                                     <button type="button" id="pdf-upload-btn" class="btn btn-outline-secondary" style="position:absolute; right:50px; top:5px; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center;">
                                         <i class="fas fa-file-pdf"></i>
                                     </button>
                                     <button type="button" id="image-upload-btn" class="btn btn-outline-secondary" style="position:absolute; right:95px; top:5px; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center;" data-bs-toggle="tooltip" data-bs-placement="top" title="Upload an image for captioning, object detection, or segmentation">
                                         <i class="fas fa-image"></i>
+                                    </button>
+                                    <button type="button" id="video-upload-btn" class="btn btn-outline-secondary" style="position:absolute; right:140px; top:5px; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center;" data-bs-toggle="tooltip" data-bs-placement="top" title="Upload a video or paste a YouTube URL for analysis">
+                                        <i class="fas fa-video"></i>
                                     </button>
                                 </div>
                                 <div id="image-preview-container" class="mt-2" style="display:none;">
@@ -701,6 +705,17 @@
                                         <i class="fas fa-file-pdf text-danger me-2" style="font-size:24px;"></i>
                                         <span id="pdf-filename">document.pdf</span>
                                         <button type="button" id="remove-pdf-btn" class="btn btn-sm btn-link text-danger ms-2">Remove</button>
+                                    </div>
+                                </div>
+                                <div id="video-preview-container" class="mt-2" style="display:none;">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-video text-primary me-2" style="font-size:24px;"></i>
+                                        <span id="video-filename">video.mp4</span>
+                                        <button type="button" id="remove-video-btn" class="btn btn-sm btn-link text-danger ms-2">Remove</button>
+                                    </div>
+                                    <div id="youtube-preview" class="mt-2" style="display:none;">
+                                        <span class="badge bg-danger me-2"><i class="fab fa-youtube"></i> YouTube</span>
+                                        <span id="youtube-url-display"></span>
                                     </div>
                                 </div>
                                 <div class="keyboard-shortcuts-info text-muted small mt-1">
@@ -792,10 +807,37 @@
                     <button class="btn btn-outline-primary prompt-suggestion">Caption this image</button>
                     <button class="btn btn-outline-primary prompt-suggestion">Detect objects in this image</button>
                     <button class="btn btn-outline-primary prompt-suggestion">Segment the objects in this image</button>
+                    <button class="btn btn-outline-primary prompt-suggestion">Describe this video in detail</button>
+                    <button class="btn btn-outline-primary prompt-suggestion">Transcribe the audio from this video</button>
+                    <button class="btn btn-outline-primary prompt-suggestion">Summarize this video in a few sentences</button>
+                    <button class="btn btn-outline-primary prompt-suggestion">What happens at 01:15 in this video?</button>
                 </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- YouTube URL Input Modal -->
+<div class="modal fade" id="youtubeUrlModal" tabindex="-1" aria-labelledby="youtubeUrlModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="youtubeUrlModalLabel">Enter YouTube URL</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="youtube-url-input" class="form-label">YouTube Video URL</label>
+                    <input type="text" class="form-control" id="youtube-url-input" placeholder="https://www.youtube.com/watch?v=...">
+                    <div class="form-text">Enter a public YouTube video URL to analyze with Gemini.</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirm-youtube-url">Confirm</button>
             </div>
         </div>
     </div>
@@ -1025,30 +1067,39 @@
         const pdfInput = document.getElementById('pdf-input'); // Get PDF input element
         const imagePreviewContainer = document.getElementById('image-preview-container'); // Get image preview container
         const pdfPreviewContainer = document.getElementById('pdf-preview-container'); // Get PDF preview container
+        const videoPreviewContainer = document.getElementById('video-preview-container'); // Get video preview container
         const imagePreview = document.getElementById('image-preview'); // Get image preview element
         const pdfFilename = document.getElementById('pdf-filename'); // Get PDF filename element
+        const videoFilename = document.getElementById('video-filename'); // Get video filename element
+        const youtubePreview = document.getElementById('youtube-preview'); // Get YouTube preview container
+        const youtubeUrlDisplay = document.getElementById('youtube-url-display'); // Get YouTube URL display element
+        const videoInput = document.getElementById('video-input'); // Get video input element
         let selectedImageDataUrl = null; // Variable to hold base64 image data
         let selectedPdfDataUrl = null; // Variable to hold base64 PDF data
+        let selectedVideoDataUrl = null; // Variable to hold base64 video data or YouTube URL
         let isPdfUpload = false; // Flag to indicate if this is a PDF upload
+        let isYoutubeUrl = false; // Flag to indicate if this is a YouTube URL
         let socket = null;
 
         messageForm.addEventListener('submit', function(e) {
             e.preventDefault();
             const userMessage = messageInput.value.trim();
             
-            // Only send if there's text, an image, or a PDF
-            if (!userMessage && !selectedImageDataUrl && !selectedPdfDataUrl) return;
+            // Only send if there's text, an image, a PDF, or a video
+            if (!userMessage && !selectedImageDataUrl && !selectedPdfDataUrl && !selectedVideoDataUrl) return;
 
-            // Add user message bubble (even if it's just an image or PDF being sent)
+            // Add user message bubble (even if it's just media being sent)
             let displayMessage = userMessage;
             if (!userMessage) {
                 if (selectedImageDataUrl) {
                     displayMessage = '[Image Sent]';
                 } else if (selectedPdfDataUrl) {
                     displayMessage = '[PDF Document Sent]';
+                } else if (selectedVideoDataUrl) {
+                    displayMessage = isYoutubeUrl ? '[YouTube Video Sent]' : '[Video Sent]';
                 }
             }
-            appendMessage(displayMessage, true); // Display placeholder if only image/PDF
+            appendMessage(displayMessage, true); // Display placeholder if only media
             
             // Determine if this is an image understanding request based on message content
             const isImageUnderstanding = selectedImageDataUrl && 
@@ -1059,13 +1110,23 @@
                  userMessage.toLowerCase().includes("what is") ||
                  userMessage.toLowerCase().includes("what's in") ||
                  userMessage.toLowerCase().includes("identify"));
+                 
+            // Determine if this is a video understanding request based on message content
+            const isVideoUnderstanding = selectedVideoDataUrl && 
+                (userMessage.toLowerCase().includes("describe") || 
+                 userMessage.toLowerCase().includes("transcribe") || 
+                 userMessage.toLowerCase().includes("summarize") ||
+                 userMessage.toLowerCase().includes("timestamp") ||
+                 userMessage.toLowerCase().includes("at time") ||
+                 userMessage.toLowerCase().includes("what happens") ||
+                 userMessage.toLowerCase().includes("analyze this video"));
             
             // Decide whether to use WebSocket streaming or AJAX fallback
             const useWebSocket = (apiType === 'OPENAI' || apiType === 'GEMINI');
 
             if (useWebSocket) {
                 console.log(`Using WebSocket for ${apiType}`);
-                streamAIMessageWebSocket(conversationId, userMessage, selectedImageDataUrl, selectedPdfDataUrl, isPdfUpload);
+                streamAIMessageWebSocket(conversationId, userMessage, selectedImageDataUrl, selectedPdfDataUrl, isPdfUpload, selectedVideoDataUrl, isYoutubeUrl, isVideoUnderstanding);
             } else {
                 console.log(`Using AJAX fallback for ${apiType}`);
                 // Note: AJAX fallback currently does not send image/PDF data
@@ -1080,12 +1141,16 @@
             messageInput.value = '';
             imageInput.value = ''; // Clear file input
             pdfInput.value = ''; // Clear PDF input
+            videoInput.value = ''; // Clear video input
             selectedImageDataUrl = null;
             selectedPdfDataUrl = null;
+            selectedVideoDataUrl = null;
             isPdfUpload = false;
+            isYoutubeUrl = false;
             imagePreview.src = '';
             imagePreviewContainer.style.display = 'none';
             pdfPreviewContainer.style.display = 'none';
+            videoPreviewContainer.style.display = 'none';
             messageInput.focus();
         });
 
@@ -1159,7 +1224,7 @@
             }
         }
 
-        function streamAIMessageWebSocket(conversationId, userMessage, imageDataUrl, pdfDataUrl, isPdfUpload) {
+        function streamAIMessageWebSocket(conversationId, userMessage, imageDataUrl, pdfDataUrl, isPdfUpload, videoDataUrl, isYoutubeUrl, isVideoUnderstanding) {
             if (socket) socket.close();
             const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
             socket = new WebSocket(`${protocol}://${window.location.host}/ws/chat/${conversationId}/`);
@@ -1167,7 +1232,8 @@
             socket.onopen = function() {
                 const payload = {
                     message: userMessage || "", // Send empty string if no text but file exists
-                    is_image_understanding: isImageUnderstanding
+                    is_image_understanding: isImageUnderstanding,
+                    is_video_understanding: isVideoUnderstanding
                 };
                 if (imageDataUrl) {
                     payload.image_url = imageDataUrl;
@@ -1175,6 +1241,10 @@
                 if (pdfDataUrl) {
                     payload.pdf_url = pdfDataUrl;
                     payload.is_pdf_upload = isPdfUpload;
+                }
+                if (videoDataUrl) {
+                    payload.video_url = videoDataUrl;
+                    payload.is_youtube_url = isYoutubeUrl;
                 }
                 socket.send(JSON.stringify(payload));
             };
@@ -1257,6 +1327,29 @@
             e.preventDefault();
             imageInput.click();
         });
+        
+        // --- Video upload logic ---
+        const videoUploadBtn = document.getElementById('video-upload-btn');
+        const removeVideoBtn = document.getElementById('remove-video-btn');
+        const youtubeUrlModal = new bootstrap.Modal(document.getElementById('youtubeUrlModal'));
+        const youtubeUrlInput = document.getElementById('youtube-url-input');
+        const confirmYoutubeUrlBtn = document.getElementById('confirm-youtube-url');
+        // selectedVideoDataUrl and isYoutubeUrl are declared earlier
+
+        videoUploadBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Show popup asking if user wants to upload video or enter YouTube URL
+            const uploadType = confirm('Do you want to upload a video file?\n\nClick "OK" to upload a video file.\nClick "Cancel" to enter a YouTube URL.');
+            
+            if (uploadType) {
+                // User chose to upload a file
+                videoInput.click();
+            } else {
+                // User chose to enter a YouTube URL
+                youtubeUrlModal.show();
+            }
+        });
 
         imageInput.addEventListener('change', function(e) {
             const file = e.target.files[0];
@@ -1274,10 +1367,14 @@
                     imagePreview.src = selectedImageDataUrl;
                     imagePreviewContainer.style.display = 'block';
                     
-                    // Clear any PDF selection when an image is selected
+                    // Clear any PDF or video selection when an image is selected
                     pdfInput.value = '';
+                    videoInput.value = '';
                     selectedPdfDataUrl = null;
+                    selectedVideoDataUrl = null;
                     isPdfUpload = false;
+                    isYoutubeUrl = false;
+                    videoPreviewContainer.style.display = 'none';
                     pdfPreviewContainer.style.display = 'none';
                 };
                 reader.onerror = function(error) {
@@ -1358,6 +1455,116 @@
             selectedPdfDataUrl = null; // Clear the stored data
             isPdfUpload = false; // Reset upload flag
             pdfPreviewContainer.style.display = 'none'; // Hide the preview container
+        });
+        
+        // --- Video upload logic ---
+        const videoUploadBtn = document.getElementById('video-upload-btn');
+        const removeVideoBtn = document.getElementById('remove-video-btn');
+        const youtubeUrlModal = new bootstrap.Modal(document.getElementById('youtubeUrlModal'));
+        const youtubeUrlInput = document.getElementById('youtube-url-input');
+        const confirmYoutubeUrlBtn = document.getElementById('confirm-youtube-url');
+        // selectedVideoDataUrl and isYoutubeUrl are declared earlier
+
+        videoUploadBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Show popup asking if user wants to upload video or enter YouTube URL
+            const uploadType = confirm('Do you want to upload a video file?\n\nClick "OK" to upload a video file.\nClick "Cancel" to enter a YouTube URL.');
+            
+            if (uploadType) {
+                // User chose to upload a file
+                videoInput.click();
+            } else {
+                // User chose to enter a YouTube URL
+                youtubeUrlModal.show();
+            }
+        });
+        
+        videoInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                // Basic validation
+                if (!file.type.startsWith('video/')) {
+                    alert('Please select a video file.');
+                    videoInput.value = ''; // Reset input
+                    return;
+                }
+                
+                // Check file size (warn if >20MB as Gemini has limitations)
+                const fileSizeMB = file.size / (1024 * 1024);
+                if (fileSizeMB > 20) {
+                    const proceed = confirm('This video is larger than 20MB (' + fileSizeMB.toFixed(1) + 'MB). Large videos may take longer to process. Continue?');
+                    if (!proceed) {
+                        videoInput.value = '';
+                        return;
+                    }
+                }
+
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    selectedVideoDataUrl = evt.target.result; // Store base64 data URL
+                    videoFilename.textContent = file.name;
+                    videoPreviewContainer.style.display = 'block';
+                    youtubePreview.style.display = 'none';
+                    isYoutubeUrl = false;
+                    
+                    // Clear any image or PDF selection when a video is selected
+                    imageInput.value = '';
+                    pdfInput.value = '';
+                    selectedImageDataUrl = null;
+                    selectedPdfDataUrl = null;
+                    isPdfUpload = false;
+                    imagePreview.src = '';
+                    imagePreviewContainer.style.display = 'none';
+                    pdfPreviewContainer.style.display = 'none';
+                };
+                reader.onerror = function(error) {
+                    console.error("FileReader Error:", error);
+                    alert('Error reading video file.');
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        removeVideoBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            videoInput.value = '';
+            selectedVideoDataUrl = null;
+            isYoutubeUrl = false;
+            videoPreviewContainer.style.display = 'none';
+        });
+        
+        // YouTube URL handling
+        confirmYoutubeUrlBtn.addEventListener('click', function() {
+            const youtubeUrl = youtubeUrlInput.value.trim();
+            
+            // Basic validation for YouTube URL
+            if (!youtubeUrl || 
+                !(youtubeUrl.includes('youtube.com/watch?v=') || 
+                  youtubeUrl.includes('youtu.be/'))) {
+                alert('Please enter a valid YouTube URL.');
+                return;
+            }
+            
+            // Store the YouTube URL and update UI
+            selectedVideoDataUrl = youtubeUrl;
+            isYoutubeUrl = true;
+            youtubeUrlDisplay.textContent = youtubeUrl;
+            youtubePreview.style.display = 'block';
+            videoPreviewContainer.style.display = 'block';
+            
+            // Clear any image or PDF selection when a video is selected
+            imageInput.value = '';
+            pdfInput.value = '';
+            selectedImageDataUrl = null;
+            selectedPdfDataUrl = null;
+            isPdfUpload = false;
+            imagePreview.src = '';
+            imagePreviewContainer.style.display = 'none';
+            pdfPreviewContainer.style.display = 'none';
+            
+            // Close the modal
+            youtubeUrlModal.hide();
         });
     });
 </script>

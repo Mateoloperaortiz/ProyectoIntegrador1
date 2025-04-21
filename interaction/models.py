@@ -37,7 +37,8 @@ class Message(models.Model):
     content = models.TextField()  # May contain HTML content for image understanding features
     image_url = models.TextField(blank=True, null=True)  # Optional image URL or base64
     pdf_url = models.TextField(blank=True, null=True)  # Optional PDF URL or base64
-    file_type = models.CharField(max_length=20, blank=True, null=True)  # Type of file (image, pdf, etc.)
+    video_url = models.TextField(blank=True, null=True)  # Optional video URL or base64/YouTube
+    file_type = models.CharField(max_length=20, blank=True, null=True)  # Type of file (image, pdf, video, etc.)
     timestamp = models.DateTimeField(auto_now_add=True)
     
     class Meta:
