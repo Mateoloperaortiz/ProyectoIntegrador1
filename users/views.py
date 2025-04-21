@@ -58,9 +58,11 @@ class ProfileView(LoginRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         context['favorites'] = Favorite.objects.filter(user=self.request.user)
         
-          # Obtener las herramientas recomendadas para el usuario
         recommended_tools = get_recommended_tools(self.request.user)
         context['recommended_tools'] = recommended_tools
+        
+        from interaction.models import Conversation
+        context['conversations'] = Conversation.objects.filter(user=self.request.user).order_by('-updated_at')[:5]
         
         return context
 class CustomPasswordChangeView(LoginRequiredMixin, PasswordChangeView):
