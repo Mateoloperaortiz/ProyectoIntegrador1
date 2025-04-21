@@ -26,6 +26,7 @@ if os.path.exists(os.path.join(BASE_DIR, '.envrc')):
 
 print(f"OpenAI API key set: {os.environ.get('OPENAI_API_KEY') is not None}")
 print(f"Hugging Face API key set: {os.environ.get('HUGGINGFACE_API_KEY') is not None}")
+print(f"Gemini API key set: {os.environ.get('GEMINI_API_KEY') is not None}")
 
 
 

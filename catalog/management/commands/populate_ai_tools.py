@@ -75,7 +75,7 @@ class Command(BaseCommand):
                 'website_url': 'https://gemini.google.com/',
                 'category': 'CHAT',
                 'is_featured': True,
-                'api_type': 'GOOGLE',
+                'api_type': 'GEMINI',
                 'api_model': 'gemini-pro-vision',
                 'api_endpoint': 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent',
                 'logo_filename': 'Google_Gemini_logo.svg',
