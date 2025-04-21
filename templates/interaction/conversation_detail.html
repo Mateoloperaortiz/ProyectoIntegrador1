@@ -1179,6 +1179,9 @@
         let isPdfUpload = false; // Flag to indicate if this is a PDF upload
         let isYoutubeUrl = false; // Flag to indicate if this is a YouTube URL
         let isImageGeneration = false; // Flag to indicate if this is an image generation request
+        let isImageUnderstanding = false; // Flag to indicate if this is an image understanding request
+        let isVideoUnderstanding = false; // Flag to indicate if this is a video understanding request
+        let isAudioUnderstanding = false; // Flag to indicate if this is an audio understanding request
         let socket = null;
 
         messageForm.addEventListener('submit', function(e) {
