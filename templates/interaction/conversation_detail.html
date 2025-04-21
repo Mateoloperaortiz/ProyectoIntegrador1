@@ -1085,6 +1085,18 @@
             e.preventDefault();
             const userMessage = messageInput.value.trim();
             
+            // Check if the message contains a YouTube URL
+            const youtubeUrlRegex = /(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+            const youtubeMatch = userMessage.match(youtubeUrlRegex);
+            
+            // If a YouTube URL is found in the message, set it as the video URL
+            if (youtubeMatch && !selectedVideoDataUrl) {
+                const fullUrl = youtubeMatch[0].startsWith('http') ? youtubeMatch[0] : 'https://' + youtubeMatch[0];
+                selectedVideoDataUrl = fullUrl;
+                isYoutubeUrl = true;
+                console.log('Detected YouTube URL in message:', selectedVideoDataUrl);
+            }
+            
             // Only send if there's text, an image, a PDF, or a video
             if (!userMessage && !selectedImageDataUrl && !selectedPdfDataUrl && !selectedVideoDataUrl) return;
 
@@ -1112,14 +1124,17 @@
                  userMessage.toLowerCase().includes("identify"));
                  
             // Determine if this is a video understanding request based on message content
-            const isVideoUnderstanding = selectedVideoDataUrl && 
-                (userMessage.toLowerCase().includes("describe") || 
-                 userMessage.toLowerCase().includes("transcribe") || 
-                 userMessage.toLowerCase().includes("summarize") ||
-                 userMessage.toLowerCase().includes("timestamp") ||
-                 userMessage.toLowerCase().includes("at time") ||
-                 userMessage.toLowerCase().includes("what happens") ||
-                 userMessage.toLowerCase().includes("analyze this video"));
+            // Always set to true if we have a YouTube URL or video data
+            const isVideoUnderstanding = selectedVideoDataUrl || 
+                // If the message contains video-related keywords and we have a video URL
+                (selectedVideoDataUrl && 
+                 (userMessage.toLowerCase().includes("describe") || 
+                  userMessage.toLowerCase().includes("transcribe") || 
+                  userMessage.toLowerCase().includes("summarize") ||
+                  userMessage.toLowerCase().includes("timestamp") ||
+                  userMessage.toLowerCase().includes("at time") ||
+                  userMessage.toLowerCase().includes("what happens") ||
+                  userMessage.toLowerCase().includes("analyze this video")));
             
             // Decide whether to use WebSocket streaming or AJAX fallback
             const useWebSocket = (apiType === 'OPENAI' || apiType === 'GEMINI');

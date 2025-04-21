@@ -364,7 +364,7 @@ def generate_gemini_response(tool, user_message):
 
     try:
         client = genai.Client(api_key=api_key)
-        model_name = tool.api_model or "gemini-2.0-flash-live-001"
+        model_name = tool.api_model or "gemini-1.5-flash"
         
         # Generate content with text only for this fallback
         response = client.models.generate_content(
@@ -497,7 +497,7 @@ def generate_gemini_image_edit(tool, prompt, image_data, response_modalities=Non
     
     try:
         client = genai.Client(api_key=api_key)
-        model = "gemini-2.0-flash-exp-image-generation"
+        model = "gemini-1.5-flash"
         
         if response_modalities is None:
             response_modalities = ['TEXT', 'IMAGE']

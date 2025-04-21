@@ -41,6 +41,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
         video_url = data.get('video_url')  # Can be base64 data URL, file URL, or YouTube URL
         is_youtube_url = data.get('is_youtube_url', False)  # Flag for YouTube URL
         is_video_understanding = data.get('is_video_understanding', False)  # Flag for video understanding requests
+        
+        print(f"DEBUG: receive method called with data:")
+        print(f"DEBUG: user_message: {user_message}")
+        print(f"DEBUG: video_url exists: {video_url is not None}")
+        print(f"DEBUG: is_youtube_url: {is_youtube_url}")
+        print(f"DEBUG: is_video_understanding: {is_video_understanding}")
+        
         user = self.scope["user"]
 
         conversation = await database_sync_to_async(Conversation.objects.get)(id=self.conversation_id, user=user)
@@ -380,7 +387,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     async def stream_gemini_response(self, tool, user_message, conversation, user, image_url=None, pdf_url=None, is_pdf_upload=False):
         api_key = os.environ.get('GEMINI_API_KEY')
-        model_name = tool.api_model or "gemini-2.0-flash-live-001"
+        model_name = tool.api_model or "gemini-1.5-flash"
 
         if not api_key:
             await self.send(text_data=json.dumps({'type': 'error', 'content': "Gemini API key not found."}))
@@ -513,7 +520,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             image_url: Base64 encoded image data
         """
         api_key = os.environ.get('GEMINI_API_KEY')
-        model_name = "gemini-2.0-flash"  # Use the requested model
+        model_name = "gemini-1.5-flash"  # Use the Gemini 1.5 model that supports images
 
         if not api_key:
             await self.send(text_data=json.dumps({'type': 'error', 'content': "Gemini API key not found."}))
@@ -716,8 +723,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
             video_url: Base64 encoded video data, file URL, or YouTube URL
             is_youtube_url: Whether the video_url is a YouTube URL
         """
+        print(f"DEBUG: stream_gemini_video_understanding called with is_youtube_url={is_youtube_url}")
+        print(f"DEBUG: video_url starts with: {video_url[:50]}...")
+        
         api_key = os.environ.get('GEMINI_API_KEY')
-        model_name = "gemini-2.0-flash"  # Use the Gemini 2.0 model that supports video
+        model_name = "gemini-1.5-flash"  # Use the Gemini 1.5 model that supports video
         
         if not api_key:
             await self.send(text_data=json.dumps({'type': 'error', 'content': "Gemini API key not found."}))
