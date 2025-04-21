@@ -15,6 +15,7 @@ import io
 import base64
 from openai import OpenAI
 import google.genai as genai
+from google.genai import types
 from PIL import Image
 
 from .models import Conversation, Message, Favorite
@@ -191,14 +192,125 @@ def send_message(request, conversation_id):
     return redirect('interaction:conversation_detail', pk=conversation.id)
 
 
-def simulate_ai_response(tool, user_message):
+def simulate_ai_response(tool, user_message, image_url=None, is_image_generation=False, is_video_generation=False):
     """
     Dispatch to the appropriate non-streaming API generation function based on tool type.
-    Handles text input only in this fallback implementation.
+    Handles text input, image input, image generation, and video generation requests.
+    
+    Args:
+        tool: The AITool object
+        user_message: Text message from the user
+        image_url: Optional base64 encoded image data
+        is_image_generation: Whether this is an image generation request
+        is_video_generation: Whether this is a video generation request
+        
+    Returns:
+        Text response, image data, video data, or error message
     """
     try:
-        if tool.api_type == 'OPENAI':
-            # Note: generate_openai_response might need adjustment if it expects multimodal input here
+        if is_video_generation:
+            if tool.api_type == 'GEMINI':
+                params = {}
+                prompt = user_message
+                
+                if ":" in user_message:
+                    prompt_parts = user_message.split("\n")
+                    prompt_lines = []
+                    for part in prompt_parts:
+                        if ":" in part and not part.startswith("http"):
+                            key, value = part.split(":", 1)
+                            key = key.strip().lower()
+                            value = value.strip()
+                            if key == "number_of_videos":
+                                try:
+                                    params[key] = int(value)
+                                except ValueError:
+                                    params[key] = 1
+                            elif key == "aspect_ratio":
+                                params[key] = value
+                            elif key == "person_generation":
+                                params[key] = value
+                            elif key == "duration_seconds":
+                                try:
+                                    params[key] = int(value)
+                                except ValueError:
+                                    params[key] = 5
+                            elif key == "enhance_prompt":
+                                params[key] = value.lower() == "true"
+                            else:
+                                prompt_lines.append(part)
+                        else:
+                            prompt_lines.append(part)
+                    prompt = "\n".join(prompt_lines)
+                
+                # Generate videos using Veo
+                result = generate_veo_video(tool, prompt, image_url, **params)
+                if isinstance(result, dict) and "error" in result:
+                    return f"Video generation error: {result['error']}"
+                
+                response = "Generated videos based on your prompt:\n\n"
+                for i, video in enumerate(result):
+                    if isinstance(video, dict) and "video_data" in video:
+                        video_data = video.get("video_data", "")
+                        response += f"Video {i+1}: {video_data}\n\n"
+                return response
+            else:
+                return fallback_response(tool, user_message, "Video generation is only available with Gemini API.")
+        
+        elif is_image_generation:
+            if tool.api_type == 'GEMINI':
+                params = {}
+                if ":" in user_message:
+                    prompt_parts = user_message.split("\n")
+                    prompt = []
+                    for part in prompt_parts:
+                        if ":" in part and not part.startswith("http"):
+                            key, value = part.split(":", 1)
+                            key = key.strip().lower()
+                            value = value.strip()
+                            if key == "number_of_images":
+                                try:
+                                    params[key] = int(value)
+                                except ValueError:
+                                    params[key] = 1
+                            elif key == "aspect_ratio":
+                                params[key] = value
+                            elif key == "person_generation":
+                                params[key] = value
+                            else:
+                                prompt.append(part)
+                        else:
+                            prompt.append(part)
+                    prompt = "\n".join(prompt)
+                else:
+                    prompt = user_message
+                
+                # Generate images using Imagen 3
+                result = generate_imagen_image(tool, prompt, **params)
+                if isinstance(result, dict) and "error" in result:
+                    return f"Image generation error: {result['error']}"
+                
+                response = "Generated images based on your prompt:\n\n"
+                for i, img in enumerate(result):
+                    if isinstance(img, dict) and "image_data" in img:
+                        image_data = img.get("image_data", "")
+                        response += f"Image {i+1}: {image_data}\n\n"
+                return response
+            else:
+                return fallback_response(tool, user_message, "Image generation is only available with Gemini API.")
+        
+        elif image_url and tool.api_type == 'GEMINI':
+            result = generate_gemini_image_edit(tool, user_message, image_url)
+            if "error" in result:
+                return f"Image editing error: {result['error']}"
+            
+            response = result["text"] + "\n\n"
+            for i, img_url in enumerate(result["images"]):
+                response += f"Edited image {i+1}: {img_url}\n\n"
+            return response
+        
+        # Handle regular text generation
+        elif tool.api_type == 'OPENAI':
             return generate_openai_response(tool, user_message)
         elif tool.api_type == 'GEMINI':
             return generate_gemini_response(tool, user_message)
@@ -244,29 +356,39 @@ def generate_openai_response(tool, user_message):
 def generate_gemini_response(tool, user_message):
     """
     Non-streaming Gemini response generation (Text only for fallback).
+    Uses the new client-based approach for the Gemini API.
     """
     api_key = os.environ.get('GEMINI_API_KEY')
     if not api_key:
         return fallback_response(tool, user_message, "Gemini API key not found.")
 
     try:
-        genai.configure(api_key=api_key)
+        client = genai.Client(api_key=api_key)
         model_name = tool.api_model or "gemini-2.0-flash-live-001"
-        model = genai.GenerativeModel(model_name)
-
+        
         # Generate content with text only for this fallback
-        response = model.generate_content(user_message)
+        response = client.models.generate_content(
+            model=model_name,
+            contents=[user_message],
+            config=genai.types.GenerateContentConfig(
+                max_output_tokens=1024,
+                temperature=0.7,
+                top_p=0.95,
+                top_k=40
+            )
+        )
+        
         # Handle potential lack of text in response
-        if response.parts:
-             return response.text
+        if hasattr(response, 'text') and response.text:
+            return response.text
         else:
-             # Handle cases where the response might be blocked or empty
-             # Log the full response for debugging
-             print(f"Gemini Warning: Received response with no parts. Full response: {response}")
-             # Check for prompt feedback indicating blocking
-             if response.prompt_feedback and response.prompt_feedback.block_reason:
-                 return f"My response was blocked due to: {response.prompt_feedback.block_reason.name}. Please modify your prompt."
-             return fallback_response(tool, user_message, "Received an empty or blocked response from Gemini.")
+            # Handle cases where the response might be blocked or empty
+            # Log the full response for debugging
+            print(f"Gemini Warning: Received response with no text. Full response: {response}")
+            # Check for prompt feedback indicating blocking
+            if hasattr(response, 'prompt_feedback') and response.prompt_feedback and hasattr(response.prompt_feedback, 'block_reason'):
+                return f"My response was blocked due to: {response.prompt_feedback.block_reason.name}. Please modify your prompt."
+            return fallback_response(tool, user_message, "Received an empty or blocked response from Gemini.")
 
     except Exception as e:
         return fallback_response(tool, user_message, f"Gemini API error (non-streaming): {str(e)}")
@@ -296,6 +418,231 @@ def generate_huggingface_response(tool, user_message):
          return fallback_response(tool, user_message, f"Hugging Face API request error: {str(e)}")
     except Exception as e:
         return fallback_response(tool, user_message, f"Hugging Face API error: {str(e)}")
+
+
+def generate_imagen_image(tool, prompt, number_of_images=1, aspect_ratio="1:1", person_generation="ALLOW_ADULT"):
+    """
+    Generate images using Imagen 3 model.
+    
+    Args:
+        tool: The AITool object
+        prompt: Text prompt for image generation
+        number_of_images: Number of images to generate (1-4)
+        aspect_ratio: Aspect ratio of generated images ("1:1", "3:4", "4:3", "9:16", "16:9")
+        person_generation: Person generation policy ("DONT_ALLOW" or "ALLOW_ADULT")
+        
+    Returns:
+        List of base64 encoded image data or error message
+    """
+    api_key = os.environ.get('GEMINI_API_KEY')
+    if not api_key:
+        return {"error": "Gemini API key not found."}
+    
+    try:
+        client = genai.Client(api_key=api_key)
+        model = 'imagen-3.0-generate-002'  # Imagen 3 model
+        
+        number_of_images = max(1, min(4, number_of_images))
+        
+        valid_aspect_ratios = ["1:1", "3:4", "4:3", "9:16", "16:9"]
+        if aspect_ratio not in valid_aspect_ratios:
+            aspect_ratio = "1:1"  # Default to 1:1 if invalid
+        
+        valid_person_generation = ["DONT_ALLOW", "ALLOW_ADULT"]
+        if person_generation not in valid_person_generation:
+            person_generation = "ALLOW_ADULT"  # Default
+        
+        response = client.models.generate_images(
+            model=model,
+            prompt=prompt,
+            config=types.GenerateImagesConfig(
+                number_of_images=number_of_images,
+                aspect_ratio=aspect_ratio,
+                person_generation=person_generation
+            )
+        )
+        
+        result = []
+        for generated_image in response.generated_images:
+            image_bytes = generated_image.image.image_bytes
+            base64_image = base64.b64encode(image_bytes).decode('utf-8')
+            result.append({
+                "image_data": f"data:image/png;base64,{base64_image}",
+                "prompt": prompt
+            })
+        
+        return result
+    
+    except Exception as e:
+        print(f"Imagen API error: {str(e)}")
+        return {"error": f"Error generating image: {str(e)}"}
+
+
+def generate_gemini_image_edit(tool, prompt, image_data, response_modalities=None):
+    """
+    Edit images using Gemini's image generation capabilities.
+    
+    Args:
+        tool: The AITool object
+        prompt: Text prompt describing the edit
+        image_data: Base64 encoded image data or PIL Image object
+        response_modalities: List of modalities to include in response (default: ['TEXT', 'IMAGE'])
+        
+    Returns:
+        Dictionary with text and image data or error message
+    """
+    api_key = os.environ.get('GEMINI_API_KEY')
+    if not api_key:
+        return {"error": "Gemini API key not found."}
+    
+    try:
+        client = genai.Client(api_key=api_key)
+        model = "gemini-2.0-flash-exp-image-generation"
+        
+        if response_modalities is None:
+            response_modalities = ['TEXT', 'IMAGE']
+        
+        pil_image = None
+        if isinstance(image_data, str) and image_data.startswith('data:image'):
+            header, encoded = image_data.split(',', 1)
+            decoded_bytes = base64.b64decode(encoded)
+            pil_image = Image.open(io.BytesIO(decoded_bytes))
+        elif isinstance(image_data, Image.Image):
+            pil_image = image_data
+        else:
+            return {"error": "Invalid image data format"}
+        
+        # Generate content with image editing
+        response = client.models.generate_content(
+            model=model,
+            contents=[prompt, pil_image],
+            config=types.GenerateContentConfig(
+                response_modalities=response_modalities
+            )
+        )
+        
+        result = {"text": "", "images": []}
+        
+        for part in response.candidates[0].content.parts:
+            if part.text is not None:
+                result["text"] += part.text
+            elif part.inline_data is not None:
+                image_bytes = part.inline_data.data
+                base64_image = base64.b64encode(image_bytes).decode('utf-8')
+                mime_type = part.inline_data.mime_type
+                result["images"].append(f"data:{mime_type};base64,{base64_image}")
+        
+        return result
+    
+    except Exception as e:
+        print(f"Gemini image editing error: {str(e)}")
+        return {"error": f"Error editing image: {str(e)}"}
+
+
+def generate_veo_video(tool, prompt, image_data=None, aspect_ratio="16:9", person_generation="ALLOW_ADULT", 
+                      number_of_videos=1, duration_seconds=5, enhance_prompt=True):
+    """
+    Generate videos using Veo model.
+    
+    Args:
+        tool: The AITool object
+        prompt: Text prompt for video generation
+        image_data: Optional base64 encoded image data or PIL Image object for image-to-video generation
+        aspect_ratio: Aspect ratio of generated videos ("16:9" or "9:16")
+        person_generation: Person generation policy ("DONT_ALLOW" or "ALLOW_ADULT") - only for text-to-video
+        number_of_videos: Number of videos to generate (1 or 2)
+        duration_seconds: Length of each output video in seconds (5-8)
+        enhance_prompt: Enable or disable the prompt rewriter
+        
+    Returns:
+        List of dictionaries with video data or error message
+    """
+    api_key = os.environ.get('GEMINI_API_KEY')
+    if not api_key:
+        return {"error": "Gemini API key not found."}
+    
+    try:
+        client = genai.Client(api_key=api_key)
+        model = 'veo-2.0-generate-001'  # Veo model
+        
+        valid_aspect_ratios = ["16:9", "9:16"]
+        if aspect_ratio not in valid_aspect_ratios:
+            aspect_ratio = "16:9"  # Default to 16:9 if invalid
+        
+        valid_person_generation = ["DONT_ALLOW", "ALLOW_ADULT"]
+        if person_generation not in valid_person_generation:
+            person_generation = "ALLOW_ADULT"  # Default
+        
+        number_of_videos = max(1, min(2, number_of_videos))
+        duration_seconds = max(5, min(8, duration_seconds))
+        
+        config_params = {
+            "aspect_ratio": aspect_ratio,
+            "number_of_videos": number_of_videos,
+            "duration_seconds": duration_seconds,
+            "enhance_prompt": enhance_prompt
+        }
+        
+        # For text-to-video, we can specify person_generation
+        if image_data is None:
+            config_params["person_generation"] = person_generation
+        
+        pil_image = None
+        if image_data:
+            if isinstance(image_data, str) and image_data.startswith('data:image'):
+                header, encoded = image_data.split(',', 1)
+                decoded_bytes = base64.b64decode(encoded)
+                pil_image = Image.open(io.BytesIO(decoded_bytes))
+            elif isinstance(image_data, Image.Image):
+                pil_image = image_data
+            else:
+                return {"error": "Invalid image data format"}
+        
+        if pil_image:
+            # Image-to-video generation
+            operation = client.models.generate_videos(
+                model=model,
+                prompt=prompt,
+                image=pil_image,
+                config=types.GenerateVideosConfig(**config_params)
+            )
+        else:
+            # Text-to-video generation
+            operation = client.models.generate_videos(
+                model=model,
+                prompt=prompt,
+                config=types.GenerateVideosConfig(**config_params)
+            )
+        
+        import time
+        while not operation.done:
+            time.sleep(20)
+            operation = client.operations.get(operation)
+        
+        result = []
+        for i, video in enumerate(operation.response.generated_videos):
+            video_filename = f"video_{int(time.time())}_{i}.mp4"
+            video_path = os.path.join("/tmp", video_filename)
+            
+            client.files.download(file=video.video)
+            video.video.save(video_path)
+            
+            with open(video_path, "rb") as video_file:
+                video_bytes = video_file.read()
+                base64_video = base64.b64encode(video_bytes).decode('utf-8')
+            
+            result.append({
+                "video_data": f"data:video/mp4;base64,{base64_video}",
+                "prompt": prompt
+            })
+            
+            os.remove(video_path)
+        
+        return result
+    
+    except Exception as e:
+        print(f"Veo API error: {str(e)}")
+        return {"error": f"Error generating video: {str(e)}"}
 
 
 def fallback_response(tool, user_message, error_message=None):
