@@ -1297,7 +1297,10 @@
                 const data = JSON.parse(event.data);
                 if (data.type === 'ai_message') {
                     aiContent = data.content;
+                    
+                    // Update the streaming bubble with new content
                     updateAIStreamingBubble(aiContent);
+                    
                     if (data.done) {
                         finalizeAIStreamingBubble(aiContent);
                         socket.close();
@@ -1355,11 +1358,13 @@
             });
         }
         
-        // Handle Enter key for sending messages
+        // Handle Enter key for sending messages and Shift+Enter for new line
         messageInput.addEventListener('keydown', function(e) {
             if (e.key === 'Enter' && !e.shiftKey) {
-                 e.preventDefault();
-                 messageForm.dispatchEvent(new Event('submit'));
+                e.preventDefault();
+                messageForm.dispatchEvent(new Event('submit'));
+            } else if (e.key === 'Enter' && e.shiftKey) {
+                // Allow default behavior of Shift+Enter to add a new line
             }
         });
 

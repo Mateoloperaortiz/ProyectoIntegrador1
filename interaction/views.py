@@ -364,7 +364,7 @@ def generate_gemini_response(tool, user_message):
 
     try:
         client = genai.Client(api_key=api_key)
-        model_name = tool.api_model or "gemini-1.5-flash"
+        model_name = tool.api_model or "gemini-2.0-flash"
         
         # Generate content with text only for this fallback
         response = client.models.generate_content(

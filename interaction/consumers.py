@@ -6,6 +6,7 @@ import httpx
 import pathlib
 import time
 import re
+import asyncio
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from openai import AsyncOpenAI
@@ -397,7 +398,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     async def stream_gemini_response(self, tool, user_message, conversation, user, image_url=None, pdf_url=None, is_pdf_upload=False):
         api_key = os.environ.get('GEMINI_API_KEY')
-        model_name = tool.api_model or "gemini-1.5-flash"
+        model_name = tool.api_model or "gemini-2.0-flash"
 
         if not api_key:
             await self.send(text_data=json.dumps({'type': 'error', 'content': "Gemini API key not found."}))
@@ -486,11 +487,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
             )
             
             ai_content = ""
-
-            async for chunk in response_stream:
+            stream_generator = await database_sync_to_async(lambda: response_stream)()
+            
+            async for chunk in stream_generator:
                 if hasattr(chunk, 'text') and chunk.text:
                     ai_content += chunk.text
                     await self.send(text_data=json.dumps({'type': 'ai_message', 'content': ai_content, 'done': False}))
+                    await asyncio.sleep(0.01)
 
             if file_obj:
                 try:
