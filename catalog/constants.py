@@ -25,6 +25,7 @@ API_TYPE_CHOICES = [
     ('GOOGLE', 'Google AI API'),
     ('CUSTOM', 'Custom API'),
     ('NONE', 'No API Integration'),
+    ('GEMINI', 'Google Gemini API'),
 ]
 
 # Rating Choices (1-5 stars)

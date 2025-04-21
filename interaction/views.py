@@ -9,6 +9,13 @@ from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 import json
 import random
+import os
+import requests
+import io
+import base64
+from openai import OpenAI
+import google.genai as genai
+from PIL import Image
 
 from .models import Conversation, Message, Favorite
 from .forms import MessageForm, ConversationTitleForm
@@ -138,33 +145,36 @@ def start_conversation(request, tool_id):
 def send_message(request, conversation_id):
     """
     Send a message in a conversation.
+    NOTE: This view is primarily a fallback for non-JS/non-WebSocket scenarios or
+          for API types that don't support streaming via the ChatConsumer yet.
+          The main interaction for streaming APIs (OpenAI, Gemini) happens via WebSocket.
     """
     conversation = get_object_or_404(Conversation, id=conversation_id, user=request.user)
     
     if request.method == 'POST':
         form = MessageForm(request.POST)
         if form.is_valid():
-            # Save user message
+            user_content = form.cleaned_data['content']
+            # Note: Image handling is NOT implemented in this fallback view.
+            # It assumes text-only input for simplicity.
             user_message = Message.objects.create(
                 conversation=conversation,
                 is_from_user=True,
-                content=form.cleaned_data['content']
+                content=user_content
             )
             
-            # Generate AI response
-            ai_response = simulate_ai_response(conversation.tool, form.cleaned_data['content'])
+            # Generate AI response using the simulation/fallback function
+            # This function handles dispatching to the correct non-streaming API call
+            ai_response_content = simulate_ai_response(conversation.tool, user_content)
             
-            # Save AI response
             ai_message = Message.objects.create(
                 conversation=conversation,
                 is_from_user=False,
-                content=ai_response
+                content=ai_response_content
             )
             
-            # Update conversation timestamp
-            conversation.save()
+            conversation.save() # Update timestamp
             
-            # If AJAX request, return JSON
             if request.headers.get('x-requested-with') == 'XMLHttpRequest':
                 return JsonResponse({
                     'user_message': {
@@ -177,159 +187,131 @@ def send_message(request, conversation_id):
                     }
                 })
             
-            # No need for a success message for each chat message
-            # Prevent empty messages from appearing
-    
+    # Redirect back to the conversation for non-AJAX POST or GET requests
     return redirect('interaction:conversation_detail', pk=conversation.id)
 
 
 def simulate_ai_response(tool, user_message):
     """
-    Generate an AI response using the appropriate API based on the tool's configuration.
-    Falls back to simulated responses if API calls fail.
+    Dispatch to the appropriate non-streaming API generation function based on tool type.
+    Handles text input only in this fallback implementation.
     """
-    import os
-    import requests
-    from openai import OpenAI
-    
     try:
         if tool.api_type == 'OPENAI':
+            # Note: generate_openai_response might need adjustment if it expects multimodal input here
             return generate_openai_response(tool, user_message)
+        elif tool.api_type == 'GEMINI':
+            return generate_gemini_response(tool, user_message)
         elif tool.api_type == 'HUGGINGFACE':
             return generate_huggingface_response(tool, user_message)
         elif tool.api_type == 'ANTHROPIC':
-            return fallback_response(tool, user_message, "Anthropic API integration is coming soon.")
-        elif tool.api_type == 'GOOGLE':
-            return fallback_response(tool, user_message, "Google AI API integration is coming soon.")
+            return fallback_response(tool, user_message, "Anthropic API integration is not yet available for non-streaming.")
+        elif tool.api_type == 'GOOGLE': # Consider renaming or removing if GEMINI covers all Google AI
+            return fallback_response(tool, user_message, "Google AI API integration is not yet available for non-streaming.")
         else:
             return fallback_response(tool, user_message)
     except Exception as e:
-        print(f"Error generating AI response: {str(e)}")
-        return fallback_response(tool, user_message, f"API Error: {str(e)}")
+        print(f"Error in simulate_ai_response dispatcher: {str(e)}")
+        # Provide a generic error message via fallback
+        return fallback_response(tool, user_message, f"An error occurred while processing the request: {str(e)}")
 
 
 def generate_openai_response(tool, user_message):
     """
-    Generate a response using OpenAI API (using the new responses endpoint as per official docs).
+    Non-streaming OpenAI response generation (Text only for fallback).
     """
-    import os
-    from openai import OpenAI
-
     api_key = os.environ.get('OPENAI_API_KEY')
     if not api_key:
-        return fallback_response(tool, user_message, "OpenAI API key not found in environment.")
+        return fallback_response(tool, user_message, "OpenAI API key not found.")
 
-    client = OpenAI(api_key=api_key)
-    model = tool.api_model if tool.api_model else "gpt-4.1-2025-04-14"
-
-    # Use the new responses endpoint for text and image (vision) models
     try:
-        # If the tool is for images, check if user_message is a dict/list for vision input
-        if tool.category == 'IMAGE' and isinstance(user_message, (list, dict)):
-            response = client.responses.create(
-                model=model,
-                input=user_message
-            )
-        else:
-            response = client.responses.create(
-                model=model,
-                input=user_message
-            )
-        return getattr(response, 'output_text', str(response))
+        client = OpenAI(api_key=api_key)
+        model = tool.api_model or "gpt-4o" # Default model
+
+        # Using chat completions endpoint for consistency, text-only
+        response = client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": f"You are {tool.name}, an AI assistant by {tool.provider}. Respond concisely."}, # Simplified prompt for fallback
+                {"role": "user", "content": user_message}
+            ]
+        )
+        return response.choices[0].message.content
     except Exception as e:
-        return fallback_response(tool, user_message, f"OpenAI API error: {str(e)}")
+        return fallback_response(tool, user_message, f"OpenAI API error (non-streaming): {str(e)}")
+
+
+def generate_gemini_response(tool, user_message):
+    """
+    Non-streaming Gemini response generation (Text only for fallback).
+    """
+    api_key = os.environ.get('GEMINI_API_KEY')
+    if not api_key:
+        return fallback_response(tool, user_message, "Gemini API key not found.")
+
+    try:
+        genai.configure(api_key=api_key)
+        model_name = tool.api_model or "gemini-2.0-flash-live-001"
+        model = genai.GenerativeModel(model_name)
+
+        # Generate content with text only for this fallback
+        response = model.generate_content(user_message)
+        # Handle potential lack of text in response
+        if response.parts:
+             return response.text
+        else:
+             # Handle cases where the response might be blocked or empty
+             # Log the full response for debugging
+             print(f"Gemini Warning: Received response with no parts. Full response: {response}")
+             # Check for prompt feedback indicating blocking
+             if response.prompt_feedback and response.prompt_feedback.block_reason:
+                 return f"My response was blocked due to: {response.prompt_feedback.block_reason.name}. Please modify your prompt."
+             return fallback_response(tool, user_message, "Received an empty or blocked response from Gemini.")
+
+    except Exception as e:
+        return fallback_response(tool, user_message, f"Gemini API error (non-streaming): {str(e)}")
 
 
 def generate_huggingface_response(tool, user_message):
     """
-    Generate a response using Hugging Face API.
+    Generate a response using Hugging Face API (placeholder/example).
+    Requires tool.api_endpoint to be set correctly.
     """
-    import os
-    import requests
-    import json
-    
-    api_key = os.environ.get('HUGGINGFACE_API_KEY')
+    api_key = os.environ.get('HUGGINGFACE_API_KEY') # Assumes HF key is needed
     if not api_key:
-        return fallback_response(tool, user_message, "Hugging Face API key not found in environment.")
-    
-    api_endpoint = tool.api_endpoint if tool.api_endpoint else "https://api-inference.huggingface.co/models/gpt2"
-    
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json"
-    }
-    
-    payload = {
-        "inputs": user_message,
-        "parameters": {
-            "max_length": 100,
-            "temperature": 0.7,
-            "return_full_text": False
-        }
-    }
-    
+        return fallback_response(tool, user_message, "Hugging Face API key not found.")
+    if not tool.api_endpoint:
+         return fallback_response(tool, user_message, "Hugging Face model endpoint not configured for this tool.")
+
     try:
-        response = requests.post(api_endpoint, headers=headers, json=payload)
-        response.raise_for_status()  # Raise exception for HTTP errors
-        
+        headers = {"Authorization": f"Bearer {api_key}"}
+        payload = {"inputs": user_message}
+        response = requests.post(tool.api_endpoint, headers=headers, json=payload, timeout=30)
+        response.raise_for_status() # Raise an exception for bad status codes
         result = response.json()
-        
-        if isinstance(result, list) and len(result) > 0:
-            if tool.category == 'IMAGE':
-                return "I've created an image based on your description. (Image data would be displayed here)"
-            elif 'generated_text' in result[0]:
-                return result[0]['generated_text']
-            else:
-                return json.dumps(result)
-        else:
-            return fallback_response(tool, user_message, "Unexpected response format from Hugging Face API.")
+        # The actual response structure depends heavily on the specific HF model/API
+        # This is a common structure for text generation models
+        return result[0].get('generated_text', "Sorry, I couldn't process that.")
+    except requests.exceptions.RequestException as e:
+         return fallback_response(tool, user_message, f"Hugging Face API request error: {str(e)}")
     except Exception as e:
         return fallback_response(tool, user_message, f"Hugging Face API error: {str(e)}")
 
 
 def fallback_response(tool, user_message, error_message=None):
     """
-    Generate a fallback response when API calls fail.
+    Provides a generic fallback response or formats an error message.
     """
-    # Simple responses based on AI tool category
-    responses = {
-        'TEXT': [
-            "I've generated a text passage based on your input.",
-            "Here's a creative text I've written for you.",
-            "I hope you find this text helpful for your needs."
-        ],
-        'IMAGE': [
-            "I've created an image based on your description.",
-            "Your image has been generated. I hope it matches what you had in mind.",
-            "Here's the visualization I created from your prompt."
-        ],
-        'CHAT': [
-            "That's an interesting question! Let me share my thoughts.",
-            "I understand what you're asking. Here's my response.",
-            "Great conversation! Here's what I think about that."
-        ]
-    }
-    
-    # Get responses for the tool's category or use generic responses
-    category_responses = responses.get(tool.category, [
-        "Thank you for your input. Here's my response.",
-        "I've processed your request and here are the results.",
-        "I hope this answer helps with what you were looking for."
-    ])
-    
-    # Random response from category
-    response = random.choice(category_responses)
-    
-    # Add some context from the user message to make it seem more responsive
-    words = user_message.split()
-    if len(words) > 3:
-        keywords = words[:3]
-        response += f" I noticed you mentioned {', '.join(keywords)}."
-    
     if error_message:
-        response += f"\n\n(Note: {error_message})"
-    
-    return response
+        print(f"Fallback triggered for {tool.name}: {error_message}")
+        return f"I encountered an issue processing your request with {tool.name}. Error: {error_message}"
+    else:
+        responses = [
+            f"Sorry, I can't fully process that request with {tool.name} right now.",
+            f"Hmm, I'm having trouble connecting to the {tool.name} service.",
+            f"Let me try that again later. I couldn't get a response from {tool.name}."
+        ]
+        return random.choice(responses)
 
 
 @login_required
@@ -338,42 +320,39 @@ def update_conversation_title(request, conversation_id):
     Update the title of a conversation.
     """
     conversation = get_object_or_404(Conversation, id=conversation_id, user=request.user)
-    
     if request.method == 'POST':
         form = ConversationTitleForm(request.POST, instance=conversation)
         if form.is_valid():
-            # Get the old title for comparison
-            old_title = conversation.title
             form.save()
-            
-            # Only display a success message if the title actually changed
-            if old_title != form.cleaned_data['title']:
-                messages.success(request, _('Conversation title updated!'))
-    
+            # Return JSON for AJAX request or redirect
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({'success': True, 'new_title': conversation.title})
+            else:
+                messages.success(request, _('Conversation title updated.'))
+                return redirect('interaction:conversation_detail', pk=conversation.id)
+        else:
+            # Handle errors if needed, perhaps return JSON error
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({'success': False, 'errors': form.errors}, status=400)
+            else:
+                 messages.error(request, _('Error updating title.'))
+    # If not POST, or if form invalid in non-AJAX, redirect back
     return redirect('interaction:conversation_detail', pk=conversation.id)
 
 
 @login_required
 def delete_conversation(request, conversation_id):
     """
-    Delete a conversation and all its messages.
+    Delete a conversation.
     """
     conversation = get_object_or_404(Conversation, id=conversation_id, user=request.user)
-    
     if request.method == 'POST':
-        # Store the conversation title for the success message
-        title = conversation.title
-        
-        # Delete the conversation (cascade will delete all related messages)
+        conversation_title = conversation.title # Get title before deleting
         conversation.delete()
-        
-        # Show success message
-        messages.success(request, _(f'Conversation "{title}" has been deleted.'))
-        
-        # Redirect to conversation list
+        messages.success(request, _(f'Conversation "{conversation_title}" deleted.'))
         return redirect('interaction:conversation_list')
     
-    # If not POST, show confirmation page
-    return render(request, 'interaction/delete_confirmation.html', {
-        'conversation': conversation
-    })
+    # If GET, render confirmation page (though usually handled by modal)
+    # You might want to redirect to list if accessed via GET directly
+    # return render(request, 'interaction/delete_confirmation.html', {'conversation': conversation})
+    return redirect('interaction:conversation_list')

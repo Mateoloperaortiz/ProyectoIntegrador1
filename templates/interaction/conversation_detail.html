@@ -981,27 +981,46 @@
         const conversationId = "{{ conversation.id }}";
         const apiType = "{{ conversation.tool.api_type|escapejs }}";
         const messageForm = document.getElementById('message-form');
+        const messageInput = document.getElementById('id_content'); // Get message input element
+        const imageInput = document.getElementById('image-input'); // Get image input element
+        const imagePreviewContainer = document.getElementById('image-preview-container'); // Get image preview container
+        const imagePreview = document.getElementById('image-preview'); // Get image preview element
+        let selectedImageDataUrl = null; // Variable to hold base64 image data
         let socket = null;
+
         messageForm.addEventListener('submit', function(e) {
             e.preventDefault();
             const userMessage = messageInput.value.trim();
-            if (!userMessage) return;
-            // Add user message to chat
-            appendMessage(userMessage, true);
-            messageInput.value = '';
-            messageInput.focus();
-            // For OpenAI tools, use WebSocket streaming
-            if (apiType === 'OPENAI') {
+            
+            // Only send if there's text or an image
+            if (!userMessage && !selectedImageDataUrl) return;
+
+            // Add user message bubble (even if it's just an image being sent)
+            appendMessage(userMessage || '[Image Sent]', true); // Display placeholder if only image
+            
+            // Decide whether to use WebSocket streaming or AJAX fallback
+            const useWebSocket = (apiType === 'OPENAI' || apiType === 'GEMINI');
+
+            if (useWebSocket) {
+                console.log(`Using WebSocket for ${apiType}`);
                 streamAIMessageWebSocket(conversationId, userMessage, selectedImageDataUrl);
             } else {
-                // Fallback: AJAX POST
-                sendMessageAjax(userMessage);
+                console.log(`Using AJAX fallback for ${apiType}`);
+                // Note: AJAX fallback currently does not send image data
+                if(userMessage) { // Only send AJAX if there is text for fallback
+                   sendMessageAjax(userMessage);
+                } else {
+                    appendMessage("Image upload via AJAX is not supported for this tool.", false);
+                }
             }
-            // Reset image after sending
-            imageInput.value = '';
+
+            // Clear inputs after attempting to send
+            messageInput.value = '';
+            imageInput.value = ''; // Clear file input
             selectedImageDataUrl = null;
             imagePreview.src = '';
             imagePreviewContainer.style.display = 'none';
+            messageInput.focus();
         });
 
         function appendMessage(content, isUser, isTemp = false) {
@@ -1080,7 +1099,12 @@
             socket = new WebSocket(`${protocol}://${window.location.host}/ws/chat/${conversationId}/`);
             let aiContent = '';
             socket.onopen = function() {
-                const payload = imageDataUrl ? {message: userMessage, image_url: imageDataUrl} : {message: userMessage};
+                const payload = {
+                    message: userMessage || "" // Send empty string if no text but image exists
+                };
+                if (imageDataUrl) {
+                    payload.image_url = imageDataUrl;
+                }
                 socket.send(JSON.stringify(payload));
             };
             socket.onmessage = function(event) {
@@ -1094,17 +1118,24 @@
                     }
                 } else if (data.type === 'error') {
                     updateAIStreamingBubble('<span class="text-danger">Error: ' + data.content + '</span>');
+                    finalizeAIStreamingBubble('<span class="text-danger">Error: ' + data.content + '</span>'); // Ensure bubble ID is removed
                     socket.close();
                 }
             };
-            socket.onerror = function() {
-                updateAIStreamingBubble('<span class="text-danger">WebSocket error.</span>');
+            socket.onerror = function(error) {
+                console.error('WebSocket Error:', error);
+                updateAIStreamingBubble('<span class="text-danger">WebSocket connection error. Please try again.</span>');
+                finalizeAIStreamingBubble('<span class="text-danger">WebSocket connection error. Please try again.</span>');
             };
-            socket.onclose = function() {};
+            socket.onclose = function(event) {
+                console.log('WebSocket closed:', event.code, event.reason);
+                // Optionally handle unexpected closures, maybe attempt reconnect or inform user
+            };
         }
 
         function sendMessageAjax(userMessage) {
-            // Fallback for non-OpenAI tools: AJAX POST
+            // Fallback for non-streaming tools: AJAX POST (Text only)
+            console.log("Sending message via AJAX fallback...");
             fetch(messageForm.action, {
                 method: 'POST',
                 headers: {
@@ -1114,63 +1145,83 @@
                 },
                 body: 'content=' + encodeURIComponent(userMessage)
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
-                if (data.ai_message) {
+                console.log("AJAX response received:", data);
+                if (data.ai_message && data.ai_message.content) {
                     appendMessage(data.ai_message.content, false);
                 } else if (data.ai_message && data.ai_message.error) {
-                    appendMessage('<span class="text-danger">' + data.ai_message.error + '</span>', false);
+                    // Display error if returned structuredly
+                    appendMessage(`<span class="text-danger">Error: ${data.ai_message.error}</span>`, false);
+                } else {
+                    // Fallback if response format is unexpected
+                    appendMessage('<span class="text-danger">Received an unexpected response from the server.</span>', false);
                 }
             })
-            .catch(() => {
-                appendMessage('<span class="text-danger">AJAX error.</span>', false);
+            .catch((error) => {
+                console.error('AJAX Error:', error);
+                appendMessage(`<span class="text-danger">Failed to send message via fallback: ${error}.</span>`, false);
             });
         }
         
         // Handle Enter key for sending messages
         messageInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                if (!e.shiftKey) {
-                    // Enter without Shift: send message
-                    e.preventDefault();
-                    messageForm.dispatchEvent(new Event('submit'));
-                } else {
-                    // Shift+Enter: allow default behavior (new line)
-                    // No need to prevent default as we want the newline to be inserted
-                }
+            if (e.key === 'Enter' && !e.shiftKey) {
+                 e.preventDefault();
+                 messageForm.dispatchEvent(new Event('submit'));
             }
         });
 
         // --- Image upload logic ---
-        const imageInput = document.getElementById('image-input');
         const imageUploadBtn = document.getElementById('image-upload-btn');
-        const imagePreviewContainer = document.getElementById('image-preview-container');
-        const imagePreview = document.getElementById('image-preview');
         const removeImageBtn = document.getElementById('remove-image-btn');
-        let selectedImageDataUrl = null;
+        // selectedImageDataUrl is declared earlier
 
         imageUploadBtn.addEventListener('click', function(e) {
             e.preventDefault();
             imageInput.click();
         });
+
         imageInput.addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) {
+                // Basic validation (optional: add more checks for size, type)
+                if (!file.type.startsWith('image/')) {
+                    alert('Please select an image file.');
+                    imageInput.value = ''; // Reset input
+                    return;
+                }
+
                 const reader = new FileReader();
                 reader.onload = function(evt) {
-                    selectedImageDataUrl = evt.target.result;
+                    selectedImageDataUrl = evt.target.result; // Store base64 data URL
                     imagePreview.src = selectedImageDataUrl;
                     imagePreviewContainer.style.display = 'block';
                 };
-                reader.readAsDataURL(file);
+                reader.onerror = function(error) {
+                    console.error("FileReader Error:", error);
+                    alert('Error reading file.');
+                     // Reset state
+                    selectedImageDataUrl = null;
+                    imagePreview.src = '';
+                    imagePreviewContainer.style.display = 'none';
+                    imageInput.value = '';
+                };
+                reader.readAsDataURL(file); // Read file as base64
             }
         });
+
         removeImageBtn.addEventListener('click', function(e) {
             e.preventDefault();
-            imageInput.value = '';
-            selectedImageDataUrl = null;
-            imagePreview.src = '';
-            imagePreviewContainer.style.display = 'none';
+            imageInput.value = ''; // Clear the file input
+            selectedImageDataUrl = null; // Clear the stored data
+            imagePreview.src = ''; // Clear the preview src
+            imagePreviewContainer.style.display = 'none'; // Hide the preview container
         });
     });
 </script>
