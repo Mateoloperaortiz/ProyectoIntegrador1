@@ -666,13 +666,24 @@
                                         <i class="fas fa-paper-plane"></i>
                                     </button>
                                     <input type="file" id="image-input" accept="image/*" style="display:none;">
-                                    <button type="button" id="image-upload-btn" class="btn btn-outline-secondary" style="position:absolute; right:50px; top:5px; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center;">
+                                    <input type="file" id="pdf-input" accept="application/pdf" style="display:none;">
+                                    <button type="button" id="pdf-upload-btn" class="btn btn-outline-secondary" style="position:absolute; right:50px; top:5px; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center;">
+                                        <i class="fas fa-file-pdf"></i>
+                                    </button>
+                                    <button type="button" id="image-upload-btn" class="btn btn-outline-secondary" style="position:absolute; right:95px; top:5px; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center;">
                                         <i class="fas fa-image"></i>
                                     </button>
                                 </div>
                                 <div id="image-preview-container" class="mt-2" style="display:none;">
                                     <img id="image-preview" src="" alt="Image preview" style="max-width:120px; max-height:80px; border-radius:8px; border:1px solid #ccc;" />
                                     <button type="button" id="remove-image-btn" class="btn btn-sm btn-link text-danger">Remove</button>
+                                </div>
+                                <div id="pdf-preview-container" class="mt-2" style="display:none;">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-file-pdf text-danger me-2" style="font-size:24px;"></i>
+                                        <span id="pdf-filename">document.pdf</span>
+                                        <button type="button" id="remove-pdf-btn" class="btn btn-sm btn-link text-danger ms-2">Remove</button>
+                                    </div>
                                 </div>
                                 <div class="keyboard-shortcuts-info text-muted small mt-1">
                                     <i class="fas fa-keyboard me-1"></i> Press <kbd>Enter</kbd> to send, <kbd>Shift</kbd>+<kbd>Enter</kbd> for new line
@@ -983,43 +994,60 @@
         const messageForm = document.getElementById('message-form');
         const messageInput = document.getElementById('id_content'); // Get message input element
         const imageInput = document.getElementById('image-input'); // Get image input element
+        const pdfInput = document.getElementById('pdf-input'); // Get PDF input element
         const imagePreviewContainer = document.getElementById('image-preview-container'); // Get image preview container
+        const pdfPreviewContainer = document.getElementById('pdf-preview-container'); // Get PDF preview container
         const imagePreview = document.getElementById('image-preview'); // Get image preview element
+        const pdfFilename = document.getElementById('pdf-filename'); // Get PDF filename element
         let selectedImageDataUrl = null; // Variable to hold base64 image data
+        let selectedPdfDataUrl = null; // Variable to hold base64 PDF data
+        let isPdfUpload = false; // Flag to indicate if this is a PDF upload
         let socket = null;
 
         messageForm.addEventListener('submit', function(e) {
             e.preventDefault();
             const userMessage = messageInput.value.trim();
             
-            // Only send if there's text or an image
-            if (!userMessage && !selectedImageDataUrl) return;
+            // Only send if there's text, an image, or a PDF
+            if (!userMessage && !selectedImageDataUrl && !selectedPdfDataUrl) return;
 
-            // Add user message bubble (even if it's just an image being sent)
-            appendMessage(userMessage || '[Image Sent]', true); // Display placeholder if only image
+            // Add user message bubble (even if it's just an image or PDF being sent)
+            let displayMessage = userMessage;
+            if (!userMessage) {
+                if (selectedImageDataUrl) {
+                    displayMessage = '[Image Sent]';
+                } else if (selectedPdfDataUrl) {
+                    displayMessage = '[PDF Document Sent]';
+                }
+            }
+            appendMessage(displayMessage, true); // Display placeholder if only image/PDF
             
             // Decide whether to use WebSocket streaming or AJAX fallback
             const useWebSocket = (apiType === 'OPENAI' || apiType === 'GEMINI');
 
             if (useWebSocket) {
                 console.log(`Using WebSocket for ${apiType}`);
-                streamAIMessageWebSocket(conversationId, userMessage, selectedImageDataUrl);
+                streamAIMessageWebSocket(conversationId, userMessage, selectedImageDataUrl, selectedPdfDataUrl, isPdfUpload);
             } else {
                 console.log(`Using AJAX fallback for ${apiType}`);
-                // Note: AJAX fallback currently does not send image data
+                // Note: AJAX fallback currently does not send image/PDF data
                 if(userMessage) { // Only send AJAX if there is text for fallback
                    sendMessageAjax(userMessage);
                 } else {
-                    appendMessage("Image upload via AJAX is not supported for this tool.", false);
+                    appendMessage("File upload via AJAX is not supported for this tool.", false);
                 }
             }
 
             // Clear inputs after attempting to send
             messageInput.value = '';
             imageInput.value = ''; // Clear file input
+            pdfInput.value = ''; // Clear PDF input
             selectedImageDataUrl = null;
+            selectedPdfDataUrl = null;
+            isPdfUpload = false;
             imagePreview.src = '';
             imagePreviewContainer.style.display = 'none';
+            pdfPreviewContainer.style.display = 'none';
             messageInput.focus();
         });
 
@@ -1093,17 +1121,21 @@
             }
         }
 
-        function streamAIMessageWebSocket(conversationId, userMessage, imageDataUrl) {
+        function streamAIMessageWebSocket(conversationId, userMessage, imageDataUrl, pdfDataUrl, isPdfUpload) {
             if (socket) socket.close();
             const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
             socket = new WebSocket(`${protocol}://${window.location.host}/ws/chat/${conversationId}/`);
             let aiContent = '';
             socket.onopen = function() {
                 const payload = {
-                    message: userMessage || "" // Send empty string if no text but image exists
+                    message: userMessage || "" // Send empty string if no text but file exists
                 };
                 if (imageDataUrl) {
                     payload.image_url = imageDataUrl;
+                }
+                if (pdfDataUrl) {
+                    payload.pdf_url = pdfDataUrl;
+                    payload.is_pdf_upload = isPdfUpload;
                 }
                 socket.send(JSON.stringify(payload));
             };
@@ -1202,6 +1234,12 @@
                     selectedImageDataUrl = evt.target.result; // Store base64 data URL
                     imagePreview.src = selectedImageDataUrl;
                     imagePreviewContainer.style.display = 'block';
+                    
+                    // Clear any PDF selection when an image is selected
+                    pdfInput.value = '';
+                    selectedPdfDataUrl = null;
+                    isPdfUpload = false;
+                    pdfPreviewContainer.style.display = 'none';
                 };
                 reader.onerror = function(error) {
                     console.error("FileReader Error:", error);
@@ -1222,6 +1260,65 @@
             selectedImageDataUrl = null; // Clear the stored data
             imagePreview.src = ''; // Clear the preview src
             imagePreviewContainer.style.display = 'none'; // Hide the preview container
+        });
+        
+        // --- PDF upload logic ---
+        const pdfUploadBtn = document.getElementById('pdf-upload-btn');
+        const removePdfBtn = document.getElementById('remove-pdf-btn');
+        // selectedPdfDataUrl and isPdfUpload are declared earlier
+        
+        pdfUploadBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            pdfInput.click();
+        });
+        
+        pdfInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                // Basic validation
+                if (file.type !== 'application/pdf') {
+                    alert('Please select a PDF file.');
+                    pdfInput.value = ''; // Reset input
+                    return;
+                }
+                
+                // Check file size (warn if over 20MB but still allow)
+                if (file.size > 20 * 1024 * 1024) {
+                    console.warn('PDF file is larger than 20MB. It will be processed using the File API.');
+                }
+                
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    selectedPdfDataUrl = evt.target.result; // Store base64 data URL
+                    pdfFilename.textContent = file.name;
+                    pdfPreviewContainer.style.display = 'block';
+                    isPdfUpload = true; // Mark as PDF upload for storage
+                    
+                    // Clear any image selection when a PDF is selected
+                    imageInput.value = '';
+                    selectedImageDataUrl = null;
+                    imagePreview.src = '';
+                    imagePreviewContainer.style.display = 'none';
+                };
+                reader.onerror = function(error) {
+                    console.error("FileReader Error:", error);
+                    alert('Error reading PDF file.');
+                    // Reset state
+                    selectedPdfDataUrl = null;
+                    isPdfUpload = false;
+                    pdfPreviewContainer.style.display = 'none';
+                    pdfInput.value = '';
+                };
+                reader.readAsDataURL(file); // Read file as base64
+            }
+        });
+        
+        removePdfBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            pdfInput.value = ''; // Clear the file input
+            selectedPdfDataUrl = null; // Clear the stored data
+            isPdfUpload = false; // Reset upload flag
+            pdfPreviewContainer.style.display = 'none'; // Hide the preview container
         });
     });
 </script>
