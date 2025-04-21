@@ -630,6 +630,11 @@
                                             {% endif %}
                                         </div>
                                         <div style="clear:both"></div>
+                                        {% if message.image_url %}
+                                            <div class="chat-image-preview mb-2">
+                                                <img src="{{ message.image_url }}" alt="Sent image" style="max-width:220px; max-height:160px; border-radius:8px; border:1px solid #ccc; display:block;" />
+                                            </div>
+                                        {% endif %}
                                         <div class="message-content markdown-content">
                                             {{ message.content }}
                                         </div>
@@ -653,13 +658,21 @@
                         
                         <!-- Message Form -->
                         <div class="message-form-container">
-                            <form method="post" action="{% url 'interaction:send_message' conversation_id=conversation.id %}" id="message-form">
+                            <form method="post" action="{% url 'interaction:send_message' conversation_id=conversation.id %}" id="message-form" enctype="multipart/form-data">
                                 {% csrf_token %}
                                 <div class="message-input-container">
                                     <textarea name="content" class="form-control" id="id_content" rows="2" placeholder="Type your message here..." required></textarea>
                                     <button type="submit" class="btn btn-primary send-button">
                                         <i class="fas fa-paper-plane"></i>
                                     </button>
+                                    <input type="file" id="image-input" accept="image/*" style="display:none;">
+                                    <button type="button" id="image-upload-btn" class="btn btn-outline-secondary" style="position:absolute; right:50px; top:5px; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center;">
+                                        <i class="fas fa-image"></i>
+                                    </button>
+                                </div>
+                                <div id="image-preview-container" class="mt-2" style="display:none;">
+                                    <img id="image-preview" src="" alt="Image preview" style="max-width:120px; max-height:80px; border-radius:8px; border:1px solid #ccc;" />
+                                    <button type="button" id="remove-image-btn" class="btn btn-sm btn-link text-danger">Remove</button>
                                 </div>
                                 <div class="keyboard-shortcuts-info text-muted small mt-1">
                                     <i class="fas fa-keyboard me-1"></i> Press <kbd>Enter</kbd> to send, <kbd>Shift</kbd>+<kbd>Enter</kbd> for new line
@@ -979,11 +992,16 @@
             messageInput.focus();
             // For OpenAI tools, use WebSocket streaming
             if (apiType === 'OPENAI') {
-                streamAIMessageWebSocket(conversationId, userMessage);
+                streamAIMessageWebSocket(conversationId, userMessage, selectedImageDataUrl);
             } else {
                 // Fallback: AJAX POST
                 sendMessageAjax(userMessage);
             }
+            // Reset image after sending
+            imageInput.value = '';
+            selectedImageDataUrl = null;
+            imagePreview.src = '';
+            imagePreviewContainer.style.display = 'none';
         });
 
         function appendMessage(content, isUser, isTemp = false) {
@@ -1056,13 +1074,14 @@
             }
         }
 
-        function streamAIMessageWebSocket(conversationId, userMessage) {
+        function streamAIMessageWebSocket(conversationId, userMessage, imageDataUrl) {
             if (socket) socket.close();
             const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
             socket = new WebSocket(`${protocol}://${window.location.host}/ws/chat/${conversationId}/`);
             let aiContent = '';
             socket.onopen = function() {
-                socket.send(JSON.stringify({message: userMessage}));
+                const payload = imageDataUrl ? {message: userMessage, image_url: imageDataUrl} : {message: userMessage};
+                socket.send(JSON.stringify(payload));
             };
             socket.onmessage = function(event) {
                 const data = JSON.parse(event.data);
@@ -1120,6 +1139,38 @@
                     // No need to prevent default as we want the newline to be inserted
                 }
             }
+        });
+
+        // --- Image upload logic ---
+        const imageInput = document.getElementById('image-input');
+        const imageUploadBtn = document.getElementById('image-upload-btn');
+        const imagePreviewContainer = document.getElementById('image-preview-container');
+        const imagePreview = document.getElementById('image-preview');
+        const removeImageBtn = document.getElementById('remove-image-btn');
+        let selectedImageDataUrl = null;
+
+        imageUploadBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            imageInput.click();
+        });
+        imageInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    selectedImageDataUrl = evt.target.result;
+                    imagePreview.src = selectedImageDataUrl;
+                    imagePreviewContainer.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        removeImageBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            imageInput.value = '';
+            selectedImageDataUrl = null;
+            imagePreview.src = '';
+            imagePreviewContainer.style.display = 'none';
         });
     });
 </script>

@@ -220,7 +220,7 @@ def generate_openai_response(tool, user_message):
         return fallback_response(tool, user_message, "OpenAI API key not found in environment.")
 
     client = OpenAI(api_key=api_key)
-    model = tool.api_model if tool.api_model else "o4-mini-2025-04-16"
+    model = tool.api_model if tool.api_model else "gpt-4.1-2025-04-14"
 
     # Use the new responses endpoint for text and image (vision) models
     try:

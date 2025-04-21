@@ -35,6 +35,7 @@ class Message(models.Model):
     conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE)
     is_from_user = models.BooleanField(default=True)  # True if from user, False if from AI
     content = models.TextField()
+    image_url = models.TextField(blank=True, null=True)  # Optional image URL or base64
     timestamp = models.DateTimeField(auto_now_add=True)
     
     class Meta:
