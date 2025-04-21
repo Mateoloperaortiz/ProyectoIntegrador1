@@ -1087,13 +1087,55 @@
             }
         }
         
+        // Initialize image generation button
+        console.log('Initializing image generation button...');
+        let imageGenerationBtn = document.getElementById('image-generation-btn');
+        console.log('imageGenerationBtn:', imageGenerationBtn);
+        
+        try {
+            let imageGenerationModal = new bootstrap.Modal(document.getElementById('imageGenerationModal'));
+            console.log('imageGenerationModal:', imageGenerationModal);
+            let imageGenerationPrompt = document.getElementById('image-generation-prompt');
+            let imageCountSelector = document.getElementById('image-count-selector');
+            let aspectRatioSelector = document.getElementById('aspect-ratio-selector');
+            let generateImagesBtn = document.getElementById('generate-images-btn');
+            
+            imageGenerationBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                console.log('Image generation button clicked');
+                imageGenerationModal.show();
+            });
+            
+            generateImagesBtn.addEventListener('click', function() {
+                const prompt = imageGenerationPrompt.value.trim();
+                if (!prompt) {
+                    alert('Please enter a description for the image you want to generate.');
+                    return;
+                }
+
+                // Get values from selectors
+                const numberOfImages = parseInt(imageCountSelector.value);
+                const aspectRatio = aspectRatioSelector.value;
+
+                // Set the prompt in the message input and close the modal
+                messageInput.value = prompt;
+                imageGenerationModal.hide();
+
+                // Set flag for image generation and submit the form
+                isImageGeneration = true;
+                messageForm.dispatchEvent(new Event('submit'));
+            });
+        } catch (error) {
+            console.error('Error initializing image generation modal:', error);
+        }
+        
         // Scroll to bottom of message list
         const messageList = document.getElementById('message-list');
         if (messageList) {
             messageList.scrollTop = messageList.scrollHeight;
         }
         // Focus on message input
-        const messageInput = document.getElementById('id_content');
+        let messageInput = document.getElementById('id_content');
         if (messageInput) {
             messageInput.focus();
         }
@@ -1118,7 +1160,7 @@
         const conversationId = "{{ conversation.id }}";
         const apiType = "{{ conversation.tool.api_type|escapejs }}";
         const messageForm = document.getElementById('message-form');
-        const messageInput = document.getElementById('id_content'); // Get message input element
+        messageInput = document.getElementById('id_content'); // Get message input element
         const imageInput = document.getElementById('image-input'); // Get image input element
         const pdfInput = document.getElementById('pdf-input'); // Get PDF input element
         const imagePreviewContainer = document.getElementById('image-preview-container'); // Get image preview container
@@ -1435,11 +1477,11 @@
         });
         
         // --- Video upload logic ---
-        const videoUploadBtn = document.getElementById('video-upload-btn');
-        const removeVideoBtn = document.getElementById('remove-video-btn');
-        const youtubeUrlModal = new bootstrap.Modal(document.getElementById('youtubeUrlModal'));
-        const youtubeUrlInput = document.getElementById('youtube-url-input');
-        const confirmYoutubeUrlBtn = document.getElementById('confirm-youtube-url');
+        let videoUploadBtn = document.getElementById('video-upload-btn');
+        let removeVideoBtn = document.getElementById('remove-video-btn');
+        let youtubeUrlModal = new bootstrap.Modal(document.getElementById('youtubeUrlModal'));
+        let youtubeUrlInput = document.getElementById('youtube-url-input');
+        let confirmYoutubeUrlBtn = document.getElementById('confirm-youtube-url');
         // selectedVideoDataUrl and isYoutubeUrl are declared earlier
 
         videoUploadBtn.addEventListener('click', function(e) {
@@ -1564,11 +1606,11 @@
         });
         
         // --- Video upload logic ---
-        const videoUploadBtn = document.getElementById('video-upload-btn');
-        const removeVideoBtn = document.getElementById('remove-video-btn');
-        const youtubeUrlModal = new bootstrap.Modal(document.getElementById('youtubeUrlModal'));
-        const youtubeUrlInput = document.getElementById('youtube-url-input');
-        const confirmYoutubeUrlBtn = document.getElementById('confirm-youtube-url');
+        videoUploadBtn = document.getElementById('video-upload-btn');
+        removeVideoBtn = document.getElementById('remove-video-btn');
+        youtubeUrlModal = new bootstrap.Modal(document.getElementById('youtubeUrlModal'));
+        youtubeUrlInput = document.getElementById('youtube-url-input');
+        confirmYoutubeUrlBtn = document.getElementById('confirm-youtube-url');
         // selectedVideoDataUrl and isYoutubeUrl are declared earlier
 
         videoUploadBtn.addEventListener('click', function(e) {
@@ -1742,38 +1784,7 @@
             audioPreviewContainer.style.display = 'none';
         });
 
-        // --- Image Generation logic ---
-        const imageGenerationBtn = document.getElementById('image-generation-btn');
-        const imageGenerationModal = new bootstrap.Modal(document.getElementById('imageGenerationModal'));
-        const imageGenerationPrompt = document.getElementById('image-generation-prompt');
-        const imageCountSelector = document.getElementById('image-count-selector');
-        const aspectRatioSelector = document.getElementById('aspect-ratio-selector');
-        const generateImagesBtn = document.getElementById('generate-images-btn');
-
-        imageGenerationBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            imageGenerationModal.show();
-        });
-
-        generateImagesBtn.addEventListener('click', function() {
-            const prompt = imageGenerationPrompt.value.trim();
-            if (!prompt) {
-                alert('Please enter a description for the image you want to generate.');
-                return;
-            }
-
-            // Get values from selectors
-            const numberOfImages = parseInt(imageCountSelector.value);
-            const aspectRatio = aspectRatioSelector.value;
-
-            // Set the prompt in the message input and close the modal
-            messageInput.value = prompt;
-            imageGenerationModal.hide();
-
-            // Set flag for image generation and submit the form
-            isImageGeneration = true;
-            messageForm.dispatchEvent(new Event('submit'));
-        });
+        // This code has been moved inside the DOMContentLoaded event listener
     });
 </script>
 {% endblock %}
