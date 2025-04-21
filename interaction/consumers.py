@@ -487,9 +487,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
             )
             
             ai_content = ""
-            stream_generator = await database_sync_to_async(lambda: response_stream)()
+            response_iter = await database_sync_to_async(lambda: list(response_stream))()
             
-            async for chunk in stream_generator:
+            for chunk in response_iter:
                 if hasattr(chunk, 'text') and chunk.text:
                     ai_content += chunk.text
                     await self.send(text_data=json.dumps({'type': 'ai_message', 'content': ai_content, 'done': False}))
