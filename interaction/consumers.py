@@ -5,6 +5,7 @@ import base64
 import httpx
 import pathlib
 import time
+import re
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from openai import AsyncOpenAI
@@ -33,11 +34,25 @@ class ChatConsumer(AsyncWebsocketConsumer):
         user_message = data.get('message')
         image_url = data.get('image_url')  # Can be base64 data URL
         pdf_url = data.get('pdf_url')  # Can be base64 data URL or file URL
+        audio_url = data.get('audio_url')  # Can be base64 data URL
         is_pdf_upload = data.get('is_pdf_upload', False)  # Flag for PDF upload
         is_image_generation = data.get('is_image_generation', False)  # Flag for image generation requests
         is_image_editing = data.get('is_image_editing', False)  # Flag for image editing requests
         is_video_generation = data.get('is_video_generation', False)  # Flag for video generation requests
         is_image_understanding = data.get('is_image_understanding', False)  # Flag for image understanding requests
+        video_url = data.get('video_url')  # Can be base64 data URL, file URL, or YouTube URL
+        is_youtube_url = data.get('is_youtube_url', False)  # Flag for YouTube URL
+        is_video_understanding = data.get('is_video_understanding', False)  # Flag for video understanding requests
+        is_audio_understanding = data.get('is_audio_understanding', False)  # Flag for audio understanding requests
+        
+        print(f"DEBUG: receive method called with data:")
+        print(f"DEBUG: user_message: {user_message}")
+        print(f"DEBUG: video_url exists: {video_url is not None}")
+        print(f"DEBUG: audio_url exists: {audio_url is not None}")
+        print(f"DEBUG: is_youtube_url: {is_youtube_url}")
+        print(f"DEBUG: is_video_understanding: {is_video_understanding}")
+        print(f"DEBUG: is_audio_understanding: {is_audio_understanding}")
+        
         user = self.scope["user"]
 
         conversation = await database_sync_to_async(Conversation.objects.get)(id=self.conversation_id, user=user)
@@ -52,6 +67,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
             file_type = 'image'
         elif pdf_url:
             file_type = 'pdf'
+        elif video_url:
+            file_type = 'video'
+        elif audio_url:
+            file_type = 'audio'
 
         await database_sync_to_async(Message.objects.create)(
             conversation=conversation, 
@@ -59,6 +78,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
             content=user_message, 
             image_url=image_url,
             pdf_url=pdf_url,
+            video_url=video_url,
+            audio_url=audio_url,
             file_type=file_type
         )
 
@@ -70,6 +91,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
             await self.stream_gemini_image_edit(tool, user_message, conversation, user, image_url)
         elif is_image_understanding and image_url and tool.api_type == 'GEMINI':
             await self.stream_gemini_image_understanding(tool, user_message, conversation, user, image_url)
+        elif is_video_understanding and video_url and tool.api_type == 'GEMINI':
+            await self.stream_gemini_video_understanding(tool, user_message, conversation, user, video_url, is_youtube_url)
+        elif is_audio_understanding and audio_url and tool.api_type == 'GEMINI':
+            await self.stream_gemini_audio_understanding(tool, user_message, conversation, user, audio_url)
         elif tool.api_type == 'OPENAI':
             await self.stream_openai_response(tool, user_message, conversation, user, image_url)
         elif tool.api_type == 'GEMINI':
@@ -372,7 +397,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     async def stream_gemini_response(self, tool, user_message, conversation, user, image_url=None, pdf_url=None, is_pdf_upload=False):
         api_key = os.environ.get('GEMINI_API_KEY')
-        model_name = tool.api_model or "gemini-2.0-flash-live-001"
+        model_name = tool.api_model or "gemini-1.5-flash"
 
         if not api_key:
             await self.send(text_data=json.dumps({'type': 'error', 'content': "Gemini API key not found."}))
@@ -505,7 +530,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             image_url: Base64 encoded image data
         """
         api_key = os.environ.get('GEMINI_API_KEY')
-        model_name = "gemini-2.0-flash"  # Use the requested model
+        model_name = "gemini-1.5-flash"  # Use the Gemini 1.5 model that supports images
 
         if not api_key:
             await self.send(text_data=json.dumps({'type': 'error', 'content': "Gemini API key not found."}))
@@ -688,6 +713,268 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         except Exception as e:
             error_message = f"Error processing image understanding request: {str(e)}"
+            print(error_message)
+            try:
+                await database_sync_to_async(Message.objects.create)(
+                    conversation=conversation, is_from_user=False, content=f"Error: {error_message}"
+                )
+            except Exception as db_err:
+                print(f"Error saving error message to DB: {db_err}")
+            await self.send(text_data=json.dumps({'type': 'error', 'content': error_message}))
+    async def stream_gemini_video_understanding(self, tool, user_message, conversation, user, video_url, is_youtube_url=False):
+        """
+        Process videos using Gemini for understanding tasks (description, timestamps, transcription).
+        
+        Args:
+            tool: The AITool object
+            user_message: Text prompt for video understanding
+            conversation: The Conversation object
+            user: The User object
+            video_url: Base64 encoded video data, file URL, or YouTube URL
+            is_youtube_url: Whether the video_url is a YouTube URL
+        """
+        print(f"DEBUG: stream_gemini_video_understanding called with is_youtube_url={is_youtube_url}")
+        print(f"DEBUG: video_url starts with: {video_url[:50]}...")
+        
+        api_key = os.environ.get('GEMINI_API_KEY')
+        model_name = "gemini-1.5-flash"  # Use the Gemini 1.5 model that supports video
+        
+        if not api_key:
+            await self.send(text_data=json.dumps({'type': 'error', 'content': "Gemini API key not found."}))
+            return
+        
+        try:
+            client = genai.Client(api_key=api_key)
+            contents = []
+            
+            if is_youtube_url:
+                if not video_url or not (video_url.startswith('http://') or video_url.startswith('https://')):
+                    await self.send(text_data=json.dumps({'type': 'error', 'content': "Invalid YouTube URL for video understanding."}))
+                    return
+                    
+                # Create file_data content for YouTube URL
+                contents.append(types.Part(
+                    file_data=types.FileData(file_uri=video_url)
+                ))
+                
+            elif video_url and video_url.startswith('data:video'):
+                try:
+                    header, encoded = video_url.split(',', 1)
+                    decoded_bytes = base64.b64decode(encoded)
+                    
+                    mime_type = header.split(':')[1].split(';')[0]
+                    contents.append(types.Part(
+                        inline_data=types.Blob(data=decoded_bytes, mime_type=mime_type)
+                    ))
+                except Exception as video_err:
+                    await self.send(text_data=json.dumps({'type': 'error', 'content': f"Error processing video: {str(video_err)}"}))
+                    return
+            else:
+                await self.send(text_data=json.dumps({'type': 'error', 'content': "Invalid video data for understanding."}))
+                return
+            
+            request_type = "describe"
+            
+            if "transcript" in user_message.lower() or "transcribe" in user_message.lower():
+                request_type = "transcript"
+            elif "timestamp" in user_message.lower() or "at time" in user_message.lower():
+                request_type = "timestamp"
+            elif "summarize" in user_message.lower() or "summary" in user_message.lower():
+                request_type = "summarize"
+                
+            if request_type == "transcript":
+                prompt = user_message if user_message else "Transcribe the audio from this video, giving timestamps for key events."
+            elif request_type == "timestamp":
+                prompt = user_message if user_message else "Describe what happens at different timestamps in this video."
+            elif request_type == "summarize":
+                prompt = user_message if user_message else "Summarize this video in 3-5 sentences."
+            else:  # describe
+                prompt = user_message if user_message else "Describe this video in detail. What do you see happening?"
+                
+            contents.append(types.Part(text=prompt))
+            
+            await self.send(text_data=json.dumps({
+                'type': 'ai_message', 
+                'content': f"Processing video for {request_type}...", 
+                'done': False
+            }))
+            
+            response = await database_sync_to_async(client.models.generate_content)(
+                model=model_name,
+                contents=contents,
+                config=types.GenerateContentConfig(
+                    max_output_tokens=2048,
+                    temperature=0.2,
+                    top_p=0.95,
+                    top_k=40
+                )
+            )
+            
+            ai_content = ""
+            
+            if hasattr(response, 'text') and response.text:
+                ai_content = response.text
+                
+                # Add video playback if it's a YouTube URL
+                if is_youtube_url:
+                    video_embed = f"""
+                    <div class="video-container my-3" style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                        <iframe src="{video_url.replace('watch?v=', 'embed/')}" 
+                            style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowfullscreen></iframe>
+                    </div>
+                    """
+                    ai_content = video_embed + ai_content
+            
+            await database_sync_to_async(Message.objects.create)(
+                conversation=conversation,
+                is_from_user=False,
+                content=ai_content,
+                video_url=video_url if is_youtube_url else None,
+                file_type='video'
+            )
+            
+            await self.send(text_data=json.dumps({'type': 'ai_message', 'content': ai_content, 'done': True}))
+        
+        except Exception as e:
+            error_message = f"Error processing video understanding request: {str(e)}"
+            print(error_message)
+            try:
+                await database_sync_to_async(Message.objects.create)(
+                    conversation=conversation, is_from_user=False, content=f"Error: {error_message}"
+                )
+            except Exception as db_err:
+                print(f"Error saving error message to DB: {db_err}")
+            await self.send(text_data=json.dumps({'type': 'error', 'content': error_message}))
+            
+    async def stream_gemini_audio_understanding(self, tool, user_message, conversation, user, audio_url):
+        """
+        Process audio using Gemini for understanding tasks (description, transcription, timestamp analysis).
+        
+        Args:
+            tool: The AITool object
+            user_message: Text prompt for audio understanding
+            conversation: The Conversation object
+            user: The User object
+            audio_url: Base64 encoded audio data or file URL
+        """
+        print(f"DEBUG: stream_gemini_audio_understanding called")
+        print(f"DEBUG: audio_url starts with: {audio_url[:50]}...")
+        
+        api_key = os.environ.get('GEMINI_API_KEY')
+        model_name = "gemini-2.0-flash"  # Use the Gemini 2.0 model that supports audio
+        
+        if not api_key:
+            await self.send(text_data=json.dumps({'type': 'error', 'content': "Gemini API key not found."}))
+            return
+        
+        try:
+            client = genai.Client(api_key=api_key)
+            contents = []
+            
+            is_large_file = False
+            
+            if audio_url and audio_url.startswith('data:audio'):
+                try:
+                    header, encoded = audio_url.split(',', 1)
+                    decoded_bytes = base64.b64decode(encoded)
+                    
+                    if len(decoded_bytes) > 20 * 1024 * 1024:
+                        is_large_file = True
+                        
+                        await self.send(text_data=json.dumps({
+                            'type': 'error', 
+                            'content': "Audio file is too large (>20MB). Please use a smaller file."
+                        }))
+                        return
+                    
+                    mime_type = header.split(':')[1].split(';')[0]
+                    contents.append(types.Part(
+                        inline_data=types.Blob(data=decoded_bytes, mime_type=mime_type)
+                    ))
+                except Exception as audio_err:
+                    await self.send(text_data=json.dumps({'type': 'error', 'content': f"Error processing audio: {str(audio_err)}"}))
+                    return
+            else:
+                await self.send(text_data=json.dumps({'type': 'error', 'content': "Invalid audio data for understanding."}))
+                return
+            
+            request_type = "describe"
+            
+            if "transcript" in user_message.lower() or "transcribe" in user_message.lower():
+                request_type = "transcript"
+            elif "timestamp" in user_message.lower() or "at time" in user_message.lower() or "from" in user_message.lower() and "to" in user_message.lower():
+                request_type = "timestamp"
+            elif "summarize" in user_message.lower() or "summary" in user_message.lower():
+                request_type = "summarize"
+                
+            if request_type == "transcript":
+                prompt = user_message if user_message else "Generate a transcript of the speech in this audio."
+            elif request_type == "timestamp":
+                timestamp_pattern = r'(\d{1,2}:\d{2})'
+                timestamps = re.findall(timestamp_pattern, user_message)
+                
+                if len(timestamps) >= 2:
+                    prompt = user_message
+                else:
+                    prompt = user_message if user_message else "Provide timestamps for key moments in this audio."
+            elif request_type == "summarize":
+                prompt = user_message if user_message else "Summarize the content of this audio in 3-5 sentences."
+            else:  # describe
+                prompt = user_message if user_message else "Describe this audio in detail. What do you hear?"
+                
+            contents.append(types.Part(text=prompt))
+            
+            await self.send(text_data=json.dumps({
+                'type': 'ai_message', 
+                'content': f"Processing audio for {request_type}...", 
+                'done': False
+            }))
+            
+            response = await database_sync_to_async(client.models.generate_content)(
+                model=model_name,
+                contents=contents,
+                config=types.GenerateContentConfig(
+                    max_output_tokens=2048,
+                    temperature=0.2,
+                    top_p=0.95,
+                    top_k=40
+                )
+            )
+            
+            ai_content = ""
+            
+            if hasattr(response, 'text') and response.text:
+                ai_content = response.text
+                
+                if audio_url and audio_url.startswith('data:audio'):
+                    audio_embed = f"""
+                    <div class="audio-container my-3" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); padding: 10px; background-color: #f8f9fa;">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fas fa-headphones text-primary me-2" style="font-size: 24px;"></i>
+                            <span class="fw-bold">Audio Analysis</span>
+                        </div>
+                        <audio controls style="width: 100%;">
+                            <source src="{audio_url}" type="{audio_url.split(';')[0].split(':')[1]}">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </div>
+                    """
+                    ai_content = audio_embed + ai_content
+            
+            await database_sync_to_async(Message.objects.create)(
+                conversation=conversation,
+                is_from_user=False,
+                content=ai_content,
+                audio_url=audio_url,
+                file_type='audio'
+            )
+            
+            await self.send(text_data=json.dumps({'type': 'ai_message', 'content': ai_content, 'done': True}))
+        
+        except Exception as e:
+            error_message = f"Error processing audio understanding request: {str(e)}"
             print(error_message)
             try:
                 await database_sync_to_async(Message.objects.create)(

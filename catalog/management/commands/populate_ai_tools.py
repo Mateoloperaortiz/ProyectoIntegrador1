@@ -76,8 +76,8 @@ class Command(BaseCommand):
                 'category': 'CHAT',
                 'is_featured': True,
                 'api_type': 'GEMINI',
-                'api_model': 'gemini-pro-vision',
-                'api_endpoint': 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent',
+                'api_model': 'gemini-1.5-flash',
+                'api_endpoint': 'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent',
                 'logo_filename': 'Google_Gemini_logo.svg',
             }
         ]
