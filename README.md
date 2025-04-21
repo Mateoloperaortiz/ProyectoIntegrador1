@@ -27,6 +27,9 @@ Whether you're an AI enthusiast, a student, or a professional looking to leverag
 - **🔍 AI Tools Catalog**: Browse and search through a curated collection of AI tools organized by categories
 - **👤 User Accounts**: Register, login, and manage your profile with personalized recommendations
 - **💬 AI Interaction**: Chat directly with AI tools (OpenAI, Hugging Face, Google) through integrated APIs
+- **🖼️ Image Understanding**: Upload and analyze images with AI-powered description and object detection
+- **🎬 Video Understanding**: Process videos through file upload or YouTube URLs with transcription and analysis
+- **🎵 Audio Understanding**: Analyze audio files with transcription, description, and timestamp references
 - **⭐ Rating System**: Rate and review AI tools to share your experiences with other users
 - **❤️ Favorites**: Save your favorite AI tools for quick access
 - **🔎 Search & Filtering**: Find tools by name, category, functionality, or popularity
@@ -113,6 +116,9 @@ python manage.py runserver
 - **Tool Detail**: View detailed information and interact with specific AI tools
 - **Profile**: Manage your account, favorites, and conversation history
 - **Conversations**: Chat with AI tools that have API integration
+  - **Media Understanding**: Upload images, videos, or audio files for AI analysis
+  - **YouTube Integration**: Paste YouTube URLs for video analysis
+  - **Timestamp References**: Reference specific points in videos or audio using MM:SS format
 
 ## 🧩 Project Structure
 
@@ -148,7 +154,11 @@ Key directories:
 ### APIs
 - **OpenAI API**: For AI chat interactions
 - **Hugging Face API**: For AI model integrations
-- **Google AI API**: For additional AI capabilities
+- **Google Gemini API**: For multimodal AI capabilities including:
+  - Image understanding and analysis
+  - Video processing (file upload and YouTube URLs)
+  - Audio transcription and analysis
+  - Text generation and chat
 
 ## 👥 Team
 
