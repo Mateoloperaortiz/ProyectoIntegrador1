@@ -51,6 +51,18 @@ class AITool(models.Model):
         self.popularity = round(avg or 0, 2)
         self.save(update_fields=['popularity'])
         return self.popularity
+        
+    @classmethod
+    def update_gemini_model(cls):
+        """
+        Update all Gemini tools to use the gemini-2.0-flash model.
+        This ensures image understanding features work correctly.
+        """
+        gemini_tools = cls.objects.filter(api_type='GEMINI')
+        for tool in gemini_tools:
+            if tool.api_model != 'gemini-2.0-flash':
+                tool.api_model = 'gemini-2.0-flash'
+                tool.save(update_fields=['api_model'])
 
 
 class Rating(models.Model):
@@ -86,6 +98,6 @@ class Favorite(models.Model):
         unique_together = ('user', 'tool')
 
     def __str__(self):
-        return f"{self.user.username} ❤️ {self.tool.name}"    
+        return f"{self.user.username} ❤️ {self.tool.name}"        
         
  

@@ -37,6 +37,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         is_image_generation = data.get('is_image_generation', False)  # Flag for image generation requests
         is_image_editing = data.get('is_image_editing', False)  # Flag for image editing requests
         is_video_generation = data.get('is_video_generation', False)  # Flag for video generation requests
+        is_image_understanding = data.get('is_image_understanding', False)  # Flag for image understanding requests
         user = self.scope["user"]
 
         conversation = await database_sync_to_async(Conversation.objects.get)(id=self.conversation_id, user=user)
@@ -67,6 +68,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
             await self.stream_imagen_response(tool, user_message, conversation, user)
         elif is_image_editing and image_url and tool.api_type == 'GEMINI':
             await self.stream_gemini_image_edit(tool, user_message, conversation, user, image_url)
+        elif is_image_understanding and image_url and tool.api_type == 'GEMINI':
+            await self.stream_gemini_image_understanding(tool, user_message, conversation, user, image_url)
         elif tool.api_type == 'OPENAI':
             await self.stream_openai_response(tool, user_message, conversation, user, image_url)
         elif tool.api_type == 'GEMINI':
@@ -489,4 +492,207 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 )
             except Exception as db_err:
                  print(f"Error saving error message to DB: {db_err}")
+            await self.send(text_data=json.dumps({'type': 'error', 'content': error_message}))
+    async def stream_gemini_image_understanding(self, tool, user_message, conversation, user, image_url):
+        """
+        Process images using Gemini for understanding tasks (captioning, object detection, segmentation).
+        
+        Args:
+            tool: The AITool object
+            user_message: Text prompt for image understanding
+            conversation: The Conversation object
+            user: The User object
+            image_url: Base64 encoded image data
+        """
+        api_key = os.environ.get('GEMINI_API_KEY')
+        model_name = "gemini-2.0-flash"  # Use the requested model
+
+        if not api_key:
+            await self.send(text_data=json.dumps({'type': 'error', 'content': "Gemini API key not found."}))
+            return
+
+        try:
+            client = genai.Client(api_key=api_key)
+            contents = []
+            pil_image = None
+
+            if not image_url or not image_url.startswith('data:image'):
+                await self.send(text_data=json.dumps({'type': 'error', 'content': "Invalid image data for understanding."}))
+                return
+
+            try:
+                header, encoded = image_url.split(',', 1)
+                decoded_bytes = base64.b64decode(encoded)
+                pil_image = Image.open(io.BytesIO(decoded_bytes))
+                contents.append(pil_image)
+            except Exception as img_err:
+                await self.send(text_data=json.dumps({'type': 'error', 'content': f"Error processing image: {str(img_err)}"}))
+                return
+
+            request_type = "caption"  # Default to captioning
+            if "detect objects" in user_message.lower() or "object detection" in user_message.lower():
+                request_type = "detect"
+            elif "segment" in user_message.lower() or "segmentation" in user_message.lower():
+                request_type = "segment"
+
+            if request_type == "detect":
+                prompt = user_message if user_message else "Detect the all of the prominent items in the image. The box_2d should be [ymin, xmin, ymax, xmax] normalized to 0-1000."
+                contents.append(prompt)
+            elif request_type == "segment":
+                prompt = user_message if user_message else "Give the segmentation masks for all visible items. Output a JSON list of segmentation masks where each entry contains the 2D bounding box in the key \"box_2d\", the segmentation mask in key \"mask\", and the text label in the key \"label\". Use descriptive labels."
+                contents.append(prompt)
+            else:  # caption
+                prompt = user_message if user_message else "Caption this image in detail. Describe what you see."
+                contents.append(prompt)
+
+            await self.send(text_data=json.dumps({
+                'type': 'ai_message', 
+                'content': f"Processing image for {request_type}...", 
+                'done': False
+            }))
+
+            response = await database_sync_to_async(client.models.generate_content)(
+                model=model_name,
+                contents=contents,
+                config=types.GenerateContentConfig(
+                    max_output_tokens=2048,
+                    temperature=0.2,
+                    top_p=0.95,
+                    top_k=40
+                )
+            )
+
+            ai_content = ""
+            bounding_boxes = []
+            segmentation = []
+
+            if hasattr(response, 'text') and response.text:
+                ai_content = response.text
+
+                if request_type == "detect" and "[" in ai_content and "]" in ai_content:
+                    try:
+                        json_text = ai_content[ai_content.find("["):ai_content.rfind("]")+1]
+                        bounding_boxes = json.loads(json_text)
+                        
+                        box_html = "<div class='bounding-box-container' style='position: relative; display: inline-block;'>"
+                        box_html += f"<img src='{image_url}' style='max-width: 100%; height: auto;' />"
+                        
+                        for box in bounding_boxes:
+                            if "box_2d" in box and "label" in box:
+                                y_min, x_min, y_max, x_max = box["box_2d"]
+                                
+                                top = y_min / 10  # Convert to percentage
+                                left = x_min / 10
+                                height = (y_max - y_min) / 10
+                                width = (x_max - x_min) / 10
+                                
+                                label = box["label"]
+                                color = "#FF0000"  # Red by default
+                                
+                                box_html += f"""
+                                <div class='bbox' style='
+                                    position: absolute;
+                                    top: {top}%;
+                                    left: {left}%;
+                                    width: {width}%;
+                                    height: {height}%;
+                                    border: 2px solid {color};
+                                    color: {color};
+                                    background-color: rgba(255, 0, 0, 0.1);
+                                    font-size: 12px;
+                                    padding: 2px;
+                                    box-sizing: border-box;
+                                '>
+                                    <span style='
+                                        background-color: {color};
+                                        color: white;
+                                        padding: 2px 4px;
+                                        border-radius: 2px;
+                                        font-weight: bold;
+                                        position: absolute;
+                                        top: 0;
+                                        left: 0;
+                                    '>{label}</span>
+                                </div>
+                                """
+                        
+                        box_html += "</div>"
+                        
+                        ai_content += "\n\n" + box_html
+                    except json.JSONDecodeError:
+                        pass  # Not valid JSON, just use the text response
+                
+                elif request_type == "segment" and "[" in ai_content and "]" in ai_content:
+                    try:
+                        json_text = ai_content[ai_content.find("["):ai_content.rfind("]")+1]
+                        segmentation = json.loads(json_text)
+                        
+                        segment_html = "<div class='segmentation-container' style='position: relative; display: inline-block;'>"
+                        segment_html += f"<img src='{image_url}' style='max-width: 100%; height: auto;' />"
+                        
+                        for i, segment in enumerate(segmentation):
+                            if "box_2d" in segment and "label" in segment and "mask" in segment:
+                                mask_data = segment["mask"]  # Base64 encoded PNG
+                                y_min, x_min, y_max, x_max = segment["box_2d"]
+                                label = segment["label"]
+                                
+                                top = y_min / 10
+                                left = x_min / 10
+                                height = (y_max - y_min) / 10
+                                width = (x_max - x_min) / 10
+                                
+                                hue = (i * 137) % 360  # Spread colors evenly
+                                color = f"hsla({hue}, 100%, 50%, 0.3)"
+                                
+                                segment_html += f"""
+                                <div class='segment' style='
+                                    position: absolute;
+                                    top: {top}%;
+                                    left: {left}%;
+                                    width: {width}%;
+                                    height: {height}%;
+                                    background-color: {color};
+                                    background-image: url(data:image/png;base64,{mask_data});
+                                    background-size: 100% 100%;
+                                    background-blend-mode: multiply;
+                                    border: 2px solid {color.replace('0.3', '1.0')};
+                                    box-sizing: border-box;
+                                '>
+                                    <span style='
+                                        background-color: {color.replace('0.3', '0.8')};
+                                        color: white;
+                                        padding: 2px 4px;
+                                        border-radius: 2px;
+                                        font-weight: bold;
+                                        position: absolute;
+                                        top: 0;
+                                        left: 0;
+                                    '>{label}</span>
+                                </div>
+                                """
+                        
+                        segment_html += "</div>"
+                        
+                        ai_content += "\n\n" + segment_html
+                    except json.JSONDecodeError:
+                        pass  # Not valid JSON, just use the text response
+
+            await database_sync_to_async(Message.objects.create)(
+                conversation=conversation,
+                is_from_user=False,
+                content=ai_content,
+                image_url=None
+            )
+            
+            await self.send(text_data=json.dumps({'type': 'ai_message', 'content': ai_content, 'done': True}))
+
+        except Exception as e:
+            error_message = f"Error processing image understanding request: {str(e)}"
+            print(error_message)
+            try:
+                await database_sync_to_async(Message.objects.create)(
+                    conversation=conversation, is_from_user=False, content=f"Error: {error_message}"
+                )
+            except Exception as db_err:
+                print(f"Error saving error message to DB: {db_err}")
             await self.send(text_data=json.dumps({'type': 'error', 'content': error_message}))
