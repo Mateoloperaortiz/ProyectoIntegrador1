@@ -686,6 +686,7 @@
                                     <input type="file" id="image-input" accept="image/*" style="display:none;">
                                     <input type="file" id="pdf-input" accept="application/pdf" style="display:none;">
                                     <input type="file" id="video-input" accept="video/*" style="display:none;">
+                                    <input type="file" id="audio-input" accept="audio/*" style="display:none;">
                                     <button type="button" id="pdf-upload-btn" class="btn btn-outline-secondary" style="position:absolute; right:50px; top:5px; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center;">
                                         <i class="fas fa-file-pdf"></i>
                                     </button>
@@ -694,6 +695,9 @@
                                     </button>
                                     <button type="button" id="video-upload-btn" class="btn btn-outline-secondary" style="position:absolute; right:140px; top:5px; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center;" data-bs-toggle="tooltip" data-bs-placement="top" title="Upload a video or paste a YouTube URL for analysis">
                                         <i class="fas fa-video"></i>
+                                    </button>
+                                    <button type="button" id="audio-upload-btn" class="btn btn-outline-secondary" style="position:absolute; right:185px; top:5px; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center;" data-bs-toggle="tooltip" data-bs-placement="top" title="Upload an audio file for transcription or analysis">
+                                        <i class="fas fa-microphone"></i>
                                     </button>
                                 </div>
                                 <div id="image-preview-container" class="mt-2" style="display:none;">
@@ -717,6 +721,14 @@
                                         <span class="badge bg-danger me-2"><i class="fab fa-youtube"></i> YouTube</span>
                                         <span id="youtube-url-display"></span>
                                     </div>
+                                </div>
+                                <div id="audio-preview-container" class="mt-2" style="display:none;">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-microphone text-success me-2" style="font-size:24px;"></i>
+                                        <span id="audio-filename">audio.mp3</span>
+                                        <button type="button" id="remove-audio-btn" class="btn btn-sm btn-link text-danger ms-2">Remove</button>
+                                    </div>
+                                    <audio id="audio-preview" controls class="mt-2" style="max-width:100%; display:none;"></audio>
                                 </div>
                                 <div class="keyboard-shortcuts-info text-muted small mt-1">
                                     <i class="fas fa-keyboard me-1"></i> Press <kbd>Enter</kbd> to send, <kbd>Shift</kbd>+<kbd>Enter</kbd> for new line
@@ -1077,6 +1089,7 @@
         let selectedImageDataUrl = null; // Variable to hold base64 image data
         let selectedPdfDataUrl = null; // Variable to hold base64 PDF data
         let selectedVideoDataUrl = null; // Variable to hold base64 video data or YouTube URL
+        let selectedAudioDataUrl = null; // Variable to hold base64 audio data
         let isPdfUpload = false; // Flag to indicate if this is a PDF upload
         let isYoutubeUrl = false; // Flag to indicate if this is a YouTube URL
         let socket = null;
@@ -1097,8 +1110,8 @@
                 console.log('Detected YouTube URL in message:', selectedVideoDataUrl);
             }
             
-            // Only send if there's text, an image, a PDF, or a video
-            if (!userMessage && !selectedImageDataUrl && !selectedPdfDataUrl && !selectedVideoDataUrl) return;
+            // Only send if there's text, an image, a PDF, a video, or audio
+            if (!userMessage && !selectedImageDataUrl && !selectedPdfDataUrl && !selectedVideoDataUrl && !selectedAudioDataUrl) return;
 
             // Add user message bubble (even if it's just media being sent)
             let displayMessage = userMessage;
@@ -1109,6 +1122,8 @@
                     displayMessage = '[PDF Document Sent]';
                 } else if (selectedVideoDataUrl) {
                     displayMessage = isYoutubeUrl ? '[YouTube Video Sent]' : '[Video Sent]';
+                } else if (selectedAudioDataUrl) {
+                    displayMessage = '[Audio Sent]';
                 }
             }
             appendMessage(displayMessage, true); // Display placeholder if only media
@@ -1135,13 +1150,22 @@
                   userMessage.toLowerCase().includes("at time") ||
                   userMessage.toLowerCase().includes("what happens") ||
                   userMessage.toLowerCase().includes("analyze this video")));
+                  
+            // Determine if this is an audio understanding request based on message content
+            const isAudioUnderstanding = selectedAudioDataUrl && 
+                (userMessage.toLowerCase().includes("transcribe") || 
+                 userMessage.toLowerCase().includes("describe") || 
+                 userMessage.toLowerCase().includes("what do you hear") ||
+                 userMessage.toLowerCase().includes("analyze this audio") ||
+                 userMessage.toLowerCase().includes("listen to") ||
+                 userMessage.toLowerCase().includes("tell me about this audio"));
             
             // Decide whether to use WebSocket streaming or AJAX fallback
             const useWebSocket = (apiType === 'OPENAI' || apiType === 'GEMINI');
 
             if (useWebSocket) {
                 console.log(`Using WebSocket for ${apiType}`);
-                streamAIMessageWebSocket(conversationId, userMessage, selectedImageDataUrl, selectedPdfDataUrl, isPdfUpload, selectedVideoDataUrl, isYoutubeUrl, isVideoUnderstanding);
+                streamAIMessageWebSocket(conversationId, userMessage, selectedImageDataUrl, selectedPdfDataUrl, isPdfUpload, selectedVideoDataUrl, isYoutubeUrl, isVideoUnderstanding, selectedAudioDataUrl, isAudioUnderstanding);
             } else {
                 console.log(`Using AJAX fallback for ${apiType}`);
                 // Note: AJAX fallback currently does not send image/PDF data
@@ -1157,9 +1181,11 @@
             imageInput.value = ''; // Clear file input
             pdfInput.value = ''; // Clear PDF input
             videoInput.value = ''; // Clear video input
+            audioInput.value = ''; // Clear audio input
             selectedImageDataUrl = null;
             selectedPdfDataUrl = null;
             selectedVideoDataUrl = null;
+            selectedAudioDataUrl = null;
             isPdfUpload = false;
             isYoutubeUrl = false;
             imagePreview.src = '';
@@ -1239,7 +1265,7 @@
             }
         }
 
-        function streamAIMessageWebSocket(conversationId, userMessage, imageDataUrl, pdfDataUrl, isPdfUpload, videoDataUrl, isYoutubeUrl, isVideoUnderstanding) {
+        function streamAIMessageWebSocket(conversationId, userMessage, imageDataUrl, pdfDataUrl, isPdfUpload, videoDataUrl, isYoutubeUrl, isVideoUnderstanding, audioDataUrl, isAudioUnderstanding) {
             if (socket) socket.close();
             const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
             socket = new WebSocket(`${protocol}://${window.location.host}/ws/chat/${conversationId}/`);
@@ -1248,7 +1274,8 @@
                 const payload = {
                     message: userMessage || "", // Send empty string if no text but file exists
                     is_image_understanding: isImageUnderstanding,
-                    is_video_understanding: isVideoUnderstanding
+                    is_video_understanding: isVideoUnderstanding,
+                    is_audio_understanding: isAudioUnderstanding
                 };
                 if (imageDataUrl) {
                     payload.image_url = imageDataUrl;
@@ -1256,6 +1283,9 @@
                 if (pdfDataUrl) {
                     payload.pdf_url = pdfDataUrl;
                     payload.is_pdf_upload = isPdfUpload;
+                }
+                if (audioDataUrl) {
+                    payload.audio_url = audioDataUrl;
                 }
                 if (videoDataUrl) {
                     payload.video_url = videoDataUrl;
@@ -1580,6 +1610,75 @@
             
             // Close the modal
             youtubeUrlModal.hide();
+        });
+        
+        // --- Audio upload logic ---
+        const audioUploadBtn = document.getElementById('audio-upload-btn');
+        const audioInput = document.getElementById('audio-input');
+        const removeAudioBtn = document.getElementById('remove-audio-btn');
+        const audioPreviewContainer = document.getElementById('audio-preview-container');
+        const audioFilename = document.getElementById('audio-filename');
+
+        audioUploadBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            audioInput.click();
+        });
+
+        audioInput.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                const file = this.files[0];
+                
+                // Basic validation
+                if (!file.type.startsWith('audio/')) {
+                    alert('Please select an audio file.');
+                    audioInput.value = ''; // Reset input
+                    return;
+                }
+                
+                // Check file size (warn if >20MB as Gemini has limitations)
+                const fileSizeMB = file.size / (1024 * 1024);
+                if (fileSizeMB > 20) {
+                    const proceed = confirm('This audio is larger than 20MB (' + fileSizeMB.toFixed(1) + 'MB). Large files may take longer to process. Continue?');
+                    if (!proceed) {
+                        audioInput.value = '';
+                        return;
+                    }
+                }
+                
+                audioFilename.textContent = file.name;
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    selectedAudioDataUrl = e.target.result;
+                    audioPreviewContainer.style.display = 'block';
+                    
+                    // Clear any image, PDF, or video selection when audio is selected
+                    imageInput.value = '';
+                    pdfInput.value = '';
+                    videoInput.value = '';
+                    selectedImageDataUrl = null;
+                    selectedPdfDataUrl = null;
+                    selectedVideoDataUrl = null;
+                    isPdfUpload = false;
+                    isYoutubeUrl = false;
+                    imagePreview.src = '';
+                    imagePreviewContainer.style.display = 'none';
+                    pdfPreviewContainer.style.display = 'none';
+                    videoPreviewContainer.style.display = 'none';
+                };
+                reader.onerror = function(error) {
+                    console.error("FileReader Error:", error);
+                    alert('Error reading audio file.');
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        removeAudioBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            audioInput.value = '';
+            selectedAudioDataUrl = null;
+            audioPreviewContainer.style.display = 'none';
         });
     });
 </script>

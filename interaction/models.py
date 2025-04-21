@@ -38,7 +38,8 @@ class Message(models.Model):
     image_url = models.TextField(blank=True, null=True)  # Optional image URL or base64
     pdf_url = models.TextField(blank=True, null=True)  # Optional PDF URL or base64
     video_url = models.TextField(blank=True, null=True)  # Optional video URL or base64/YouTube
-    file_type = models.CharField(max_length=20, blank=True, null=True)  # Type of file (image, pdf, video, etc.)
+    audio_url = models.TextField(blank=True, null=True)  # Optional audio URL or base64
+    file_type = models.CharField(max_length=20, blank=True, null=True)  # Type of file (image, pdf, video, audio, etc.)
     timestamp = models.DateTimeField(auto_now_add=True)
     
     class Meta:
