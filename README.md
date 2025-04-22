@@ -26,7 +26,7 @@ Whether you're an AI enthusiast, a student, or a professional looking to leverag
 
 - **🔍 AI Tools Catalog**: Browse and search through a curated collection of AI tools organized by categories
 - **👤 User Accounts**: Register, login, and manage your profile with personalized recommendations
-- **💬 AI Interaction**: Chat directly with AI tools (OpenAI, Hugging Face, Google) through integrated APIs
+- **💬 AI Interaction**: Chat directly with AI tools (OpenAI, , Google) through integrated APIs
 - **🖼️ Image Understanding**: Upload and analyze images with AI-powered description and object detection
 - **🎬 Video Understanding**: Process videos through file upload or YouTube URLs with transcription and analysis
 - **🎵 Audio Understanding**: Analyze audio files with transcription, description, and timestamp references
@@ -73,7 +73,7 @@ pip install -r requirements.txt
 Create a `.envrc` file in the root directory with the following content:
 ```
 export OPENAI_API_KEY=your_openai_api_key
-export HUGGINGFACE_API_KEY=your_huggingface_api_key
+export =your_huggingface_api_key
 ```
 
 5. Apply migrations:
@@ -153,7 +153,7 @@ Key directories:
 
 ### APIs
 - **OpenAI API**: For AI chat interactions
-- **Hugging Face API**: For AI model integrations
+- ** API**: For AI model integrations
 - **Google Gemini API**: For multimodal AI capabilities including:
   - Image understanding and analysis
   - Video processing (file upload and YouTube URLs)

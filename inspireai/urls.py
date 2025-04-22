@@ -24,6 +24,8 @@ urlpatterns = [
     path('', include('catalog.urls')),
     path('users/', include('users.urls')),
     path('interaction/', include('interaction.urls')),
+    path('openai_integration/', include('openai_integration.urls')),
+    path('gemini_integration/', include('gemini_integration.urls')),
 ]
 
 # Serve media files in development

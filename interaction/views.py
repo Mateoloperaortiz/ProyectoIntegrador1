@@ -13,7 +13,7 @@ import os
 import requests
 import io
 import base64
-from openai import OpenAI
+from openai import AzureOpenAI
 import google.genai as genai
 from google.genai import types
 from PIL import Image
@@ -330,27 +330,32 @@ def simulate_ai_response(tool, user_message, image_url=None, is_image_generation
 
 def generate_openai_response(tool, user_message):
     """
-    Non-streaming OpenAI response generation (Text only for fallback).
+    Non-streaming Azure OpenAI response generation (Text only for fallback).
     """
-    api_key = os.environ.get('OPENAI_API_KEY')
-    if not api_key:
-        return fallback_response(tool, user_message, "OpenAI API key not found.")
+    api_key = os.environ.get('AZURE_OPENAI_API_KEY')
+    endpoint = os.environ.get('AZURE_OPENAI_ENDPOINT')
+    api_version = os.environ.get('AZURE_OPENAI_API_VERSION')
+    deployment = os.environ.get('AZURE_OPENAI_DEPLOYMENT')
+    if not all([api_key, endpoint, api_version, deployment]):
+        return fallback_response(tool, user_message, "Azure OpenAI configuration is missing in environment variables.")
 
     try:
-        client = OpenAI(api_key=api_key)
-        model = tool.api_model or "gpt-4o" # Default model
-
-        # Using chat completions endpoint for consistency, text-only
+        client = AzureOpenAI(
+            api_key=api_key,
+            azure_endpoint=endpoint,
+            api_version=api_version
+        )
+        # Use deployment as the model name
         response = client.chat.completions.create(
-            model=model,
+            model=deployment,
             messages=[
-                {"role": "system", "content": f"You are {tool.name}, an AI assistant by {tool.provider}. Respond concisely."}, # Simplified prompt for fallback
+                {"role": "system", "content": f"You are {tool.name}, an AI assistant by {tool.provider}. Respond concisely."},
                 {"role": "user", "content": user_message}
             ]
         )
         return response.choices[0].message.content
     except Exception as e:
-        return fallback_response(tool, user_message, f"OpenAI API error (non-streaming): {str(e)}")
+        return fallback_response(tool, user_message, f"Azure OpenAI API error (non-streaming): {str(e)}")
 
 
 def generate_gemini_response(tool, user_message):
@@ -394,16 +399,16 @@ def generate_gemini_response(tool, user_message):
         return fallback_response(tool, user_message, f"Gemini API error (non-streaming): {str(e)}")
 
 
-def generate_huggingface_response(tool, user_message):
+# (Removed generate_huggingface_response and all  API code as requested)
     """
-    Generate a response using Hugging Face API (placeholder/example).
+    Generate a response using  API (placeholder/example).
     Requires tool.api_endpoint to be set correctly.
     """
-    api_key = os.environ.get('HUGGINGFACE_API_KEY') # Assumes HF key is needed
+    api_key = os.environ.get('') # Assumes HF key is needed
     if not api_key:
-        return fallback_response(tool, user_message, "Hugging Face API key not found.")
+        return fallback_response(tool, user_message, " API key not found.")
     if not tool.api_endpoint:
-         return fallback_response(tool, user_message, "Hugging Face model endpoint not configured for this tool.")
+         return fallback_response(tool, user_message, " model endpoint not configured for this tool.")
 
     try:
         headers = {"Authorization": f"Bearer {api_key}"}
@@ -415,9 +420,9 @@ def generate_huggingface_response(tool, user_message):
         # This is a common structure for text generation models
         return result[0].get('generated_text', "Sorry, I couldn't process that.")
     except requests.exceptions.RequestException as e:
-         return fallback_response(tool, user_message, f"Hugging Face API request error: {str(e)}")
+         return fallback_response(tool, user_message, f" API request error: {str(e)}")
     except Exception as e:
-        return fallback_response(tool, user_message, f"Hugging Face API error: {str(e)}")
+        return fallback_response(tool, user_message, f" API error: {str(e)}")
 
 
 def generate_imagen_image(tool, prompt, number_of_images=1, aspect_ratio="1:1", person_generation="ALLOW_ADULT"):

@@ -680,15 +680,20 @@
                                 {% csrf_token %}
                                 <div class="message-input-container">
                                     <textarea name="content" class="form-control" id="id_content" rows="2" placeholder="Type your message here..." required></textarea>
+                                    <div class="message-input-actions">
+                                        <button type="button" class="btn btn-link text-primary message-action-btn" id="fileUploadBtn" title="Upload File">
+                                            <i class="fas fa-file-upload"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-link text-primary message-action-btn" id="microphoneBtn" title="Voice Input">
+                                            <i class="fas fa-microphone"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-link text-primary message-action-btn" id="structuredOutputBtn" title="Structured Output">
+                                            <i class="fas fa-code"></i>
+                                        </button>
+                                    </div>
                                     <button type="submit" class="btn btn-primary send-button">
                                         <i class="fas fa-paper-plane"></i>
                                     </button>
-                                    <input type="file" id="image-input" accept="image/*" style="display:none;">
-                                    <input type="file" id="pdf-input" accept="application/pdf" style="display:none;">
-                                    <input type="file" id="video-input" accept="video/*" style="display:none;">
-                                    <input type="file" id="audio-input" accept="audio/*" style="display:none;">
-                                    <button type="button" id="pdf-upload-btn" class="btn btn-outline-secondary" style="position:absolute; right:50px; top:5px; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center;">
-                                        <i class="fas fa-file-pdf"></i>
                                     </button>
                                     <button type="button" id="image-upload-btn" class="btn btn-outline-secondary" style="position:absolute; right:95px; top:5px; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center;" data-bs-toggle="tooltip" data-bs-placement="top" title="Upload an image for captioning, object detection, or segmentation">
                                         <i class="fas fa-image"></i>
@@ -701,6 +706,12 @@
                                     </button>
                                     <button type="button" id="image-generation-btn" class="btn btn-outline-secondary" style="position:absolute; right:230px; top:5px; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center;" data-bs-toggle="tooltip" data-bs-placement="top" title="Generate images using Imagen 3">
                                         <i class="fas fa-paint-brush"></i>
+                                    </button>
+                                    <button type="button" id="code-execution-btn" class="btn btn-outline-secondary" style="position:absolute; right:275px; top:5px; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center;" data-bs-toggle="tooltip" data-bs-placement="top" title="Enable code execution (Python)">
+                                        <i class="fas fa-code"></i>
+                                    </button>
+                                    <button type="button" id="gemini-files-btn" class="btn btn-outline-secondary" style="position:absolute; right:320px; top:5px; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center;" data-bs-toggle="tooltip" data-bs-placement="top" title="Gemini Files Manager">
+                                        <i class="fas fa-file-upload"></i>
                                     </button>
                                 </div>
                                 <div id="image-preview-container" class="mt-2" style="display:none;">
@@ -884,6 +895,11 @@
     </div>
 </div>
 
+<!-- Include the new modals -->
+{% include "interaction/file_upload_modal.html" %}
+{% include "interaction/microphone_modal.html" %}
+{% include "interaction/structured_output_modal.html" %}
+
 <!-- Image Generation Modal -->
 <div class="modal fade" id="imageGenerationModal" tabindex="-1" aria-labelledby="imageGenerationModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -929,6 +945,7 @@
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="{% static 'js/image-understanding.js' %}"></script>
+<script src="{% static 'js/openai_features.js' %}"></script>
 <script>
     function removeModalBackdrop() {
         const backdrops = document.querySelectorAll('.modal-backdrop');
@@ -1077,6 +1094,63 @@
         // Format messages again on page load (handles any race conditions)
         formatMessageContent();
         
+        // Toggle for code execution feature
+        const codeExecutionBtn = document.getElementById('code-execution-btn');
+        let codeExecutionEnabled = localStorage.getItem('codeExecutionEnabled') === 'true';
+        
+        // Apply the saved state on page load
+        if (codeExecutionEnabled) {
+            codeExecutionBtn.classList.add('active');
+            codeExecutionBtn.classList.remove('btn-outline-secondary');
+            codeExecutionBtn.classList.add('btn-secondary');
+        }
+        
+        // Handle code execution toggle
+        codeExecutionBtn.addEventListener('click', function() {
+            codeExecutionEnabled = !codeExecutionEnabled;
+            localStorage.setItem('codeExecutionEnabled', codeExecutionEnabled);
+            
+            if (codeExecutionEnabled) {
+                codeExecutionBtn.classList.add('active');
+                codeExecutionBtn.classList.remove('btn-outline-secondary');
+                codeExecutionBtn.classList.add('btn-secondary');
+                
+                // Show temporary success message
+                const messageList = document.getElementById('message-list');
+                const systemMsg = document.createElement('div');
+                systemMsg.className = 'system-message text-center my-2';
+                systemMsg.innerHTML = '<small class="text-success"><i class="fas fa-check-circle me-1"></i>Code execution enabled</small>';
+                messageList.appendChild(systemMsg);
+                
+                // Scroll to bottom
+                messageList.scrollTop = messageList.scrollHeight;
+                
+                // Remove message after 3 seconds
+                setTimeout(() => {
+                    systemMsg.remove();
+                }, 3000);
+            } else {
+                codeExecutionBtn.classList.remove('active');
+                codeExecutionBtn.classList.remove('btn-secondary');
+                codeExecutionBtn.classList.add('btn-outline-secondary');
+                
+                // Show temporary message
+                const messageList = document.getElementById('message-list');
+                const systemMsg = document.createElement('div');
+                systemMsg.className = 'system-message text-center my-2';
+                systemMsg.innerHTML = '<small class="text-secondary"><i class="fas fa-info-circle me-1"></i>Code execution disabled</small>';
+                messageList.appendChild(systemMsg);
+                
+                // Scroll to bottom
+                messageList.scrollTop = messageList.scrollHeight;
+                
+                // Remove message after 3 seconds
+                setTimeout(() => {
+                    systemMsg.remove();
+                }, 3000);
+            }
+        });
+        
         // Load user's preferred theme on page load
         const savedTheme = localStorage.getItem('preferredCodeTheme');
         if (savedTheme) {
@@ -1091,6 +1165,11 @@
         console.log('Initializing image generation button...');
         let imageGenerationBtn = document.getElementById('image-generation-btn');
         console.log('imageGenerationBtn:', imageGenerationBtn);
+        
+        // Gemini Files Manager button handler
+        document.getElementById('gemini-files-btn').addEventListener('click', function() {
+            window.location.href = "{% url 'gemini_integration:file_manager' %}";
+        });
         
         try {
             let imageGenerationModal = new bootstrap.Modal(document.getElementById('imageGenerationModal'));
@@ -1369,15 +1448,39 @@
             if (socket) socket.close();
             const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
             socket = new WebSocket(`${protocol}://${window.location.host}/ws/chat/${conversationId}/`);
+            
+            // Track accumulated content client-side
             let aiContent = '';
+            let statusProcessing = false;
+            
             socket.onopen = function() {
+                // Check if code execution is enabled
+                const codeExecutionEnabled = localStorage.getItem('codeExecutionEnabled') === 'true';
+                let messageToSend = userMessage || "";
+                
+                // If code execution is enabled and this is Gemini, modify the message
+                if (codeExecutionEnabled && apiType === 'GEMINI' && messageToSend) {
+                    console.log('Enabling code execution for Gemini');
+                    // Use special prefix that backend will recognize
+                    messageToSend = '#enablecodeexecution ' + messageToSend;
+                }
+                
                 const payload = {
-                    message: userMessage || "", // Send empty string if no text but file exists
+                    message: messageToSend,
                     is_image_understanding: isImageUnderstanding,
                     is_video_understanding: isVideoUnderstanding,
                     is_audio_understanding: isAudioUnderstanding,
-                    is_image_generation: isImageGeneration
+                    is_image_generation: isImageGeneration,
+                    use_structured_output: localStorage.getItem('useStructuredOutput') === 'true',
+                    json_schema: localStorage.getItem('jsonSchema') || null
                 };
+                
+                // Add file IDs if they exist
+                const fileIds = localStorage.getItem(`conversation_${conversationId}_fileIds`);
+                if (fileIds) {
+                    payload.file_ids = JSON.parse(fileIds);
+                }
+                
                 if (imageDataUrl) {
                     payload.image_url = imageDataUrl;
                 }
@@ -1394,33 +1497,167 @@
                 }
                 socket.send(JSON.stringify(payload));
             };
+            
             socket.onmessage = function(event) {
                 const data = JSON.parse(event.data);
+                
                 if (data.type === 'ai_message') {
-                    aiContent = data.content;
+                    // For improved streaming, server now sends only delta content, not cumulative
+                    // We need to accumulate it client-side
+                    aiContent += data.content || '';
                     
-                    // Update the streaming bubble with new content
+                    // Update the streaming bubble with accumulated content
                     updateAIStreamingBubble(aiContent);
                     
                     if (data.done) {
                         finalizeAIStreamingBubble(aiContent);
+                        
+                        // Check for finish_reason
+                        if (data.finish_reason && data.finish_reason !== 'stop') {
+                            console.log(`Completion finished with reason: ${data.finish_reason}`);
+                            // Could add UI element to show this information to the user
+                        }
+                        
+                        // Add speech-to-text button if content is long enough
+                        if (aiContent.length > 50) {
+                            addTextToSpeechButton(aiContent);
+                        }
+                        
                         socket.close();
                     }
-                } else if (data.type === 'error') {
+                } 
+                else if (data.type === 'status_update') {
+                    // Show status updates for assistant API
+                    if (!statusProcessing) {
+                        appendMessage(
+                            `<div class="processing-status"><i class="fas fa-cog fa-spin me-2"></i> ${data.status || 'Processing'}...</div>`, 
+                            false, 
+                            true
+                        );
+                        statusProcessing = true;
+                    } else {
+                        // Update existing status message
+                        const statusEl = document.querySelector('.processing-status');
+                        if (statusEl) {
+                            statusEl.innerHTML = `<i class="fas fa-cog fa-spin me-2"></i> ${data.status || 'Processing'}...`;
+                        }
+                    }
+                }
+                else if (data.type === 'error') {
                     updateAIStreamingBubble('<span class="text-danger">Error: ' + data.content + '</span>');
                     finalizeAIStreamingBubble('<span class="text-danger">Error: ' + data.content + '</span>'); // Ensure bubble ID is removed
                     socket.close();
                 }
             };
+            
             socket.onerror = function(error) {
                 console.error('WebSocket Error:', error);
                 updateAIStreamingBubble('<span class="text-danger">WebSocket connection error. Please try again.</span>');
                 finalizeAIStreamingBubble('<span class="text-danger">WebSocket connection error. Please try again.</span>');
             };
+            
             socket.onclose = function(event) {
                 console.log('WebSocket closed:', event.code, event.reason);
-                // Optionally handle unexpected closures, maybe attempt reconnect or inform user
+                // Hide processing status if it exists
+                if (statusProcessing) {
+                    const statusEl = document.querySelector('.processing-status');
+                    if (statusEl) {
+                        statusEl.parentElement.remove();
+                    }
+                }
             };
+        }
+        
+        // Helper function to add text-to-speech button to an AI message
+        function addTextToSpeechButton(text) {
+            const lastAIMessage = document.querySelector('.message-ai:last-child .message-content');
+            if (!lastAIMessage) return;
+            
+            // Add the TTS button if it doesn't exist
+            if (!lastAIMessage.querySelector('.tts-button')) {
+                const ttsButton = document.createElement('button');
+                ttsButton.className = 'btn btn-sm btn-outline-primary tts-button position-absolute';
+                ttsButton.style.right = '10px';
+                ttsButton.style.bottom = '10px';
+                ttsButton.innerHTML = '<i class="fas fa-volume-up"></i>';
+                ttsButton.title = 'Listen to this message';
+                
+                ttsButton.addEventListener('click', function() {
+                    generateAndPlayTTS(text, this);
+                });
+                
+                lastAIMessage.appendChild(ttsButton);
+            }
+        }
+        
+        // Function to generate and play text-to-speech
+        function generateAndPlayTTS(text, button) {
+            // Show loading state
+            const originalHTML = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            button.disabled = true;
+            
+            // If text is too long, truncate it
+            if (text.length > 4000) {
+                text = text.substring(0, 4000) + '...';
+            }
+            
+            // Get voice preference from localStorage or use default
+            const voice = localStorage.getItem('ttsVoice') || 'alloy';
+            
+            // Generate TTS using OpenAI endpoint
+            fetch('/openai_integration/tts/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: `text=${encodeURIComponent(text)}&voice=${encodeURIComponent(voice)}&format=mp3`
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Failed to generate speech');
+                return response.blob();
+            })
+            .then(blob => {
+                // Create audio element
+                const audioUrl = URL.createObjectURL(blob);
+                const audio = new Audio(audioUrl);
+                
+                // Play the audio
+                audio.play();
+                
+                // Reset button state when audio starts playing
+                audio.onplay = function() {
+                    button.innerHTML = '<i class="fas fa-pause"></i>';
+                    button.disabled = false;
+                    
+                    // Set up toggle play/pause
+                    button.onclick = function() {
+                        if (audio.paused) {
+                            audio.play();
+                            button.innerHTML = '<i class="fas fa-pause"></i>';
+                        } else {
+                            audio.pause();
+                            button.innerHTML = '<i class="fas fa-play"></i>';
+                        }
+                    };
+                };
+                
+                // Reset button when audio ends
+                audio.onended = function() {
+                    button.innerHTML = '<i class="fas fa-volume-up"></i>';
+                    button.onclick = function() {
+                        generateAndPlayTTS(text, button);
+                    };
+                };
+            })
+            .catch(error => {
+                console.error('Error generating TTS:', error);
+                button.innerHTML = originalHTML;
+                button.disabled = false;
+                alert('Error generating speech: ' + error.message);
+            });
         }
 
         function sendMessageAjax(userMessage) {

@@ -1,0 +1,195 @@
+{% extends 'base/base.html' %}
+{% load static %}
+{% load django_bootstrap5 %}
+
+{% block title %}My Files - InspireAI{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2 class="mb-0">
+                <i class="fas fa-file-alt me-2 text-primary"></i> My OpenAI Files
+            </h2>
+            <p class="text-muted">Manage your files uploaded to OpenAI</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <a href="{% url 'openai_integration:file_upload' %}" class="btn btn-primary">
+                <i class="fas fa-upload me-2"></i> Upload New File
+            </a>
+        </div>
+    </div>
+    
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-light">
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="btn-group" role="group">
+                        <a href="{% url 'openai_integration:file_list' %}" class="btn btn-sm btn-outline-secondary {% if not purpose_filter %}active{% endif %}">
+                            All
+                        </a>
+                        <a href="{% url 'openai_integration:file_list' %}?purpose=assistants" class="btn btn-sm btn-outline-secondary {% if purpose_filter == 'assistants' %}active{% endif %}">
+                            Assistants
+                        </a>
+                        <a href="{% url 'openai_integration:file_list' %}?purpose=fine-tune" class="btn btn-sm btn-outline-secondary {% if purpose_filter == 'fine-tune' %}active{% endif %}">
+                            Fine-tuning
+                        </a>
+                        <a href="{% url 'openai_integration:file_list' %}?purpose=vision" class="btn btn-sm btn-outline-secondary {% if purpose_filter == 'vision' %}active{% endif %}">
+                            Vision
+                        </a>
+                        <a href="{% url 'openai_integration:file_list' %}?purpose=user_data" class="btn btn-sm btn-outline-secondary {% if purpose_filter == 'user_data' %}active{% endif %}">
+                            User Data
+                        </a>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <input type="text" class="form-control form-control-sm" id="file-search" placeholder="Search files...">
+                        <span class="input-group-text">
+                            <i class="fas fa-search"></i>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Filename</th>
+                        <th>Purpose</th>
+                        <th>Size</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="file-table-body">
+                    {% if files %}
+                        {% for file in files %}
+                            <tr class="file-row">
+                                <td>
+                                    <a href="{% url 'openai_integration:file_detail' file_id=file.id %}" class="d-flex align-items-center text-decoration-none text-dark">
+                                        {% if file.filename|lower|endswith:'.pdf' %}
+                                            <i class="fas fa-file-pdf text-danger me-2" style="font-size: 1.2rem;"></i>
+                                        {% elif file.filename|lower|endswith:'.json' or file.filename|lower|endswith:'.jsonl' %}
+                                            <i class="fas fa-file-code text-primary me-2" style="font-size: 1.2rem;"></i>
+                                        {% elif file.filename|lower|endswith:'.jpg' or file.filename|lower|endswith:'.jpeg' or file.filename|lower|endswith:'.png' %}
+                                            <i class="fas fa-file-image text-success me-2" style="font-size: 1.2rem;"></i>
+                                        {% else %}
+                                            <i class="fas fa-file text-secondary me-2" style="font-size: 1.2rem;"></i>
+                                        {% endif %}
+                                        {{ file.filename }}
+                                    </a>
+                                </td>
+                                <td>
+                                    <span class="badge rounded-pill 
+                                        {% if file.purpose == 'assistants' %}bg-primary
+                                        {% elif file.purpose == 'fine-tune' %}bg-warning text-dark
+                                        {% elif file.purpose == 'vision' %}bg-success
+                                        {% else %}bg-secondary
+                                        {% endif %}">
+                                        {{ file.purpose }}
+                                    </span>
+                                </td>
+                                <td>{{ file.bytes|filesizeformat }}</td>
+                                <td>{{ file.created_at|date:"M d, Y" }}</td>
+                                <td>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a href="{% url 'openai_integration:file_content' file_id=file.id %}" class="btn btn-outline-primary" title="Download">
+                                            <i class="fas fa-download"></i>
+                                        </a>
+                                        <button class="btn btn-outline-danger delete-file-btn" data-file-id="{{ file.id }}" data-file-name="{{ file.filename }}" title="Delete">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center py-4">
+                                <div class="text-muted">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    No files found. 
+                                    <a href="{% url 'openai_integration:file_upload' %}">Upload a file</a> to get started.
+                                </div>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Delete File Modal -->
+<div class="modal fade" id="deleteFileModal" tabindex="-1" aria-labelledby="deleteFileModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteFileModalLabel">Confirm Deletion</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to delete the file <strong id="deleteFileName"></strong>?
+                <p class="text-danger mt-2">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    This action cannot be undone. The file will be permanently removed from OpenAI's servers.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteFileForm" method="post" action="">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash-alt me-2"></i> Delete File
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // File search functionality
+        const fileSearch = document.getElementById('file-search');
+        const fileRows = document.querySelectorAll('.file-row');
+        
+        fileSearch.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            
+            fileRows.forEach(row => {
+                const fileName = row.querySelector('td:first-child').textContent.toLowerCase();
+                
+                if (fileName.includes(searchTerm)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+        
+        // Delete file modal
+        const deleteFileModal = document.getElementById('deleteFileModal');
+        const deleteFileName = document.getElementById('deleteFileName');
+        const deleteFileForm = document.getElementById('deleteFileForm');
+        const deleteFileBtns = document.querySelectorAll('.delete-file-btn');
+        
+        deleteFileBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const fileId = this.dataset.fileId;
+                const fileName = this.dataset.fileName;
+                
+                deleteFileName.textContent = fileName;
+                deleteFileForm.action = `/openai_integration/files/${fileId}/delete/`;
+                
+                const modal = new bootstrap.Modal(deleteFileModal);
+                modal.show();
+            });
+        });
+    });
+</script>
+{% endblock %}

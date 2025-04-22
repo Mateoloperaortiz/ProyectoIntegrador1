@@ -17,16 +17,8 @@ import dotenv
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-if os.path.exists(os.path.join(BASE_DIR, '.envrc')):
-    with open(os.path.join(BASE_DIR, '.envrc'), 'r') as f:
-        for line in f:
-            if line.startswith('export '):
-                key, value = line.replace('export ', '', 1).strip().split('=', 1)
-                os.environ[key] = value.strip('"').strip("'")
-
-print(f"OpenAI API key set: {os.environ.get('OPENAI_API_KEY') is not None}")
-print(f"Hugging Face API key set: {os.environ.get('HUGGINGFACE_API_KEY') is not None}")
-print(f"Gemini API key set: {os.environ.get('GEMINI_API_KEY') is not None}")
+# Load environment variables from .env (recommended for all environments)
+dotenv.load_dotenv(os.path.join(BASE_DIR, '.env'))
 
 
 
@@ -34,7 +26,9 @@ print(f"Gemini API key set: {os.environ.get('GEMINI_API_KEY') is not None}")
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-t*-w!33i7f(e_5lnj)lm&(rrr*zad0&658(77r8=4%2mblo*3l'
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
+if not SECRET_KEY:
+    raise RuntimeError('DJANGO_SECRET_KEY environment variable not set! Please add it to your .env file.')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -56,6 +50,8 @@ INSTALLED_APPS = [
     'catalog.apps.CatalogConfig',
     'users.apps.UsersConfig',
     'interaction.apps.InteractionConfig',
+    'openai_integration.apps.OpenaiIntegrationConfig',
+    'gemini_integration.apps.GeminiIntegrationConfig',
 ]
 
 MIDDLEWARE = [

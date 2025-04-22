@@ -1,0 +1,47 @@
+{% extends 'base/base.html' %}
+{% load static %}
+{% load django_bootstrap5 %}
+
+{% block title %}Upload File - InspireAI{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">Upload File to OpenAI</h3>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-4">
+                        Upload a file to use with the OpenAI API. Files can be used with Assistants, fine-tuning, and other features.
+                    </p>
+                    
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        {% bootstrap_form form %}
+                        
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-upload me-2"></i> Upload File
+                        </button>
+                        <a href="{% url 'openai_integration:file_list' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i> Cancel
+                        </a>
+                    </form>
+                </div>
+                <div class="card-footer bg-light">
+                    <div class="text-muted small">
+                        <i class="fas fa-info-circle me-1"></i> 
+                        File size limit: 512 MB. Supported file types depend on the purpose:
+                        <ul class="mt-2 mb-0">
+                            <li>Assistants: PDF, DOCX, TXT, CSV, JSON, MD, etc.</li>
+                            <li>Fine-tuning: JSONL format with specific schema</li>
+                            <li>Vision: JPG, PNG, WebP formats</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

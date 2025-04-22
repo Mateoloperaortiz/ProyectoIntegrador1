@@ -3,18 +3,26 @@ import os
 import io
 import base64
 import httpx
+import datetime
 import pathlib
 import time
 import re
 import asyncio
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
-from openai import AsyncOpenAI
+from openai import AsyncAzureOpenAI
 import google.genai as genai
 from google.genai import types
 from PIL import Image
 from .models import Conversation, Message
 from catalog.models import AITool
+from openai_integration.models import OpenAIFile, MessageOpenAIFile
+from openai_integration.consumer_services import (
+    prepare_openai_thread, add_user_message_to_thread,
+    add_assistant_message_to_thread, get_associated_files,
+    enhanced_stream_openai_chat, stream_openai_assistant_response
+)
+from gemini_integration.models import GeminiFile, MessageGeminiFile
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -109,55 +117,131 @@ class ChatConsumer(AsyncWebsocketConsumer):
             await self.send(text_data=json.dumps({'type': 'ai_message', 'content': ai_response, 'done': True}))
 
     async def stream_openai_response(self, tool, user_message, conversation, user, image_url=None):
-        api_key = os.environ.get('OPENAI_API_KEY')
-        model = tool.api_model or "gpt-4o"
-        if not api_key:
-            await self.send(text_data=json.dumps({'type': 'error', 'content': "OpenAI API key not found."}))
+        api_key = os.environ.get('AZURE_OPENAI_API_KEY')
+        endpoint = os.environ.get('AZURE_OPENAI_ENDPOINT')
+        api_version = os.environ.get('AZURE_OPENAI_API_VERSION')
+        deployment = os.environ.get('AZURE_OPENAI_DEPLOYMENT')
+        
+        if not all([api_key, endpoint, api_version, deployment]):
+            await self.send(text_data=json.dumps({'type': 'error', 'content': "Azure OpenAI configuration is missing in environment variables."}))
             return
-        client = AsyncOpenAI(api_key=api_key)
+
+        # Start with empty content that will be built up as we stream
         ai_content = ""
+
         try:
-            if image_url and image_url.startswith('data:image'):
-                input_content = [
-                    {"type": "text", "text": user_message},
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": image_url, "detail": "auto"}
-                    }
-                ]
-                messages = [
-                    {"role": "user", "content": input_content}
-                ]
-                stream = await client.chat.completions.create(
-                    model=model,
-                    messages=messages,
-                    stream=True
-                )
+            # Check if this conversation has any files associated with the last message
+            user_db_message = await database_sync_to_async(Message.objects.create)(
+                conversation=conversation, is_from_user=True, 
+                content=user_message, image_url=image_url
+            )
+            
+            # Check if we should use assistants API
+            use_assistants = getattr(tool, 'use_assistants', False)
+            
+            if use_assistants:
+                # Get or create thread for this conversation
+                thread_id = await prepare_openai_thread(conversation, tool)
+                
+                # Get files associated with this message
+                file_ids = await get_associated_files(user_db_message.id)
+                
+                # Add user message to thread
+                await add_user_message_to_thread(thread_id, user_message, file_ids)
+                
+                # Stream the assistant's response
+                assistant_id = getattr(tool, 'assistant_id', None)
+                if not assistant_id:
+                    await self.send(text_data=json.dumps({'type': 'error', 'content': "No assistant ID configured for this tool."}))  
+                    return
+                
+                # Process the assistant stream
+                async for chunk in stream_openai_assistant_response(thread_id, assistant_id):
+                    chunk_type = chunk.get('type')
+                    
+                    if chunk_type == 'status_update':
+                        # Send status update to the client
+                        await self.send(text_data=json.dumps({
+                            'type': 'status_update',
+                            'status': chunk.get('status', 'processing'),
+                            'done': False
+                        }))
+                    
+                    elif chunk_type == 'content_chunk':
+                        # Send content chunk
+                        content = chunk.get('content', '')
+                        ai_content += content
+                        await self.send(text_data=json.dumps({
+                            'type': 'ai_message', 
+                            'content': content,  # Only send the new content, not cumulative
+                            'done': False
+                        }))
+                    
+                    elif chunk_type == 'completion':
+                        # Send completion
+                        await self.send(text_data=json.dumps({
+                            'type': 'ai_message',
+                            'content': '',
+                            'done': True,
+                            'finish_reason': chunk.get('finish_reason')
+                        }))
+                        break
+                    
+                    elif chunk_type == 'error':
+                        # Send error message
+                        await self.send(text_data=json.dumps({
+                            'type': 'error',
+                            'content': chunk.get('content', 'Error processing assistant response'),
+                            'done': True
+                        }))
+                        break
+            
             else:
-                messages=[
-                    {"role": "system", "content": f"You are {tool.name}, an AI assistant by {tool.provider}."},
-                    {"role": "user", "content": user_message}
-                ]
-                stream = await client.chat.completions.create(
-                    model=model,
-                    messages=messages,
-                    stream=True
-                )
-
-            async for event in stream:
-                if hasattr(event, "choices") and event.choices:
-                    delta = event.choices[0].delta
-                    if hasattr(delta, "content") and delta.content:
-                        ai_content += delta.content
-                        await self.send(text_data=json.dumps({'type': 'ai_message', 'content': ai_content, 'done': False}))
-
+                # Use the standard chat completions API with enhanced streaming
+                if image_url and image_url.startswith('data:image'):
+                    # For image input, we'll use a special structure
+                    messages = [
+                        {"role": "system", "content": f"You are {tool.name}, an AI assistant by {tool.provider}."},
+                        {"role": "user", "content": user_message}  # This will be replaced by enhanced_stream_openai_chat
+                    ]
+                else:
+                    # Standard text chat
+                    messages = [
+                        {"role": "system", "content": f"You are {tool.name}, an AI assistant by {tool.provider}."},
+                        {"role": "user", "content": user_message}
+                    ]
+                
+                # Stream the response with enhanced streaming
+                async for chunk in enhanced_stream_openai_chat(messages, tool, image_url):
+                    chunk_type = chunk.get('type')
+                    
+                    if chunk_type == 'content_chunk':
+                        # Send just the new chunk of content
+                        content = chunk.get('content', '')
+                        ai_content += content  # Add to cumulative content locally
+                        await self.send(text_data=json.dumps({
+                            'type': 'ai_message', 
+                            'content': content,  # Only send the new chunk
+                            'done': False
+                        }))
+                    
+                    elif chunk_type == 'completion':
+                        # Signal completion
+                        await self.send(text_data=json.dumps({
+                            'type': 'ai_message',
+                            'content': '',
+                            'done': True,
+                            'finish_reason': chunk.get('finish_reason')
+                        }))
+                        break
+            
+            # Save the AI response to the database
             await database_sync_to_async(Message.objects.create)(
                 conversation=conversation, is_from_user=False, content=ai_content, image_url=None
             )
-            await self.send(text_data=json.dumps({'type': 'ai_message', 'content': ai_content, 'done': True}))
 
         except Exception as e:
-            error_message = f"Error interacting with OpenAI API: {str(e)}"
+            error_message = f"Error interacting with Azure OpenAI API: {str(e)}"
             print(error_message)
             await self.send(text_data=json.dumps({'type': 'error', 'content': error_message}))
 
@@ -410,6 +494,15 @@ class ChatConsumer(AsyncWebsocketConsumer):
             pil_image = None
             pdf_data = None
             file_obj = None
+            
+            # Check if code execution is enabled 
+            enable_code_execution = user_message.lower().startswith('#enablecodeexecution') or 'enable code execution' in user_message.lower()
+            
+            # If code execution is explicitly mentioned but we should still keep the original prompt
+            if enable_code_execution and user_message.lower().startswith('#enablecodeexecution'):
+                user_message = user_message.replace('#enablecodeexecution', '', 1).strip()
+                if not user_message:
+                    user_message = "Please help me with a problem that requires code."
 
             if image_url and image_url.startswith('data:image'):
                 try:
@@ -441,10 +534,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                             contents.append(pdf_data)
                         else:
                             pdf_io = io.BytesIO(pdf_bytes)
-                            file_obj = await database_sync_to_async(client.files.upload)(
-                                file=pdf_io,
-                                config=dict(mime_type='application/pdf')
-                            )
+                            file_obj = await self.handle_file_upload(pdf_bytes, 'application/pdf', 'pdf_file.pdf', 'pdf_upload', user, conversation)
                             contents.append(file_obj)
                     elif pdf_url.startswith('http'):
                         await self.send(text_data=json.dumps({
@@ -464,36 +554,88 @@ class ChatConsumer(AsyncWebsocketConsumer):
                             contents.append(pdf_data)
                         else:
                             pdf_io = io.BytesIO(pdf_bytes)
-                            file_obj = await database_sync_to_async(client.files.upload)(
-                                file=pdf_io,
-                                config=dict(mime_type='application/pdf')
-                            )
+                            file_obj = await self.handle_file_upload(pdf_bytes, 'application/pdf', 'pdf_file.pdf', 'pdf_upload', user, conversation)
                             contents.append(file_obj)
                 except Exception as pdf_err:
                     await self.send(text_data=json.dumps({'type': 'error', 'content': f"Error processing PDF: {str(pdf_err)}"}))
                     return
 
             contents.append(user_message)
+            
+            # Set up config, adding code execution tool if enabled
+            config_params = {
+                'max_output_tokens': 2048,
+                'temperature': 0.7,
+                'top_p': 0.95,
+                'top_k': 40
+            }
+            
+            if enable_code_execution:
+                await self.send(text_data=json.dumps({
+                    'type': 'ai_message', 
+                    'content': "Enabling code execution capabilities...", 
+                    'done': False
+                }))
+                config_params['tools'] = [types.Tool(code_execution=types.ToolCodeExecution)]
+
+            config = types.GenerateContentConfig(**config_params)
 
             response_stream = await database_sync_to_async(client.models.generate_content_stream)(
                 model=model_name,
                 contents=contents,
-                config=types.GenerateContentConfig(
-                    max_output_tokens=2048,
-                    temperature=0.7,
-                    top_p=0.95,
-                    top_k=40
-                )
+                config=config
             )
             
             ai_content = ""
             response_iter = await database_sync_to_async(lambda: list(response_stream))()
             
             for chunk in response_iter:
+                # Handle text content
                 if hasattr(chunk, 'text') and chunk.text:
                     ai_content += chunk.text
-                    await self.send(text_data=json.dumps({'type': 'ai_message', 'content': ai_content, 'done': False}))
+                    await self.send(text_data=json.dumps({
+                        'type': 'ai_message',
+                        'content': ai_content,
+                        'done': False
+                    }))
                     await asyncio.sleep(0.01)
+                
+                # Handle code execution parts
+                if enable_code_execution and hasattr(chunk, 'parts'):
+                    for part in chunk.parts:
+                        # Handle executable code
+                        if hasattr(part, 'executable_code') and part.executable_code:
+                            code = part.executable_code.code
+                            code_html = f'<pre class="code-block"><code class="language-python">{code}</code></pre>'
+                            await self.send(text_data=json.dumps({
+                                'type': 'ai_message_code',
+                                'content': code_html,
+                                'done': False
+                            }))
+                            ai_content += f"```python\n{code}\n```\n"
+                            
+                        # Handle code execution results
+                        if hasattr(part, 'code_execution_result') and part.code_execution_result:
+                            result = part.code_execution_result.output
+                            result_html = f'<pre class="execution-result"><code>{result}</code></pre>'
+                            await self.send(text_data=json.dumps({
+                                'type': 'ai_message_execution_result',
+                                'content': result_html,
+                                'done': False
+                            }))
+                            ai_content += f"Execution result:\n```\n{result}\n```\n"
+                            
+                        # Handle inline data (for matplotlib visualizations)
+                        if hasattr(part, 'inline_data') and part.inline_data:
+                            image_data = base64.b64encode(part.inline_data.data).decode('utf-8')
+                            image_html = f'<img src="data:image/png;base64,{image_data}" alt="Generated visualization" class="generated-visualization">'
+                            await self.send(text_data=json.dumps({
+                                'type': 'ai_message_inline_data',
+                                'content': image_html,
+                                'done': False
+                            }))
+                            # Add a placeholder in the markdown content
+                            ai_content += "\n[Visualization image]\n"
 
             if file_obj:
                 try:
@@ -521,6 +663,55 @@ class ChatConsumer(AsyncWebsocketConsumer):
             except Exception as db_err:
                  print(f"Error saving error message to DB: {db_err}")
             await self.send(text_data=json.dumps({'type': 'error', 'content': error_message}))
+
+    async def handle_file_upload(self, file_bytes, mime_type, file_name, purpose, user, conversation, message=None):
+        """
+        Handle file upload to Gemini API and store the metadata.
+        
+        Args:
+            file_bytes: The file content as bytes
+            mime_type: The MIME type of the file
+            file_name: Name of the file
+            purpose: Purpose of the file upload
+            user: User uploading the file
+            conversation: Conversation to associate the file with
+            message: Message to associate the file with (optional)
+            
+        Returns:
+            Tuple of (file_obj, gemini_file_model)
+        """
+        client = genai.Client(api_key=os.environ.get('GEMINI_API_KEY'))
+        
+        # Upload file to Gemini API
+        file_io = io.BytesIO(file_bytes)
+        file_obj = client.files.upload(
+            file=file_io,
+            config=dict(mime_type=mime_type)
+        )
+        
+        # Calculate expiration time (48 hours from now as per Gemini docs)
+        expiration_time = datetime.datetime.now() + datetime.timedelta(hours=48)
+        
+        # Store file metadata in our database
+        gemini_file = GeminiFile.objects.create(
+            user=user,
+            gemini_file_id=file_obj.name,
+            filename=file_name,
+            purpose=purpose,
+            mime_type=mime_type,
+            bytes_size=len(file_bytes),
+            expiration_time=expiration_time
+        )
+        
+        # Associate the file with the message if provided
+        if message:
+            MessageGeminiFile.objects.create(
+                message=message,
+                gemini_file=gemini_file
+            )
+            
+        return file_obj, gemini_file
+
     async def stream_gemini_image_understanding(self, tool, user_message, conversation, user, image_url):
         """
         Process images using Gemini for understanding tasks (captioning, object detection, segmentation).
