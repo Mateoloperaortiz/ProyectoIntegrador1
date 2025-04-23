@@ -45,7 +45,7 @@
                     {% endif %}
                     
                     {% if user.is_authenticated %}
-                        <form method="post" action="{% url 'interaction:toggle_favorite' tool_id=tool.id %}" class="d-inline">
+                        <form method="post" action="{% url 'catalog:toggle_favorite' tool_id=tool.id %}" class="d-inline">
                             {% csrf_token %}
                             <button type="submit" class="btn {% if is_favorite %}btn-danger{% else %}btn-light{% endif %}">
                                 <i class="{% if is_favorite %}fas{% else %}far{% endif %} fa-heart me-1"></i> 

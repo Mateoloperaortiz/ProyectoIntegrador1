@@ -13,6 +13,40 @@ from interaction.models import Favorite
 import uuid
 
 
+@login_required
+def toggle_favorite(request, tool_id):
+    """
+    Toggle favorite status for an AI tool.
+    """
+    tool = get_object_or_404(AITool, id=tool_id)
+    
+    # Check if already favorited
+    favorite, created = Favorite.objects.get_or_create(
+        user=request.user,
+        tool=tool
+    )
+    
+    # If not created, it already exists, so delete it
+    if not created:
+        favorite.delete()
+        is_favorite = False
+        message = _('Removed from favorites')
+    else:
+        is_favorite = True
+        message = _('Added to favorites')
+    
+    # If AJAX request, return JSON response
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return JsonResponse({
+            'is_favorite': is_favorite,
+            'message': message
+        })
+    
+    # If regular request, redirect back
+    messages.success(request, message)
+    return redirect('catalog:tool_detail', slug=tool.slug)
+
+
 def get_recommended_tools(user, current_tool=None, limit=4):
     if not user.is_authenticated:
         return AITool.objects.none()
