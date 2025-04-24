@@ -14,24 +14,7 @@
         <!-- Filters Sidebar -->
         <div class="col-lg-3">
             <div class="filter-sidebar">
-                <!-- Search Box -->
-                <div class="card border-0 shadow-sm rounded-custom mb-4">
-                    <div class="card-body p-4">
-                        <h3 class="filter-header mb-3">
-                            <i class="fas fa-search text-primary me-2"></i>Search Tools
-                        </h3>
-                        <form method="GET" action="{% url 'catalog:search' %}" class="mb-0">
-                            <div class="input-group">
-                                <input type="text" name="q" class="form-control" 
-                                       placeholder="Find AI tools..." 
-                                       value="{{ request.GET.q }}">
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-search"></i>
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
+            
                 
                 <!-- Category Filters -->
                 <div class="card border-0 shadow-sm rounded-custom mb-4">
@@ -83,13 +66,9 @@
                         </h3>
                         
                         <select class="form-select sort-dropdown" id="sort-select">
-                            <option value="{% url 'catalog:catalog' %}?{% if current_category %}category={{ current_category }}&{% endif %}sort_by=popularity" 
-                                   {% if current_sort == 'popularity' %}selected{% endif %}>
-                                Most Popular
-                            </option>
                             <option value="{% url 'catalog:catalog' %}?{% if current_category %}category={{ current_category }}&{% endif %}sort_by=rating" 
                                    {% if current_sort == 'rating' %}selected{% endif %}>
-                                Highest Rating
+                                Rating
                             </option>
                             <option value="{% url 'catalog:catalog' %}?{% if current_category %}category={{ current_category }}&{% endif %}sort_by=name" 
                                    {% if current_sort == 'name' %}selected{% endif %}>
@@ -99,11 +78,8 @@
                                    {% if current_sort == '-name' %}selected{% endif %}>
                                 Name (Z-A)
                             </option>
-                            <option value="{% url 'catalog:catalog' %}?{% if current_category %}category={{ current_category }}&{% endif %}sort_by=newest" 
-                                   {% if current_sort == 'newest' %}selected{% endif %}>
-                                Newest First
-                            </option>
                         </select>
+
                         
                         {% if current_category or current_sort %}
                             <div class="mt-4 text-center">
