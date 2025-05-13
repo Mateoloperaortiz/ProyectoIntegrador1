@@ -49,6 +49,8 @@ DEBUG = False
 
 ALLOWED_HOSTS = ['*']
 
+CSRF_TRUSTED_ORIGINS = ['https://inspire-ai-5astm.ondigitalocean.app']
+
 
 # Application definition
 
