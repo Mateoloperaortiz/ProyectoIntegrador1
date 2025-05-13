@@ -1,0 +1,53 @@
+{% extends 'base/base.html' %}
+{% load django_bootstrap5 %}
+
+{% block title %}Register - InspireAI{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="card-title mb-0">Create an Account</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                {% bootstrap_field form.first_name %}
+                            </div>
+                            <div class="col-md-6">
+                                {% bootstrap_field form.username %}
+                            </div>
+                        </div>
+                        
+                        {% bootstrap_field form.email %}
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                {% bootstrap_field form.password1 %}
+                            </div>
+                            <div class="col-md-6">
+                                {% bootstrap_field form.password2 %}
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">Register</button>
+                        </div>
+                    </form>
+                    
+                    <hr>
+                    
+                    <div class="text-center">
+                        <p class="mb-0">Already have an account? <a href="{% url 'users:login' %}">Login here</a></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

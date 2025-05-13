@@ -1,0 +1,241 @@
+{% load static %}
+{% load django_bootstrap5 %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}InspireAI - AI Tools Hub{% endblock %}</title>
+    <link rel="icon" href="{% static 'images/icon.png' %}" type="image/png">
+    {% bootstrap_css %}
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <!-- Highlight.js for code syntax highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/default.min.css">
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <link rel="stylesheet" href="{% static 'css/animations.css' %}">
+    <link rel="stylesheet" href="{% static 'css/code-blocks.css' %}">
+    {% block extra_css %}{% endblock %}
+
+    <!-- PostHog Snippet -->
+    {% if settings.POSTHOG_API_KEY %}
+    <script>
+        !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="capture identify alias people.set people.set_once set_config register register_once unregister opt_out_capturing has_opted_out_capturing opt_in_capturing reset isFeatureEnabled onFeatureFlags getFeatureFlag getFeatureFlagPayload reloadFeatureFlags group updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures getActiveMatchingSurveys getSurveys getNextSurveyStep".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+        posthog.init('{{ settings.POSTHOG_API_KEY }}', {
+            api_host: '{{ settings.POSTHOG_HOST }}',
+            {% if user.is_authenticated %}
+            loaded: function(posthog) {
+                posthog.identify('{{ user.email }}', { // Assuming email is the unique identifier
+                    username: '{{ user.username }}'
+                    // Add any other user properties you want to track
+                });
+            }
+            {% endif %}
+        });
+    </script>
+    {% endif %}
+    <!-- End PostHog Snippet -->
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="{% url 'catalog:home' %}">
+                <div class="me-2 d-flex align-items-center justify-content-center rounded-circle bg-white nav-logo-container">
+                    <img src="{% static 'images/icon.png' %}" alt="InspireAI Logo" class="nav-logo-img">
+                </div>
+                <span>Inspire<span class="fw-bold">AI</span></span>
+            </a>
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/catalog/' %}active{% endif %}" href="{% url 'catalog:catalog' %}">
+                            <i class="fas fa-th-large me-1"></i> AI Catalog
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/statistics/' %}active{% endif %}" href="{% url 'catalog:statistics' %}">
+                            <i class="fas fa-chart-bar me-1"></i> Statistics
+                        </a>
+                    </li>
+                    
+                    
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.path == '/interaction/conversations/' %}active{% endif %}" href="{% url 'interaction:conversation_list' %}">
+                            <i class="fas fa-comments me-1"></i> Chat
+                        </a>
+                    </li>
+                </ul>
+                
+                <!-- Search Form -->
+                <form class="d-flex mx-auto" method="GET" action="{% url 'catalog:search' %}" style="max-width: 400px;">
+                    <div class="input-group">
+                        <input class="form-control border-0 shadow-sm" type="search" name="q" placeholder="Search AI tools..." aria-label="Search">
+                        <button class="btn btn-light shadow-sm" type="submit">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </form>
+                
+                <!-- User Authentication -->
+                <ul class="navbar-nav ms-auto">
+                    {% if user.is_authenticated %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="navbarDropdown" role="button" 
+                              data-bs-toggle="dropdown" aria-expanded="false">
+                              <div class="d-flex align-items-center justify-content-center bg-white rounded-circle me-2" style="width: 28px; height: 28px;">
+                                {% if user.profile_picture %}
+                                    <img src="{{ user.profile_picture.url }}" alt="{{ user.username }}" class="rounded-circle" style="width: 28px; height: 28px; object-fit: cover;">
+                                {% else %}
+                                    <i class="fas fa-user text-primary" style="font-size: 14px;"></i>
+                                {% endif %}
+                              </div>
+                              {{ user.username }}
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-custom" aria-labelledby="navbarDropdown">
+                                <li><a class="dropdown-item" href="{% url 'users:profile' %}"><i class="fas fa-user-circle me-2"></i> Profile</a></li>
+                                <li><a class="dropdown-item" href="{% url 'interaction:conversation_list' %}"><i class="fas fa-comments me-2"></i> Conversations</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <form action="{% url 'users:logout' %}" method="post" style="display: inline;">
+                                        {% csrf_token %}
+                                        <button type="submit" class="dropdown-item">
+                                            <i class="fas fa-sign-out-alt me-2"></i> Logout
+                                        </button>
+                                    </form>
+                                </li>
+                                
+                            </ul>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link btn px-3 mx-1 shadow-sm border" 
+                            style="background-color: white; color: #333;" 
+                            href="{% url 'users:login' %}">
+                            Login
+                            </a>
+                        </li>
+                    
+                        <li class="nav-item">
+                            <a class="nav-link btn btn-accent px-3 mx-1 shadow-sm" href="{% url 'users:register' %}">Register</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main>
+        <!-- Messages -->
+        {% block messages %}
+            {% if messages %}
+                <div class="container mt-3">
+                    {% bootstrap_messages %}
+                </div>
+            {% endif %}
+        {% endblock %}
+        
+        <!-- Content -->
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-4 mb-4 mb-lg-0">
+                    <h5 class="mb-3 d-flex align-items-center">
+                        <div class="me-2 d-flex align-items-center justify-content-center rounded-circle bg-white footer-logo-container">
+                            <img src="{% static 'images/icon.png' %}" alt="InspireAI Logo" class="footer-logo-img">
+                        </div>
+                        Inspire<span class="fw-bold">AI</span>
+                    </h5>
+                    <p class="text-muted mb-3">Your centralized hub for discovering, accessing, and interacting with the best AI tools.</p>
+                    <div class="d-flex gap-3">
+                        <a href="#" class="text-white">
+                            <i class="fab fa-twitter"></i>
+                        </a>
+                        <a href="#" class="text-white">
+                            <i class="fab fa-github"></i>
+                        </a>
+                        <a href="#" class="text-white">
+                            <i class="fab fa-linkedin"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-4 col-6 mb-4 mb-md-0">
+                    <h6 class="mb-3">Navigation</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><a href="{% url 'catalog:home' %}" class="text-muted">Home</a></li>
+                        <li class="mb-2"><a href="{% url 'catalog:catalog' %}" class="text-muted">AI Catalog</a></li>
+                        <li class="mb-2"><a href="{% url 'catalog:statistics' %}" class="text-muted">Statistics</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-2 col-md-4 col-6 mb-4 mb-md-0">
+                    <h6 class="mb-3">Categories</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><a href="{% url 'catalog:catalog' %}?category=TEXT" class="text-muted">Text Generation</a></li>
+                        <li class="mb-2"><a href="{% url 'catalog:catalog' %}?category=IMAGE" class="text-muted">Image Generation</a></li>
+                        <li class="mb-2"><a href="{% url 'catalog:catalog' %}?category=CHAT" class="text-muted">Conversational</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-4 col-md-4">
+                    <h6 class="mb-3">Subscribe to our newsletter</h6>
+                    <p class="text-muted mb-3">Get the latest updates on new AI tools and features.</p>
+                    <div class="input-group mb-3">
+                        <input type="email" class="form-control" placeholder="Your email" aria-label="Your email">
+                        <button class="btn btn-accent" type="button">Subscribe</button>
+                    </div>
+                </div>
+            </div>
+            <hr class="my-4 bg-secondary opacity-25">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-center">
+                <p class="mb-2 mb-md-0 text-muted">&copy; {% now "Y" %} InspireAI. All rights reserved.</p>
+                <div>
+                    <a href="#" class="text-muted me-3">Privacy Policy</a>
+                    <a href="#" class="text-muted me-3">Terms of Service</a>
+                    <a href="#" class="text-muted">Contact Us</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    {% bootstrap_javascript %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/js/all.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.2.12/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+    <!-- Common language modules -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/css.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/html.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/bash.min.js"></script>
+    <!-- Additional language modules -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/java.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/typescript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/ruby.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/php.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/sql.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/go.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/cpp.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/csharp.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/rust.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/swift.min.js"></script>
+    <script src="{% static 'js/main.js' %}"></script>
+    <script>
+        window.hljs_initialized = true;
+        hljs.highlightAll();
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

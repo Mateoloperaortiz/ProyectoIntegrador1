@@ -1,0 +1,224 @@
+{% extends 'base/base.html' %}
+{% load static %}
+{% load django_bootstrap5 %}
+
+{% block title %}Your Conversations - InspireAI{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row mb-4 align-items-center">
+        <div class="col-md-8">
+            <h1 class="display-5 fw-bold mb-0">Your Conversations</h1>
+            <p class="lead text-muted mt-2">Chat history with AI tools</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <a href="{% url 'catalog:catalog' %}?category=CHAT" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i> New Conversation
+            </a>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Filter sidebar -->
+        <div class="col-lg-3 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-filter me-2"></i> Filter</h5>
+                </div>
+                <div class="card-body">
+                    <form method="get" action="{% url 'interaction:conversation_list' %}">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">AI Tool</label>
+                            <select class="form-select" name="tool">
+                                <option value="">All Tools</option>
+                                {% for tool in user_tools %}
+                                    <option value="{{ tool.id }}" {% if current_tool == tool.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ tool.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Date Range</label>
+                            <select class="form-select" name="date_range">
+                                <option value="">All Time</option>
+                                <option value="today" {% if current_date_range == 'today' %}selected{% endif %}>Today</option>
+                                <option value="week" {% if current_date_range == 'week' %}selected{% endif %}>This Week</option>
+                                <option value="month" {% if current_date_range == 'month' %}selected{% endif %}>This Month</option>
+                            </select>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">Apply Filters</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="card shadow-sm mt-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i> Stats</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px;">
+                            <i class="fas fa-comment text-white"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0">Total Conversations</h6>
+                            <h4 class="mt-1 mb-0">{{ conversations|length }}</h4>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex align-items-center">
+                        <div class="rounded-circle bg-success d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px;">
+                            <i class="fas fa-clock text-white"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0">Latest Activity</h6>
+                            <p class="mb-0 mt-1">
+                                {% if conversations %}
+                                    {{ conversations.0.updated_at|date:"M d, Y" }}
+                                {% else %}
+                                    No activity yet
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Conversation list -->
+        <div class="col-lg-9">
+            {% if conversations %}
+                <div class="row">
+                    {% for conversation in conversations %}
+                        <div class="col-md-6 mb-4">
+                            <div class="card shadow-sm h-100 conversation-card position-relative">
+                                <!-- Delete button as absolute positioned element -->
+                                <button class="btn btn-sm btn-link text-danger position-absolute top-0 end-0 mt-2 me-2 z-index-1" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#deleteModal{{ conversation.id }}"
+                                        onclick="event.stopPropagation();"
+                                        style="z-index: 2;">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            
+                                <a href="{% url 'interaction:conversation_detail' pk=conversation.id %}" class="card-body text-decoration-none text-dark d-block">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <!-- AI Tool Icon/Image -->
+                                        <div class="rounded bg-light p-2 me-3" style="height: 50px; width: 50px;">
+                                            {% if conversation.tool.image %}
+                                                <img src="{{ conversation.tool.image.url }}" alt="{{ conversation.tool.name }}" class="rounded" style="width: 100%; height: 100%; object-fit: cover;">
+                                            {% else %}
+                                                <div class="h-100 w-100 d-flex align-items-center justify-content-center text-primary">
+                                                    <i class="fas fa-robot fa-lg"></i>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        <div>
+                                            <span class="badge bg-primary rounded-pill mb-1">{{ conversation.tool.get_category_display }}</span>
+                                            <h5 class="mb-0">{{ conversation.tool.name }}</h5>
+                                        </div>
+                                    </div>
+                                    
+                                    <h6 class="mb-3 text-truncate">{{ conversation.title }}</h6>
+                                    
+                                    <div class="conversation-snippet bg-light p-3 rounded mb-3">
+                                        {% with last_message=conversation.message_set.last %}
+                                            {% if last_message %}
+                                                <p class="mb-0 small text-truncate">{{ last_message.content|truncatechars:80 }}</p>
+                                            {% else %}
+                                                <p class="mb-0 small text-muted">No messages yet</p>
+                                            {% endif %}
+                                        {% endwith %}
+                                    </div>
+                                    
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <small class="text-muted">
+                                                <i class="fas fa-comment-dots me-1"></i> {{ conversation.message_set.count }} messages
+                                            </small>
+                                        </div>
+                                        <div>
+                                            <small class="text-muted">
+                                                <i class="far fa-clock me-1"></i> {{ conversation.updated_at|date:"M d, Y" }}
+                                            </small>
+                                        </div>
+                                    </div>
+                                </a>
+                                <div class="card-footer bg-white border-top-0">
+                                    <a href="{% url 'interaction:conversation_detail' pk=conversation.id %}" class="btn btn-outline-primary btn-sm w-100">
+                                        <i class="fas fa-comments me-2"></i> Continue Chat
+                                    </a>
+                                </div>
+                            </div>
+                            
+                            <!-- Delete Confirmation Modal - Moved outside the card -->
+                            <div class="modal fade" id="deleteModal{{ conversation.id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ conversation.id }}" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="deleteModalLabel{{ conversation.id }}">Confirm Delete</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p>Are you sure you want to delete the conversation "{{ conversation.title }}"?</p>
+                                            <p class="text-danger">This action cannot be undone.</p>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <form method="post" action="{% url 'interaction:delete_conversation' conversation_id=conversation.id %}">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-danger">Delete</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Pagination -->
+                {% if is_paginated %}
+                    <div class="mt-4">
+                        {% bootstrap_pagination page_obj %}
+                    </div>
+                {% endif %}
+            {% else %}
+                <div class="card shadow-sm">
+                    <div class="card-body text-center py-5">
+                        <div class="mb-4">
+                            <i class="fas fa-comments text-muted" style="font-size: 64px;"></i>
+                        </div>
+                        <h4>No conversations yet</h4>
+                        <p class="text-muted mb-4">Start a new conversation with an AI tool to see it here</p>
+                        <a href="{% url 'catalog:catalog' %}?category=CHAT" class="btn btn-primary">
+                            <i class="fas fa-robot me-2"></i> Browse AI Tools
+                        </a>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    .conversation-card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    
+    .conversation-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .conversation-snippet {
+        min-height: 60px;
+        display: flex;
+        align-items: center;
+    }
+</style>
+{% endblock %}

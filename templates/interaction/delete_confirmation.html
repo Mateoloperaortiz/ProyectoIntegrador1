@@ -1,0 +1,42 @@
+{% extends 'base/base.html' %}
+{% load static %}
+{% load django_bootstrap5 %}
+
+{% block title %}Delete Conversation - InspireAI{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">Delete Conversation</h4>
+                </div>
+                <div class="card-body p-4">
+                    <h5 class="mb-4">Are you sure you want to delete this conversation?</h5>
+                    
+                    <div class="alert alert-danger">
+                        <p><strong>Title:</strong> {{ conversation.title }}</p>
+                        <p><strong>With:</strong> {{ conversation.tool.name }}</p>
+                        <p><strong>Created on:</strong> {{ conversation.created_at|date:"F j, Y" }}</p>
+                        <p><strong>Messages:</strong> {{ conversation.message_set.count }}</p>
+                        <p class="mb-0 mt-3 text-danger fw-bold">This action cannot be undone. All messages in this conversation will be permanently deleted.</p>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{% url 'interaction:conversation_detail' pk=conversation.id %}" class="btn btn-secondary">
+                            <i class="fas fa-times me-2"></i> Cancel
+                        </a>
+                        <form method="post" action="{% url 'interaction:delete_conversation' conversation_id=conversation.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash-alt me-2"></i> Delete Permanently
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
