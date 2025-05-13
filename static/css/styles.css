@@ -254,6 +254,11 @@ main {
     border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg);
 }
 
+.tool-detail-header-overlay {
+    position: relative; /* To ensure z-index applies correctly */
+    z-index: 2;       /* To place it above the ::before pseudo-element (z-index: 1) */
+}
+
 .tool-detail-content {
     position: relative;
     z-index: 2;

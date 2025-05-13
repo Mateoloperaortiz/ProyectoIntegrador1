@@ -12,21 +12,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name='rating',
-            name='new_id',
-            # Temporarily allow null, default will ensure population for existing rows if any
-            field=models.UUIDField(default=uuid.uuid4, editable=False, null=True), 
-        ),
-        migrations.RemoveField(
-            model_name='rating',
-            name='id',
-        ),
-        migrations.RenameField(
-            model_name='rating',
-            old_name='new_id',
-            new_name='id',
-        ),
         migrations.AlterField(
             model_name='rating',
             name='id',
