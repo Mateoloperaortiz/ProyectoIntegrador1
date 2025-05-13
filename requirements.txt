@@ -15,3 +15,5 @@ whitenoise~=6.9.0
 reportlab~=4.1.0
 gunicorn # If used for deployment
 posthog
+django-storages
+boto3

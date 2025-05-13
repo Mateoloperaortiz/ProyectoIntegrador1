@@ -107,45 +107,46 @@
                                 </button>
                             
                                 <a href="{% url 'interaction:conversation_detail' pk=conversation.id %}" class="card-body text-decoration-none text-dark d-block">
-                                    <div class="d-flex align-items-center mb-3">
-                                        <!-- AI Tool Icon/Image -->
-                                        <div class="rounded bg-light p-2 me-3" style="height: 50px; width: 50px;">
-                                            {% if conversation.tool.image %}
-                                                <img src="{{ conversation.tool.image.url }}" alt="{{ conversation.tool.name }}" class="rounded" style="width: 100%; height: 100%; object-fit: cover;">
-                                            {% else %}
-                                                <div class="h-100 w-100 d-flex align-items-center justify-content-center text-primary">
-                                                    <i class="fas fa-robot fa-lg"></i>
-                                                </div>
-                                            {% endif %}
+                                    <div class="row">
+                                        <div class="col-md-4 p-0" style="height: 150px;">
+                                            <div class="rounded bg-light p-2 me-3" style="height: 50px; width: 50px;">
+                                                {% if conversation.tool.logo %}
+                                                    <img src="{{ conversation.tool.logo.url }}" alt="{{ conversation.tool.name }}" class="rounded" style="width: 100%; height: 100%; object-fit: cover;">
+                                                {% else %}
+                                                    <div class="h-100 w-100 d-flex align-items-center justify-content-center text-primary">
+                                                        {{ conversation.tool.name|slice:":2" }}
+                                                    </div>
+                                                {% endif %}
+                                            </div>
                                         </div>
-                                        <div>
+                                        <div class="col-md-8 d-flex flex-column">
                                             <span class="badge bg-primary rounded-pill mb-1">{{ conversation.tool.get_category_display }}</span>
                                             <h5 class="mb-0">{{ conversation.tool.name }}</h5>
-                                        </div>
-                                    </div>
-                                    
-                                    <h6 class="mb-3 text-truncate">{{ conversation.title }}</h6>
-                                    
-                                    <div class="conversation-snippet bg-light p-3 rounded mb-3">
-                                        {% with last_message=conversation.message_set.last %}
-                                            {% if last_message %}
-                                                <p class="mb-0 small text-truncate">{{ last_message.content|truncatechars:80 }}</p>
-                                            {% else %}
-                                                <p class="mb-0 small text-muted">No messages yet</p>
-                                            {% endif %}
-                                        {% endwith %}
-                                    </div>
-                                    
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <small class="text-muted">
-                                                <i class="fas fa-comment-dots me-1"></i> {{ conversation.message_set.count }} messages
-                                            </small>
-                                        </div>
-                                        <div>
-                                            <small class="text-muted">
-                                                <i class="far fa-clock me-1"></i> {{ conversation.updated_at|date:"M d, Y" }}
-                                            </small>
+                                            
+                                            <h6 class="mb-3 text-truncate">{{ conversation.title }}</h6>
+                                            
+                                            <div class="conversation-snippet bg-light p-3 rounded mb-3">
+                                                {% with last_message=conversation.message_set.last %}
+                                                    {% if last_message %}
+                                                        <p class="mb-0 small text-truncate">{{ last_message.content|truncatechars:80 }}</p>
+                                                    {% else %}
+                                                        <p class="mb-0 small text-muted">No messages yet</p>
+                                                    {% endif %}
+                                                {% endwith %}
+                                            </div>
+                                            
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <small class="text-muted">
+                                                        <i class="fas fa-comment-dots me-1"></i> {{ conversation.message_set.count }} messages
+                                                    </small>
+                                                </div>
+                                                <div>
+                                                    <small class="text-muted">
+                                                        <i class="far fa-clock me-1"></i> {{ conversation.updated_at|date:"M d, Y" }}
+                                                    </small>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </a>

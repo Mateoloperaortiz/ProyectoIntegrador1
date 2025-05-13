@@ -26,23 +26,31 @@ class Command(BaseCommand):
     def get_svg_file(self, logo_name, tool_name, field_type="logo"):
         """
         Loads an SVG logo file and returns a File object
+        The 'field_type' parameter is less relevant now if we use original filenames.
         """
         try:
+            # Path to the source images in your static directory
             logo_path = os.path.join('static', 'images', logo_name)
             
             if not os.path.exists(logo_path):
-                self.stdout.write(self.style.WARNING(f"Logo file not found: {logo_path}"))
+                self.stdout.write(self.style.WARNING(f"Source logo file not found: {logo_path}"))
                 return None
                 
-            with open(logo_path, 'rb') as f:
-                img_temp = tempfile.NamedTemporaryFile(delete=True)
-                img_temp.write(f.read())
-                img_temp.flush()
-                img_temp.seek(0)
+            # Read the original file content
+            with open(logo_path, 'rb') as f_original:
+                file_content = f_original.read()
+
+            # Create a temporary file to hold the content for Django's File object
+            img_temp = tempfile.NamedTemporaryFile(delete=True)
+            img_temp.write(file_content)
+            img_temp.flush() # Ensure all data is written
+            img_temp.seek(0) # Rewind to the beginning of the temporary file
                 
-                return File(img_temp, name=f"{slugify(tool_name)}_{field_type}.svg")
+            # Return a Django File object using the original filename (logo_name)
+            # This name will be used when saving to DigitalOcean Spaces.
+            return File(img_temp, name=logo_name) 
         except Exception as e:
-            self.stdout.write(self.style.ERROR(f"Error loading SVG file: {e}"))
+            self.stdout.write(self.style.ERROR(f"Error loading SVG file {logo_name}: {e}"))
             return None
 
     def handle(self, *args, **options):
@@ -102,18 +110,20 @@ class Command(BaseCommand):
                     tool = AITool.objects.create(**tool_data)
                     
                     if logo_filename:
-                        self.stdout.write(f"Loading SVG for {tool_data['name']}...")
+                        self.stdout.write(f"Processing logo {logo_filename} for {tool_data['name']}...")
                         
-                        # Use same SVG file for both logo and image
-                        logo_file = self.get_svg_file(logo_filename, tool_data['name'], "logo")
-                        if logo_file:
-                            tool.logo = logo_file
-                            
-                        image_file = self.get_svg_file(logo_filename, tool_data['name'], "image")
-                        if image_file:
-                            tool.image = image_file
-                            
-                        tool.save()
+                        # Get the Django File object for the logo
+                        # We'll use the original logo_filename as the name for storage
+                        logo_file_obj = self.get_svg_file(logo_filename, tool_data['name'], "logo")
+                        
+                        if logo_file_obj:
+                            tool.logo = logo_file_obj # Assign to the logo field
+                            # tool.image = logo_file_obj # If you want the same image for the 'image' field
+                                                     # Otherwise, handle tool.image separately if it's for a different image.
+                            tool.save() # This will trigger the upload to Spaces via django-storages
+                            self.stdout.write(self.style.SUCCESS(f"Successfully processed and assigned logo for {tool_data['name']}."))
+                        else:
+                            self.stdout.write(self.style.WARNING(f"Could not load logo file for {tool_data['name']}. Skipping logo assignment."))
                     
                     created_count += 1
                     self.stdout.write(self.style.SUCCESS(f"Created AI tool: {tool_data['name']}"))

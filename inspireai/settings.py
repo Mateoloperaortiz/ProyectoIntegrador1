@@ -164,7 +164,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Media files
-MEDIA_URL = '/media/'
+MEDIA_URL = f'{os.environ.get("DO_SPACES_ENDPOINT_URL")}/{os.environ.get("DO_SPACES_BUCKET_NAME")}/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Default primary key field type
@@ -193,3 +193,25 @@ POSTHOG_API_KEY = os.environ.get('POSTHOG_API_KEY')
 POSTHOG_HOST = os.environ.get('POSTHOG_HOST')
 # Optional: Link PostHog's debug mode to Django's DEBUG setting
 POSTHOG_DEBUG = DEBUG
+
+# DigitalOcean Spaces settings
+DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+AWS_ACCESS_KEY_ID = os.environ.get('DO_SPACES_ACCESS_KEY') # Make sure to set this in .env or environment
+AWS_SECRET_ACCESS_KEY = os.environ.get('DO_SPACES_SECRET_KEY') # Make sure to set this in .env or environment
+AWS_STORAGE_BUCKET_NAME = 'blobinsai' # Your Space name
+AWS_S3_REGION_NAME = 'nyc3' # Your Space region
+AWS_S3_ENDPOINT_URL = f'https://{AWS_S3_REGION_NAME}.digitaloceanspaces.com'
+AWS_S3_OBJECT_PARAMETERS = {
+    'CacheControl': 'max-age=86400', # Cache static files for 1 day
+}
+AWS_LOCATION = '' # Set to empty string, so upload_to in models is the direct path in the bucket
+AWS_DEFAULT_ACL = 'public-read' # Make files public by default
+AWS_S3_SIGNATURE_VERSION = 's3v4' # Required for some regions, good practice
+AWS_S3_FILE_OVERWRITE = True # If a file with the same name is uploaded, overwrite it. Set to False if you need versioning.
+
+# Construct MEDIA_URL to point to Spaces
+# Ensure AWS_LOCATION is an empty string if you want upload_to to be the full path in the bucket.
+# If AWS_LOCATION was 'media', then MEDIA_URL would include '/media/' and upload_to paths would be relative to that.
+MEDIA_URL = f'{AWS_S3_ENDPOINT_URL}/{AWS_STORAGE_BUCKET_NAME}/'
+# MEDIA_ROOT will not be used by django-storages for S3, but Django might still expect it.
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media') # Local path, primarily for manage.py collectstatic if it handles media (rarely)

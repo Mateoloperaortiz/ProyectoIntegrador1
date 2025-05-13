@@ -1,4 +1,3 @@
-
 {% extends 'base/base.html' %}
 {% load django_bootstrap5 %}
 {% load static %}
@@ -93,10 +92,10 @@
                                     <div class="col">
                                         <div class="card h-100 ai-card border-0 rounded-4 shadow-sm">
                                             <div class="ai-card-img-container rounded-top-4">
-                                                {% if favorite.tool.image %}
-                                                    <img src="{{ favorite.tool.image.url }}" class="ai-card-img" alt="{{ favorite.tool.name }}">
+                                                {% if favorite.tool.logo %}
+                                                    <img src="{{ favorite.tool.logo.url }}" class="ai-card-img" alt="{{ favorite.tool.name }}">
                                                 {% else %}
-                                                    <img src="{% static 'images/placeholder.png' %}" class="ai-card-img" alt="{{ favorite.tool.name }}">
+                                                    <img src="{% static 'images/placeholder.png' %}" class="ai-card-img" alt="Placeholder">
                                                 {% endif %}
                                                 <span class="badge bg-primary rounded-pill category-badge">{{ favorite.tool.get_category_display }}</span>
                                             </div>
@@ -150,10 +149,10 @@
                                     <div class="col">
                                         <div class="card h-100 ai-card border-0 rounded-4 shadow-sm">
                                             <div class="ai-card-img-container rounded-top-4">
-                                                {% if tool.image %}
-                                                    <img src="{{ tool.image.url }}" class="ai-card-img" alt="{{ tool.name }}">
+                                                {% if tool.logo %}
+                                                    <img src="{{ tool.logo.url }}" class="ai-card-img" alt="{{ tool.name }}">
                                                 {% else %}
-                                                    <img src="{% static 'images/placeholder.png' %}" class="ai-card-img" alt="{{ tool.name }}">
+                                                    <img src="{% static 'images/placeholder.png' %}" class="ai-card-img" alt="Placeholder">
                                                 {% endif %}
                                                 <span class="badge bg-primary rounded-pill category-badge">{{ tool.get_category_display }}</span>
                                             </div>

@@ -132,11 +132,11 @@
                     {% for tool in tools %}
                         <div class="col">
                             <div class="card h-100 ai-card border-0">
-                                <div class="ai-card-img-container">
-                                    {% if tool.image %}
-                                        <img src="{{ tool.image.url }}" class="ai-card-img" alt="{{ tool.name }}">
+                                <div class="ai-card-img-container rounded-top-4">
+                                    {% if tool.logo %}
+                                        <img src="{{ tool.logo.url }}" class="ai-card-img" alt="{{ tool.name }}">
                                     {% else %}
-                                        <img src="{% static 'images/placeholder.png' %}" class="ai-card-img" alt="{{ tool.name }}">
+                                        <img src="{% static 'images/placeholder.png' %}" class="ai-card-img" alt="Placeholder">
                                     {% endif %}
                                     <span class="badge category-badge">{{ tool.get_category_display }}</span>
                                 </div>

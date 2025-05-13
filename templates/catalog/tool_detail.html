@@ -2,57 +2,61 @@
 {% load static %}
 {% load django_bootstrap5 %}
 
-{% block title %}{{ tool.name }} - InspireAI{% endblock %}
+{% block title %}{{ tool.name }} - AI Tool Details{% endblock %}
 
 {% block content %}
 <!-- Tool Header -->
-<div class="tool-detail-header" style="background-image: url('{% if tool.image %}{{ tool.image.url }}{% else %}{% static 'images/placeholder.png' %}{% endif %}');">
-    <div class="container tool-detail-content">
-        <div class="row">
-            <div class="col-lg-8">
-                <span class="badge bg-primary rounded-pill mb-2">{{ tool.get_category_display }}</span>
-                <h1 class="display-4 fw-bold">{{ tool.name }}</h1>
-                <p class="lead">By {{ tool.provider }}</p>
-                
-                <!-- Rating overview -->
-                <div class="d-flex align-items-center mb-3">
-                    <div class="rating-stars me-2">
-                        {% with avg_rating=tool.popularity %}
-                            {% for i in "12345" %}
-                                {% if forloop.counter <= avg_rating %}
-                                    <i class="fas fa-star"></i>
-                                {% elif forloop.counter <= avg_rating|add:"0.5" %}
-                                    <i class="fas fa-star-half-alt"></i>
-                                {% else %}
-                                    <i class="far fa-star"></i>
-                                {% endif %}
-                            {% endfor %}
-                        {% endwith %}
+<div class="tool-detail-container container-fluid mt-0 mb-5">
+    <div class="tool-detail-header" style="background-image: url('{% if tool.logo %}{{ tool.logo.url }}{% else %}{% static 'images/placeholder.png' %}{% endif %}');">
+        <div class="tool-detail-header-overlay">
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-8">
+                        <span class="badge bg-primary rounded-pill mb-2">{{ tool.get_category_display }}</span>
+                        <h1 class="display-4 fw-bold">{{ tool.name }}</h1>
+                        <p class="lead">By {{ tool.provider }}</p>
+                        
+                        <!-- Rating overview -->
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="rating-stars me-2">
+                                {% with avg_rating=tool.popularity %}
+                                    {% for i in "12345" %}
+                                        {% if forloop.counter <= avg_rating %}
+                                            <i class="fas fa-star"></i>
+                                        {% elif forloop.counter <= avg_rating|add:"0.5" %}
+                                            <i class="fas fa-star-half-alt"></i>
+                                        {% else %}
+                                            <i class="far fa-star"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endwith %}
+                            </div>
+                            <span class="text-white">{{ tool.popularity|floatformat:1 }} ({{ tool.rating_set.count }} ratings)</span>
+                        </div>
+                        
+                        <!-- Action buttons -->
+                        <div class="d-flex flex-wrap gap-2">
+                            <a href="{{ tool.website_url }}" class="btn btn-light" target="_blank">
+                                <i class="fas fa-external-link-alt me-1"></i> Visit Website
+                            </a>
+                            
+                            {% if tool.api_type != 'NONE' %}
+                                <a href="{% url 'interaction:start_conversation' tool_id=tool.id %}" class="btn btn-light">
+                                    <i class="fas fa-comment me-1"></i> Try It Now
+                                </a>
+                            {% endif %}
+                            
+                            {% if user.is_authenticated %}
+                                <form method="post" action="{% url 'catalog:toggle_favorite' tool_id=tool.id %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn {% if is_favorite %}btn-danger{% else %}btn-light{% endif %}">
+                                        <i class="{% if is_favorite %}fas{% else %}far{% endif %} fa-heart me-1"></i> 
+                                        {% if is_favorite %}Favorito{% else %}Agregar a Favoritos{% endif %}
+                                    </button>
+                                </form>
+                            {% endif %}
+                        </div>
                     </div>
-                    <span class="text-white">{{ tool.popularity|floatformat:1 }} ({{ tool.rating_set.count }} ratings)</span>
-                </div>
-                
-                <!-- Action buttons -->
-                <div class="d-flex flex-wrap gap-2">
-                    <a href="{{ tool.website_url }}" class="btn btn-light" target="_blank">
-                        <i class="fas fa-external-link-alt me-1"></i> Visit Website
-                    </a>
-                    
-                    {% if tool.api_type != 'NONE' %}
-                        <a href="{% url 'interaction:start_conversation' tool_id=tool.id %}" class="btn btn-light">
-                            <i class="fas fa-comment me-1"></i> Try It Now
-                        </a>
-                    {% endif %}
-                    
-                    {% if user.is_authenticated %}
-                        <form method="post" action="{% url 'catalog:toggle_favorite' tool_id=tool.id %}" class="d-inline">
-                            {% csrf_token %}
-                            <button type="submit" class="btn {% if is_favorite %}btn-danger{% else %}btn-light{% endif %}">
-                                <i class="{% if is_favorite %}fas{% else %}far{% endif %} fa-heart me-1"></i> 
-                                {% if is_favorite %}Favorito{% else %}Agregar a Favoritos{% endif %}
-                            </button>
-                        </form>
-                    {% endif %}
                 </div>
             </div>
         </div>
