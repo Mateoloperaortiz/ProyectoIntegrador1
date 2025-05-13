@@ -6,12 +6,18 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
+    atomic = False  # Make this migration non-atomic
 
     dependencies = [
         ("catalog", "0002_initial"),
     ]
 
     operations = [
+        # Add this operation to delete all existing ratings before changing the ID type
+        migrations.RunSQL(
+            "DELETE FROM catalog_rating;",
+            reverse_sql=migrations.RunSQL.noop  # No specific reverse operation needed if we're okay with data loss on rollback
+        ),
         migrations.AlterModelOptions(
             name="rating",
             options={},
@@ -24,13 +30,6 @@ class Migration(migrations.Migration):
         migrations.RemoveField(
             model_name="rating",
             name="updated_at",
-        ),
-        migrations.AlterField(
-            model_name="rating",
-            name="id",
-            field=models.UUIDField(
-                default=uuid.uuid4, editable=False, primary_key=True, serialize=False
-            ),
         ),
         migrations.AlterField(
             model_name="rating",

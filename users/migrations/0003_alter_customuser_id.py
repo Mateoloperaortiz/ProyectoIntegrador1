@@ -4,17 +4,49 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
+    atomic = False  # Non-atomic for PK changes
 
     dependencies = [
         ("users", "0002_alter_customuser_id"),
     ]
 
     operations = [
+        migrations.AddField(
+            model_name='customuser',
+            name='new_int_id',
+            field=models.BigAutoField(primary_key=True, serialize=False, auto_created=True, default=None), # Temporarily set as PK, default=None for AddField
+            preserve_default=False, # Important for AddField with auto_created=True
+        ),
+
+        migrations.RunSQL(
+            sql="""
+            CREATE SEQUENCE IF NOT EXISTS users_customuser_new_int_id_seq;
+            UPDATE users_customuser
+            SET new_int_id = nextval('users_customuser_new_int_id_seq')
+            WHERE new_int_id IS NULL;
+            """,
+            reverse_sql="DROP SEQUENCE IF EXISTS users_customuser_new_int_id_seq;"
+        ),
+
+        migrations.RemoveField(
+            model_name='customuser',
+            name='id',
+        ),
+
+        # Step 4: Rename the 'new_int_id' field to 'id'.
+        migrations.RenameField(
+            model_name='customuser',
+            old_name='new_int_id',
+            new_name='id',
+        ),
+        
+        # Step 5: Now that the new 'id' field exists (and old one is gone),
+        # alter it to be the non-nullable BigAutoField primary key.
+        # This step will also associate the sequence (created in RunSQL or by Django)
+        # with the column for auto-incrementing.
         migrations.AlterField(
-            model_name="customuser",
-            name="id",
-            field=models.BigAutoField(
-                auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
-            ),
+            model_name='customuser',
+            name='id',
+            field=models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID'),
         ),
     ]

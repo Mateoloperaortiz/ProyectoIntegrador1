@@ -5,17 +5,36 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
+    atomic = False  # Ensure this migration is non-atomic for PK changes
 
     dependencies = [
         ("users", "0001_initial"),
     ]
 
     operations = [
+        migrations.AddField(
+            model_name='customuser',
+            name='new_id',
+            # Temporarily allow null; default will ensure population for existing rows.
+            field=models.UUIDField(default=uuid.uuid4, editable=False, null=True),
+        ),
+        # If there's data and you need to populate new_id from old id or other fields,
+        # you would add a migrations.RunPython operation here.
+        # For simply changing to UUID, default=uuid.uuid4 is usually sufficient.
+
+        migrations.RemoveField(
+            model_name='customuser',
+            name='id', # This removes the old AutoField/BigAutoField primary key
+        ),
+        migrations.RenameField(
+            model_name='customuser',
+            old_name='new_id',
+            new_name='id', # Rename the new UUID column to 'id'
+        ),
         migrations.AlterField(
-            model_name="customuser",
-            name="id",
-            field=models.UUIDField(
-                default=uuid.uuid4, editable=False, primary_key=True, serialize=False
-            ),
+            model_name='customuser',
+            name='id', # Now refers to the renamed UUID field
+            field=models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False),
+            # Make it the primary key. primary_key=True implies null=False.
         ),
     ]

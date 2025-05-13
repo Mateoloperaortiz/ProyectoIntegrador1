@@ -12,21 +12,29 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path
 import os
-import dotenv
+# import dotenv # python-dotenv is loaded differently
+import dj_database_url
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-if os.path.exists(os.path.join(BASE_DIR, '.envrc')):
-    with open(os.path.join(BASE_DIR, '.envrc'), 'r') as f:
-        for line in f:
-            if line.startswith('export '):
-                key, value = line.replace('export ', '', 1).strip().split('=', 1)
-                os.environ[key] = value.strip('"').strip("'")
+# Load .env file from the project's base directory
+load_dotenv(os.path.join(BASE_DIR, '.env'))
 
-print(f"OpenAI API key set: {os.environ.get('OPENAI_API_KEY') is not None}")
-print(f"Hugging Face API key set: {os.environ.get('HUGGINGFACE_API_KEY') is not None}")
-print(f"Gemini API key set: {os.environ.get('GEMINI_API_KEY') is not None}")
+# The .envrc loading logic is replaced by python-dotenv
+# if os.path.exists(os.path.join(BASE_DIR, '.envrc')):
+#     with open(os.path.join(BASE_DIR, '.envrc'), 'r') as f:
+#         for line in f:
+#             if line.startswith('export '):
+#                 key, value = line.replace('export ', '', 1).strip().split('=', 1)
+#                 os.environ[key] = value.strip('"').strip("'")
+
+# These print statements can be removed or kept for debugging,
+# but ensure API keys are not exposed in production logs if sensitive.
+# print(f"OpenAI API key set: {os.environ.get('OPENAI_API_KEY') is not None}")
+# print(f"Hugging Face API key set: {os.environ.get('HUGGINGFACE_API_KEY') is not None}")
+# print(f"Gemini API key set: {os.environ.get('GEMINI_API_KEY') is not None}")
 
 
 
@@ -93,12 +101,25 @@ WSGI_APPLICATION = 'inspireai.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+default_db_url = f"sqlite:///{BASE_DIR / 'db.sqlite3'}"
+
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': dj_database_url.config(
+        default=default_db_url,
+        conn_max_age=600,
+        conn_health_checks=True,
+        # ssl_require is typically handled by the DATABASE_URL query parameter e.g. ?sslmode=require
+        # If explicit control is needed:
+        # ssl_require=os.getenv('DB_SSLMODE', 'allow') == 'require'
+    )
 }
+
+# Ensure SSL is used for DigitalOcean managed databases if specified in DATABASE_URL
+# dj_database_url should handle the ?sslmode=require in the DATABASE_URL.
+# If not, or for more explicit control:
+# if DATABASES['default']['HOST'] and 'ondigitalocean.com' in DATABASES['default']['HOST']:
+#     if os.getenv('DATABASE_SSLMODE') == 'require' or '?sslmode=require' in os.getenv('DATABASE_URL', ''):
+#          DATABASES['default'].setdefault('OPTIONS', {}).update({'sslmode': 'require'})
 
 
 # Password validation
