@@ -37,9 +37,9 @@ print(f"Gemini API key set: {os.environ.get('GEMINI_API_KEY') is not None}")
 SECRET_KEY = 'django-insecure-t*-w!33i7f(e_5lnj)lm&(rrr*zad0&658(77r8=4%2mblo*3l'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
